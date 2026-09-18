@@ -1,0 +1,1199 @@
+# LeetCode 27 — Remove Element
+
+## 1. Đề bài
+
+Cho một mảng số nguyên `nums` và một số nguyên `val`. Hãy **xóa tất cả các phần tử có giá trị bằng `val` ngay trên chính mảng `nums` (in-place)**.
+
+Hàm cần trả về số lượng phần tử còn lại, ký hiệu là `k`, sao cho:
+
+- `nums[0] ... nums[k - 1]` chứa các phần tử **khác `val`**.
+- Các phần tử từ `nums[k]` trở đi **không cần quan tâm**.
+- Không được tạo ra một mảng mới có kích thước `n` để chứa kết quả.
+
+Ví dụ:
+
+```text
+nums = [3, 2, 2, 3], val = 3
+
+Kết quả:
+k = 2
+nums = [2, 2, _, _]
+```
+
+Trong đó `_` biểu thị phần còn lại của mảng không cần quan tâm.
+
+---
+
+# 2. Điều quan trọng nhất cần nhận ra
+
+Bài toán không thực sự yêu cầu chúng ta "xóa" phần tử theo nghĩa vật lý.
+
+Đây là điểm mấu chốt.
+
+Với mảng:
+
+```text
+[3, 2, 2, 3]
+```
+
+và:
+
+```text
+val = 3
+```
+
+ta không nhất thiết phải làm:
+
+```text
+[2, 2]
+```
+
+vì việc thay đổi kích thước một C-style array / `vector` không phải mục tiêu của bài toán.
+
+Thay vào đó, ta chỉ cần biến phần đầu của mảng thành:
+
+```text
+[2, 2, ?, ?]
+ ↑────↑
+  k phần tử hợp lệ
+```
+
+và trả về:
+
+```text
+k = 2
+```
+
+LeetCode chỉ kiểm tra `nums[0..k-1]`.
+
+Vì vậy, tư duy chính là:
+
+> **Không cần xóa phần tử. Chỉ cần ghi đè những phần tử cần giữ lên phía trước mảng.**
+
+Đây chính là ý tưởng của kỹ thuật **Two Pointers**.
+
+---
+
+# 3. Phân tích yêu cầu về độ phức tạp
+
+Giả sử:
+
+```text
+n = nums.size()
+```
+
+Ta muốn đạt:
+
+- **Time:** `O(n)`
+- **Extra Space:** `O(1)`
+
+Tại sao?
+
+## 3.1. Vì sao cần `O(n)` thời gian?
+
+Trong trường hợp xấu nhất, ta phải kiểm tra từng phần tử xem nó có bằng `val` hay không.
+
+Do đó, ít nhất phải duyệt qua mảng:
+
+```text
+nums[0]
+nums[1]
+nums[2]
+...
+nums[n-1]
+```
+
+=> `O(n)` là mức thời gian tự nhiên và tối ưu cho bài toán này.
+
+---
+
+## 3.2. Vì sao không nên dùng mảng phụ?
+
+Một cách đơn giản là:
+
+```cpp
+vector<int> result;
+
+for (int x : nums) {
+    if (x != val) {
+        result.push_back(x);
+    }
+}
+```
+
+Cách này có thời gian `O(n)`, nhưng cần thêm `O(n)` bộ nhớ.
+
+Trong khi đề bài yêu cầu xử lý **in-place**.
+
+Do đó, ta muốn:
+
+```text
+Extra Space = O(1)
+```
+
+Nghĩa là chỉ sử dụng một vài biến như:
+
+```cpp
+int k;
+int i;
+```
+
+chứ không tạo thêm một mảng có kích thước phụ thuộc vào `n`.
+
+---
+
+# 4. Tư duy Two Pointers
+
+Ta sử dụng hai chỉ số:
+
+```text
+read
+write
+```
+
+Ý nghĩa:
+
+- `read`: đang đọc / kiểm tra phần tử nào.
+- `write`: vị trí tiếp theo để ghi một phần tử hợp lệ.
+
+Đây là mô hình cực kỳ quan trọng:
+
+```text
+read  → đọc toàn bộ mảng
+write → xây dựng kết quả ở phía trước
+```
+
+Ta duyệt `read` từ trái sang phải.
+
+Mỗi khi:
+
+```cpp
+nums[read] != val
+```
+
+thì phần tử này cần được giữ lại.
+
+Ta ghi nó vào:
+
+```cpp
+nums[write]
+```
+
+sau đó tăng:
+
+```cpp
+write++;
+```
+
+Nếu:
+
+```cpp
+nums[read] == val
+```
+
+thì bỏ qua.
+
+---
+
+# 5. Ví dụ từng bước
+
+Xét:
+
+```text
+nums = [3, 2, 2, 3]
+val = 3
+```
+
+Ban đầu:
+
+```text
+read = 0
+write = 0
+```
+
+Ta có:
+
+```text
+index:  0  1  2  3
+nums:  [3, 2, 2, 3]
+         ↑
+       read
+       ↑
+     write
+```
+
+---
+
+## Bước 1
+
+`read = 0`
+
+```cpp
+nums[read] = 3
+```
+
+Mà:
+
+```cpp
+3 == val
+```
+
+nên không giữ.
+
+Ta chỉ tăng `read`.
+
+```text
+read = 1
+write = 0
+```
+
+Mảng vẫn:
+
+```text
+[3, 2, 2, 3]
+```
+
+---
+
+## Bước 2
+
+`read = 1`
+
+```cpp
+nums[read] = 2
+```
+
+Ta có:
+
+```cpp
+2 != 3
+```
+
+=> phải giữ lại.
+
+Ta ghi:
+
+```cpp
+nums[write] = nums[read];
+```
+
+tức là:
+
+```cpp
+nums[0] = nums[1];
+```
+
+Mảng trở thành:
+
+```text
+[2, 2, 2, 3]
+ ↑
+write
+    ↑
+   read
+```
+
+Sau đó:
+
+```text
+write = 1
+read = 2
+```
+
+---
+
+## Bước 3
+
+`read = 2`
+
+```cpp
+nums[read] = 2
+```
+
+`2 != 3`, nên giữ.
+
+Ghi:
+
+```cpp
+nums[1] = nums[2];
+```
+
+Mảng:
+
+```text
+[2, 2, 2, 3]
+       ↑
+      read
+
+       ↑
+     write
+```
+
+Sau đó:
+
+```text
+write = 2
+read = 3
+```
+
+---
+
+## Bước 4
+
+`read = 3`
+
+```cpp
+nums[read] = 3
+```
+
+`3 == val`.
+
+=> bỏ qua.
+
+Kết thúc vòng lặp.
+
+Ta có:
+
+```text
+write = 2
+```
+
+Do đó:
+
+```text
+k = 2
+```
+
+Hai phần tử đầu:
+
+```text
+[2, 2]
+```
+
+là kết quả cần quan tâm.
+
+Các phần tử phía sau:
+
+```text
+[2, 3]
+```
+
+không cần quan tâm.
+
+---
+
+# 6. Trực quan hóa thuật toán
+
+Có thể hình dung như sau:
+
+```text
+                 read
+                  ↓
+[ 3 | 2 | 2 | 3 ]
+  ✗   ✓   ✓   ✗
+
+      ↓
+[ 2 | 2 | ? | ? ]
+          ↑
+        write
+```
+
+`read` có nhiệm vụ:
+
+> "Phần tử này có nên giữ không?"
+
+`write` có nhiệm vụ:
+
+> "Nếu giữ, tôi sẽ đặt nó ở đâu?"
+
+Đây là cách tư duy tổng quát của rất nhiều bài Two Pointers.
+
+---
+
+# 7. Pseudocode
+
+Thuật toán có thể viết rất ngắn gọn:
+
+```text
+write = 0
+
+for read từ 0 đến n - 1:
+    nếu nums[read] != val:
+        nums[write] = nums[read]
+        write++
+
+return write
+```
+
+Điểm đáng chú ý:
+
+- `read` luôn tiến về phía trước.
+- `write` chỉ tăng khi tìm được một phần tử hợp lệ.
+- Do đó luôn có:
+
+```text
+write <= read + 1
+```
+
+và ta không cần dùng bộ nhớ phụ.
+
+---
+
+# 8. Vì sao thuật toán đúng?
+
+Ta có thể chứng minh bằng **loop invariant**.
+
+Sau khi đã xử lý các phần tử:
+
+```text
+nums[0 ... read - 1]
+```
+
+ta duy trì invariant:
+
+> `nums[0 ... write - 1]` chứa chính xác các phần tử đã gặp trong đoạn `nums[0 ... read - 1]` có giá trị khác `val`.
+
+Nói đơn giản hơn:
+
+```text
+[0 ... write-1]
+```
+
+luôn là phần "kết quả hợp lệ" mà ta đã xây dựng.
+
+---
+
+## Trường hợp 1: `nums[read] == val`
+
+Phần tử hiện tại phải bị loại.
+
+Ta không ghi gì vào vùng kết quả.
+
+Vì vậy:
+
+```text
+write
+```
+
+không thay đổi.
+
+Invariant vẫn đúng.
+
+---
+
+## Trường hợp 2: `nums[read] != val`
+
+Phần tử hiện tại phải được giữ.
+
+Ta thực hiện:
+
+```cpp
+nums[write] = nums[read];
+```
+
+Sau đó:
+
+```cpp
+write++;
+```
+
+Như vậy, phần tử vừa đọc được thêm chính xác vào cuối vùng kết quả.
+
+Invariant tiếp tục đúng.
+
+---
+
+## Khi vòng lặp kết thúc
+
+Khi:
+
+```text
+read == n
+```
+
+ta đã xử lý toàn bộ mảng.
+
+Theo invariant:
+
+```text
+nums[0 ... write-1]
+```
+
+chứa toàn bộ các phần tử khác `val`.
+
+Vì vậy:
+
+```cpp
+return write;
+```
+
+là chính xác.
+
+---
+
+# 9. Vì sao không cần `erase()`?
+
+Một người mới học C++ có thể nghĩ đến:
+
+```cpp
+for (int i = 0; i < nums.size(); i++) {
+    if (nums[i] == val) {
+        nums.erase(nums.begin() + i);
+    }
+}
+```
+
+Cách này có một vấn đề lớn: `erase()` giữa `vector` làm các phần tử phía sau phải dịch chuyển.
+
+Ví dụ:
+
+```text
+[1, 2, 3, 4, 5]
+       ↑
+     erase
+```
+
+sau khi xóa `3`:
+
+```text
+[1, 2, 4, 5]
+```
+
+Các phần tử `4`, `5` phải dịch sang trái.
+
+Nếu có rất nhiều phần tử cần xóa, tổng số phép dịch có thể lên tới `O(n²)`.
+
+Ngoài ra, việc thay đổi kích thước vector không cần thiết đối với yêu cầu của LeetCode 27.
+
+Do đó, chiến lược **ghi đè (overwrite)** tốt hơn:
+
+```text
+Đọc → kiểm tra → nếu cần thì ghi vào vị trí write
+```
+
+---
+
+# 10. Một ví dụ khác
+
+Xét:
+
+```text
+nums = [0, 1, 2, 2, 3, 0, 4, 2]
+val = 2
+```
+
+Ta có:
+
+```text
+read:   0 1 2 3 4 5 6 7
+nums:  [0 1 2 2 3 0 4 2]
+```
+
+Duyệt:
+
+```text
+0 → giữ
+1 → giữ
+2 → bỏ
+2 → bỏ
+3 → giữ
+0 → giữ
+4 → giữ
+2 → bỏ
+```
+
+Kết quả:
+
+```text
+[0, 1, 3, 0, 4, ?, ?, ?]
+```
+
+và:
+
+```text
+k = 5
+```
+
+Điều quan trọng là ta không cần quan tâm ba vị trí cuối chứa gì.
+
+---
+
+# 11. Edge cases
+
+## 11.1. Mảng rỗng
+
+```text
+nums = []
+val = 5
+```
+
+Không có phần tử nào.
+
+```cpp
+write = 0
+```
+
+Trả về:
+
+```text
+0
+```
+
+---
+
+## 11.2. Tất cả đều bằng `val`
+
+Ví dụ:
+
+```text
+nums = [7, 7, 7, 7]
+val = 7
+```
+
+Không phần tử nào được giữ.
+
+```text
+write = 0
+```
+
+=> trả về:
+
+```text
+0
+```
+
+---
+
+## 11.3. Không có phần tử nào bằng `val`
+
+Ví dụ:
+
+```text
+nums = [1, 2, 3, 4]
+val = 7
+```
+
+Tất cả đều được giữ.
+
+Khi kết thúc:
+
+```text
+write = 4
+```
+
+=> trả về `4`.
+
+Mảng không thay đổi.
+
+---
+
+## 11.4. Chỉ có một phần tử
+
+```text
+nums = [5]
+val = 5
+```
+
+=> `k = 0`.
+
+Hoặc:
+
+```text
+nums = [5]
+val = 3
+```
+
+=> `k = 1`.
+
+---
+
+# 12. Độ phức tạp
+
+## Time Complexity
+
+Ta duyệt mảng đúng một lần:
+
+```cpp
+for (int read = 0; read < nums.size(); read++)
+```
+
+Mỗi phần tử được xử lý `O(1)`.
+
+Do đó:
+
+```text
+Time = O(n)
+```
+
+---
+
+## Space Complexity
+
+Ta chỉ sử dụng:
+
+```cpp
+int write
+int read
+```
+
+không tạo thêm mảng.
+
+Do đó:
+
+```text
+Extra Space = O(1)
+```
+
+Đây là mục tiêu tối ưu của bài toán.
+
+---
+
+# 13. Lời giải C++ tối ưu
+
+```cpp
+class Solution {
+public:
+    int removeElement(vector<int>& nums, int val) {
+        int write = 0;
+
+        for (int read = 0; read < nums.size(); ++read) {
+            if (nums[read] != val) {
+                nums[write] = nums[read];
+                ++write;
+            }
+        }
+
+        return write;
+    }
+};
+```
+
+---
+
+# 14. Giải thích từng dòng code
+
+## Khai báo `write`
+
+```cpp
+int write = 0;
+```
+
+`write` là vị trí tiếp theo mà chúng ta sẽ ghi một phần tử hợp lệ.
+
+Ban đầu chưa giữ phần tử nào:
+
+```text
+write = 0
+```
+
+---
+
+## Duyệt bằng `read`
+
+```cpp
+for (int read = 0; read < nums.size(); ++read)
+```
+
+`read` lần lượt đi qua tất cả phần tử.
+
+Ta không bỏ sót bất kỳ phần tử nào.
+
+---
+
+## Kiểm tra phần tử
+
+```cpp
+if (nums[read] != val)
+```
+
+Nếu phần tử khác `val`, nó cần được giữ.
+
+Nếu bằng `val`, ta bỏ qua.
+
+---
+
+## Ghi phần tử hợp lệ
+
+```cpp
+nums[write] = nums[read];
+```
+
+Đây là thao tác quan trọng nhất.
+
+Ta lấy phần tử đang đọc và đặt nó vào vùng kết quả.
+
+Ví dụ:
+
+```text
+nums = [3, 2, 2, 3]
+        ↑  ↑
+       read
+       write
+```
+
+Khi `read` gặp `2`, ta có thể ghi:
+
+```cpp
+nums[write] = nums[read];
+```
+
+để đưa `2` lên đầu vùng kết quả.
+
+---
+
+## Tăng `write`
+
+```cpp
+++write;
+```
+
+Vừa ghi xong một phần tử hợp lệ, vị trí tiếp theo cũng phải dịch sang phải.
+
+---
+
+## Trả về `write`
+
+```cpp
+return write;
+```
+
+`write` chính là số lượng phần tử khác `val`.
+
+---
+
+# 15. Một cách viết khác
+
+Có thể viết:
+
+```cpp
+class Solution {
+public:
+    int removeElement(vector<int>& nums, int val) {
+        int k = 0;
+
+        for (int x : nums) {
+            if (x != val) {
+                nums[k++] = x;
+            }
+        }
+
+        return k;
+    }
+};
+```
+
+Cách này cũng có:
+
+```text
+Time: O(n)
+Space: O(1)
+```
+
+và rất ngắn.
+
+Tuy nhiên, khi mới học Two Pointers, phiên bản dùng `read` và `write` thường dễ hiểu hơn vì thể hiện rõ hai vai trò:
+
+```text
+read  = đọc
+write = ghi
+```
+
+---
+
+# 16. Có cần giữ nguyên thứ tự phần tử không?
+
+Đối với bài toán này, mục tiêu là đưa các phần tử khác `val` vào:
+
+```text
+nums[0 ... k-1]
+```
+
+và LeetCode không yêu cầu chúng ta phải giữ nguyên thứ tự theo một cách khiến ta phải dùng thao tác phức tạp.
+
+Với giải pháp `read/write` ở trên, thứ tự của các phần tử được giữ lại thực tế vẫn được bảo toàn.
+
+Ví dụ:
+
+```text
+[4, 2, 1, 2, 3]
+```
+
+xóa `2`:
+
+```text
+[4, 1, 3, ...]
+```
+
+Thứ tự:
+
+```text
+4 → 1 → 3
+```
+
+không thay đổi.
+
+Điều này là một ưu điểm tự nhiên của phương pháp.
+
+---
+
+# 17. So sánh các cách tiếp cận
+
+| Phương pháp | Time | Extra Space | In-place | Nhận xét |
+|---|---:|---:|---|---|
+| Tạo mảng mới | `O(n)` | `O(n)` | Không | Dễ nghĩ nhưng dùng thêm bộ nhớ |
+| `vector.erase()` nhiều lần | Có thể `O(n²)` | `O(1)` | Có | Không hiệu quả |
+| Two Pointers `read/write` | `O(n)` | `O(1)` | Có | Phù hợp nhất |
+| Two Pointers từ hai đầu | `O(n)` | `O(1)` | Có | Có thể nhanh về số lần ghi nhưng cần xử lý thứ tự |
+
+Với yêu cầu thông thường của bài LeetCode 27, phương pháp `read/write` là lựa chọn trực tiếp và đạt giới hạn độ phức tạp mong muốn.
+
+---
+
+# 18. Có một biến thể Two Pointers đáng biết
+
+Nếu **không quan tâm thứ tự** của các phần tử còn lại, có thể dùng hai con trỏ:
+
+```text
+left  → từ đầu
+right → từ cuối
+```
+
+Khi:
+
+```text
+nums[left] == val
+```
+
+ta có thể lấy một phần tử từ cuối chưa được xử lý để thay thế.
+
+Ví dụ:
+
+```text
+[3, 2, 2, 3, 4]
+ ↑           ↑
+left        right
+```
+
+Nếu `left` gặp `3`, có thể lấy `4` từ cuối:
+
+```text
+[4, 2, 2, 3, ...]
+```
+
+Cách này có thể giảm số lần ghi trong một số trường hợp.
+
+Tuy nhiên, nó làm tư duy và việc kiểm soát điều kiện vòng lặp phức tạp hơn.
+
+Vì vậy, khi mục tiêu là một lời giải **đơn giản, chắc chắn, dễ chứng minh và đạt `O(n)` / `O(1)`**, cách `read/write` thường là lựa chọn rất tốt.
+
+---
+
+# 19. Insight quan trọng để áp dụng sang bài khác
+
+Bài `Remove Element` không chỉ là một bài về xóa phần tử.
+
+Nó dạy một pattern rất quan trọng:
+
+> **Filtering an array in-place using a write pointer.**
+
+Tức là:
+
+```text
+read  → scan input
+write → construct valid prefix
+```
+
+Pattern này có thể áp dụng cho nhiều bài khác.
+
+Ví dụ:
+
+### Remove Duplicates
+
+```text
+Giữ phần tử thỏa điều kiện
+→ ghi vào nums[write]
+```
+
+### Move Zeroes
+
+Có thể:
+
+```text
+đưa các phần tử khác 0 lên đầu
+→ sau đó điền 0 vào phần còn lại
+```
+
+### Partition
+
+Chia mảng thành hai vùng dựa trên một điều kiện:
+
+```text
+[ phần tử thỏa điều kiện | phần tử không thỏa ]
+```
+
+### Filtering
+
+Bất kỳ bài nào có dạng:
+
+```text
+"giữ lại những phần tử thỏa điều kiện X"
+```
+
+đều nên khiến bạn nghĩ đến:
+
+```text
+read pointer
+write pointer
+```
+
+---
+
+# 20. Mental model nên ghi nhớ
+
+Khi gặp bài yêu cầu:
+
+> "Xóa tất cả phần tử thỏa điều kiện khỏi mảng và làm in-place."
+
+Đừng nghĩ ngay:
+
+```text
+erase()
+```
+
+Hãy nghĩ:
+
+```text
+Tôi có thể bỏ qua phần tử xấu,
+và ghi đè nó bằng phần tử tốt tiếp theo không?
+```
+
+Sau đó hình dung:
+
+```text
+                 read
+                   ↓
+[ ? | ? | ? | ? | ? | ? ]
+  ↑
+write
+```
+
+Mỗi phần tử:
+
+```text
+Không hợp lệ
+    ↓
+  skip
+
+Hợp lệ
+    ↓
+nums[write] = nums[read]
+write++
+```
+
+Cuối cùng:
+
+```text
+k = write
+```
+
+---
+
+# 21. Công thức tổng quát
+
+Có thể ghi nhớ template:
+
+```cpp
+int write = 0;
+
+for (int read = 0; read < n; ++read) {
+    if (condition(nums[read])) {
+        nums[write] = nums[read];
+        ++write;
+    }
+}
+
+return write;
+```
+
+Trong bài này:
+
+```cpp
+condition(nums[read])
+```
+
+chính là:
+
+```cpp
+nums[read] != val
+```
+
+Do đó:
+
+```cpp
+int write = 0;
+
+for (int read = 0; read < nums.size(); ++read) {
+    if (nums[read] != val) {
+        nums[write] = nums[read];
+        ++write;
+    }
+}
+
+return write;
+```
+
+Đây là template rất đáng nhớ khi luyện LeetCode.
+
+---
+
+# 22. Kết luận
+
+Lời giải tối ưu dựa trên ba ý tưởng:
+
+1. **Không cần thực sự xóa phần tử khỏi `vector`.**
+   - Chỉ cần xây dựng lại phần đầu mảng.
+
+2. **Dùng hai con trỏ `read` và `write`.**
+   - `read` tìm phần tử.
+   - `write` xác định nơi đặt phần tử hợp lệ.
+
+3. **Đạt `O(n)` time và `O(1)` extra space.**
+   - Mỗi phần tử chỉ được duyệt một lần.
+   - Không cần mảng phụ.
+
+Code cuối cùng:
+
+```cpp
+class Solution {
+public:
+    int removeElement(vector<int>& nums, int val) {
+        int write = 0;
+
+        for (int read = 0; read < nums.size(); ++read) {
+            if (nums[read] != val) {
+                nums[write] = nums[read];
+                ++write;
+            }
+        }
+
+        return write;
+    }
+};
+```
+
+**Điểm cần nhớ nhất:**
+
+```text
+read  = đọc toàn bộ dữ liệu
+write = xây dựng kết quả
+```
+
+và:
+
+```text
+Nếu phần tử hợp lệ:
+    nums[write] = nums[read]
+    write++
+```
+
+Đó là cốt lõi của bài `Remove Element`.
