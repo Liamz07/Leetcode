@@ -1,0 +1,1598 @@
+# Two Sum — Phương hướng tiếp cận tối ưu
+
+## 1. Bài toán
+
+Cho một mảng số nguyên `nums` và một số nguyên `target`.
+
+Cần tìm **hai phần tử khác nhau** trong mảng sao cho:
+
+```text
+nums[i] + nums[j] = target
+```
+
+và trả về **chỉ số (index)** của hai phần tử đó.
+
+### Ví dụ
+
+```text
+Input:
+nums = [2, 7, 11, 15]
+target = 9
+
+Output:
+[0, 1]
+```
+
+Vì:
+
+```text
+nums[0] + nums[1]
+= 2 + 7
+= 9
+= target
+```
+
+---
+
+# 2. Điều quan trọng nhất cần nhận ra
+
+Nếu đang đứng tại phần tử:
+
+```text
+nums[i]
+```
+
+và cần tìm một phần tử khác để tổng bằng `target`, thì phần tử còn thiếu phải có giá trị:
+
+```text
+target - nums[i]
+```
+
+Ta gọi giá trị này là **complement** (phần bù).
+
+Ví dụ:
+
+```text
+nums[i] = 2
+target = 9
+
+complement = 9 - 2 = 7
+```
+
+Vậy thay vì suy nghĩ:
+
+> "Mình phải thử tất cả các phần tử còn lại để xem có số nào cộng với `2` bằng `9` không?"
+
+Ta chuyển thành:
+
+> "Mình chỉ cần kiểm tra xem số `7` đã xuất hiện trước đó chưa."
+
+Đây chính là ý tưởng cốt lõi của lời giải tối ưu.
+
+---
+
+# 3. Cách 1 — Brute Force
+
+## 3.1. Ý tưởng
+
+Thử tất cả các cặp `(i, j)`:
+
+```text
+i = 0
+    j = 1, 2, 3, ...
+
+i = 1
+    j = 2, 3, 4, ...
+
+...
+```
+
+Với mỗi cặp:
+
+```cpp
+if (nums[i] + nums[j] == target)
+```
+
+thì trả về:
+
+```cpp
+{i, j}
+```
+
+## 3.2. Code
+
+```cpp
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+        int n = nums.size();
+
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+                if (nums[i] + nums[j] == target) {
+                    return {i, j};
+                }
+            }
+        }
+
+        return {};
+    }
+};
+```
+
+## 3.3. Độ phức tạp
+
+Có hai vòng lặp lồng nhau:
+
+```text
+O(n²)
+```
+
+Bộ nhớ phụ:
+
+```text
+O(1)
+```
+
+## 3.4. Vì sao chưa tối ưu?
+
+Nếu:
+
+```text
+n = 10
+```
+
+thì không có vấn đề gì.
+
+Nhưng nếu `n` rất lớn, số lượng cặp phải kiểm tra tăng rất nhanh.
+
+Ví dụ với `n` phần tử, số cặp cần kiểm tra xấp xỉ:
+
+```text
+n(n - 1) / 2
+```
+
+Do đó:
+
+```text
+n = 1,000
+→ khoảng 499,500 cặp
+
+n = 10,000
+→ khoảng 49,995,000 cặp
+```
+
+Ta cần tìm cách giảm từ:
+
+```text
+O(n²)
+```
+
+xuống:
+
+```text
+O(n)
+```
+
+---
+
+# 4. Cách 2 — Sort + Two Pointers
+
+Một hướng suy nghĩ khác là:
+
+1. Sắp xếp mảng.
+2. Đặt một con trỏ ở đầu.
+3. Đặt một con trỏ ở cuối.
+4. Nếu tổng nhỏ hơn `target`, tăng con trỏ trái.
+5. Nếu tổng lớn hơn `target`, giảm con trỏ phải.
+
+Ví dụ:
+
+```text
+nums = [2, 7, 11, 15]
+target = 9
+
+        L           R
+        ↓           ↓
+       [2, 7, 11, 15]
+
+2 + 15 = 17 > 9
+→ R--
+
+        L       R
+        ↓       ↓
+       [2, 7, 11, 15]
+
+2 + 11 = 13 > 9
+→ R--
+
+        L   R
+        ↓   ↓
+       [2, 7, 11, 15]
+
+2 + 7 = 9
+→ tìm thấy
+```
+
+Vấn đề là **đề bài yêu cầu trả về index ban đầu**.
+
+Nếu ta sort trực tiếp:
+
+```text
+[3, 2, 4]
+```
+
+thành:
+
+```text
+[2, 3, 4]
+```
+
+thì vị trí của phần tử đã thay đổi.
+
+Có thể giải quyết bằng cách lưu:
+
+```text
+(value, original_index)
+```
+
+nhưng khi đó phải sort.
+
+Độ phức tạp:
+
+```text
+Sorting: O(n log n)
+Two pointers: O(n)
+
+Tổng: O(n log n)
+```
+
+Vì vậy vẫn chưa tốt bằng Hash Map:
+
+```text
+O(n)
+```
+
+---
+
+# 5. Cách 3 — Hash Map — Lời giải tối ưu
+
+Đây là cách nên ưu tiên cho bài Two Sum cơ bản.
+
+## 5.1. Ý tưởng
+
+Ta duyệt mảng từ trái sang phải.
+
+Tại mỗi vị trí `i`:
+
+```text
+nums[i]
+```
+
+ta tính:
+
+```text
+complement = target - nums[i]
+```
+
+Sau đó kiểm tra:
+
+> `complement` đã xuất hiện trước đó chưa?
+
+Nếu có:
+
+```text
+complement + nums[i] = target
+```
+
+→ tìm thấy đáp án.
+
+Nếu chưa có:
+
+```text
+hash[nums[i]] = i
+```
+
+→ lưu giá trị hiện tại để những phần tử phía sau có thể sử dụng.
+
+---
+
+# 6. Tại sao Hash Map giúp tối ưu?
+
+Giả sử:
+
+```text
+nums = [2, 7, 11, 15]
+target = 9
+```
+
+Ta duyệt từng phần tử.
+
+## Bước 1
+
+Đang xét:
+
+```text
+i = 0
+nums[i] = 2
+```
+
+Tính:
+
+```text
+complement = 9 - 2 = 7
+```
+
+Kiểm tra Hash Map:
+
+```text
+7 có tồn tại không?
+```
+
+Chưa có.
+
+Lưu:
+
+```text
+2 → 0
+```
+
+Hash Map:
+
+```text
+{
+    2: 0
+}
+```
+
+---
+
+## Bước 2
+
+Đang xét:
+
+```text
+i = 1
+nums[i] = 7
+```
+
+Tính:
+
+```text
+complement = 9 - 7 = 2
+```
+
+Kiểm tra:
+
+```text
+2 có tồn tại không?
+```
+
+Có:
+
+```text
+2 → 0
+```
+
+Do đó:
+
+```text
+nums[0] + nums[1]
+= 2 + 7
+= 9
+```
+
+Trả về:
+
+```text
+[0, 1]
+```
+
+---
+
+# 7. Vì sao phải kiểm tra Hash Map trước khi thêm phần tử hiện tại?
+
+Đây là một điểm rất quan trọng.
+
+Ta thực hiện theo thứ tự:
+
+```cpp
+complement = target - nums[i];
+
+if (mp.find(complement) != mp.end()) {
+    return {mp[complement], i};
+}
+
+mp[nums[i]] = i;
+```
+
+Không nên làm:
+
+```cpp
+mp[nums[i]] = i;
+
+if (mp.find(complement) != mp.end()) {
+    ...
+}
+```
+
+vì có thể vô tình sử dụng **chính phần tử hiện tại hai lần**.
+
+Ví dụ:
+
+```text
+nums = [3]
+target = 6
+```
+
+Ta có:
+
+```text
+3 + 3 = 6
+```
+
+nhưng mảng chỉ có **một số 3**.
+
+Nếu thêm `3` vào Hash Map trước rồi mới kiểm tra:
+
+```text
+3 → 0
+```
+
+thì có thể tưởng rằng đã tìm được hai phần tử.
+
+Trong khi thực tế:
+
+```text
+i = j = 0
+```
+
+là không hợp lệ.
+
+Do đó quy tắc an toàn là:
+
+```text
+1. Tìm complement trong các phần tử ĐÃ DUYỆT.
+2. Nếu có → trả về đáp án.
+3. Nếu chưa → lưu phần tử hiện tại.
+```
+
+Nói cách khác:
+
+> Hash Map đại diện cho những phần tử nằm **bên trái** vị trí hiện tại.
+
+---
+
+# 8. Minh họa bằng bảng
+
+Với:
+
+```text
+nums = [2, 7, 11, 15]
+target = 9
+```
+
+| i | nums[i] | complement | Hash Map trước khi thêm | Kết quả |
+|---:|---:|---:|---|---|
+| 0 | 2 | 7 | `{}` | Chưa có 7 → lưu `2:0` |
+| 1 | 7 | 2 | `{2:0}` | Có 2 → trả về `[0,1]` |
+
+Ta không cần xét:
+
+```text
+7 với 11
+7 với 15
+...
+```
+
+vì đã tìm được đáp án ngay tại bước `i = 1`.
+
+---
+
+# 9. Code C++ tối ưu
+
+```cpp
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+        unordered_map<int, int> mp;
+
+        for (int i = 0; i < nums.size(); i++) {
+            int complement = target - nums[i];
+
+            if (mp.find(complement) != mp.end()) {
+                return {mp[complement], i};
+            }
+
+            mp[nums[i]] = i;
+        }
+
+        return {};
+    }
+};
+```
+
+---
+
+# 10. Giải thích từng dòng code
+
+## Khai báo Hash Map
+
+```cpp
+unordered_map<int, int> mp;
+```
+
+Ta lưu:
+
+```text
+key   = giá trị của phần tử
+value = index của phần tử
+```
+
+Ví dụ:
+
+```text
+nums[0] = 2
+```
+
+thì:
+
+```cpp
+mp[2] = 0;
+```
+
+Biểu diễn:
+
+```text
+2 → 0
+```
+
+---
+
+## Duyệt mảng
+
+```cpp
+for (int i = 0; i < nums.size(); i++)
+```
+
+Duyệt từng phần tử:
+
+```text
+nums[0]
+nums[1]
+nums[2]
+...
+```
+
+---
+
+## Tính phần còn thiếu
+
+```cpp
+int complement = target - nums[i];
+```
+
+Ví dụ:
+
+```text
+target = 9
+nums[i] = 7
+```
+
+thì:
+
+```text
+complement = 9 - 7 = 2
+```
+
+Ta cần tìm số `2`.
+
+---
+
+## Kiểm tra Hash Map
+
+```cpp
+if (mp.find(complement) != mp.end())
+```
+
+`find()` kiểm tra xem `complement` có tồn tại trong Hash Map hay không.
+
+Nếu:
+
+```cpp
+mp.find(complement) == mp.end()
+```
+
+thì không tìm thấy.
+
+Nếu:
+
+```cpp
+mp.find(complement) != mp.end()
+```
+
+thì tìm thấy.
+
+---
+
+## Trả về đáp án
+
+```cpp
+return {mp[complement], i};
+```
+
+Hash Map cho ta index của `complement`.
+
+Còn:
+
+```cpp
+i
+```
+
+là index của phần tử hiện tại.
+
+Ví dụ:
+
+```text
+mp[2] = 0
+i = 1
+```
+
+thì:
+
+```cpp
+return {0, 1};
+```
+
+---
+
+## Lưu phần tử hiện tại
+
+```cpp
+mp[nums[i]] = i;
+```
+
+Ví dụ:
+
+```text
+nums[i] = 7
+i = 1
+```
+
+thì:
+
+```cpp
+mp[7] = 1;
+```
+
+---
+
+# 11. Trace toàn bộ thuật toán
+
+Xét:
+
+```text
+nums = [3, 2, 4]
+target = 6
+```
+
+### Ban đầu
+
+```text
+mp = {}
+```
+
+### i = 0
+
+```text
+nums[0] = 3
+complement = 6 - 3 = 3
+```
+
+Kiểm tra:
+
+```text
+3 có trong mp không?
+→ Không
+```
+
+Lưu:
+
+```text
+mp = {
+    3 → 0
+}
+```
+
+---
+
+### i = 1
+
+```text
+nums[1] = 2
+complement = 6 - 2 = 4
+```
+
+Kiểm tra:
+
+```text
+4 có trong mp không?
+→ Không
+```
+
+Lưu:
+
+```text
+mp = {
+    3 → 0,
+    2 → 1
+}
+```
+
+---
+
+### i = 2
+
+```text
+nums[2] = 4
+complement = 6 - 4 = 2
+```
+
+Kiểm tra:
+
+```text
+2 có trong mp không?
+→ Có
+```
+
+Ta có:
+
+```text
+mp[2] = 1
+```
+
+Vậy:
+
+```text
+nums[1] + nums[2]
+= 2 + 4
+= 6
+```
+
+Trả về:
+
+```text
+[1, 2]
+```
+
+---
+
+# 12. Trường hợp có số trùng nhau
+
+Đây là test case rất quan trọng.
+
+```text
+nums = [3, 3]
+target = 6
+```
+
+### i = 0
+
+```text
+nums[0] = 3
+complement = 6 - 3 = 3
+```
+
+`3` chưa tồn tại.
+
+Lưu:
+
+```text
+mp = {
+    3 → 0
+}
+```
+
+### i = 1
+
+```text
+nums[1] = 3
+complement = 6 - 3 = 3
+```
+
+Lúc này:
+
+```text
+3 đã tồn tại
+```
+
+và:
+
+```text
+mp[3] = 0
+```
+
+Do đó:
+
+```cpp
+return {0, 1};
+```
+
+Đây là lý do Hash Map rất phù hợp với bài toán.
+
+---
+
+# 13. Tại sao Hash Map không vi phạm yêu cầu "hai phần tử khác nhau"?
+
+Vì ta chỉ tìm `complement` trong các phần tử **đã duyệt trước đó**.
+
+Tại vị trí `i`, Hash Map chưa chứa:
+
+```text
+nums[i]
+```
+
+của chính vòng lặp hiện tại.
+
+Do đó nếu tìm thấy:
+
+```text
+mp[complement]
+```
+
+thì index đó chắc chắn khác `i`.
+
+Điều này đảm bảo:
+
+```text
+i != j
+```
+
+---
+
+# 14. Độ phức tạp
+
+## Time Complexity
+
+Mỗi phần tử được xử lý một lần.
+
+Các thao tác:
+
+```cpp
+find()
+```
+
+và:
+
+```cpp
+insert / operator[]
+```
+
+có độ phức tạp trung bình:
+
+```text
+O(1)
+```
+
+Vì vậy:
+
+```text
+O(n)
+```
+
+## Space Complexity
+
+Hash Map có thể chứa tối đa `n` phần tử:
+
+```text
+O(n)
+```
+
+Kết luận:
+
+```text
+Time:  O(n) trung bình
+Space: O(n)
+```
+
+Đây là đánh đổi:
+
+```text
+Dùng thêm bộ nhớ
+        ↓
+Đổi lấy tốc độ
+        ↓
+O(n²) → O(n)
+```
+
+---
+
+# 15. Tại sao `unordered_map` mà không phải `map`?
+
+Trong C++:
+
+```cpp
+map<int, int>
+```
+
+thường được triển khai bằng cây tìm kiếm cân bằng.
+
+Độ phức tạp:
+
+```text
+find() = O(log n)
+```
+
+Trong khi:
+
+```cpp
+unordered_map<int, int>
+```
+
+sử dụng Hash Table.
+
+Độ phức tạp trung bình:
+
+```text
+find() = O(1)
+```
+
+Vì Two Sum không yêu cầu dữ liệu phải được sắp xếp, nên:
+
+```cpp
+unordered_map<int, int>
+```
+
+là lựa chọn tự nhiên.
+
+So sánh:
+
+| Cấu trúc | Tìm kiếm | Có sắp xếp |
+|---|---:|---|
+| `vector` | O(n) | Không |
+| `map` | O(log n) | Có |
+| `unordered_map` | O(1) trung bình | Không |
+
+---
+
+# 16. Có nên dùng `mp[complement]` để kiểm tra không?
+
+Không nên kiểm tra kiểu:
+
+```cpp
+if (mp[complement])
+```
+
+vì `operator[]` có thể **tự động tạo phần tử mới** nếu key chưa tồn tại.
+
+Ví dụ:
+
+```cpp
+mp[7]
+```
+
+khi `7` chưa tồn tại có thể làm xuất hiện:
+
+```text
+7 → 0
+```
+
+Điều này làm thay đổi Hash Map ngoài ý muốn.
+
+Nên dùng:
+
+```cpp
+if (mp.find(complement) != mp.end())
+```
+
+để kiểm tra sự tồn tại.
+
+---
+
+# 17. Một cách viết khác với iterator
+
+Có thể viết:
+
+```cpp
+auto it = mp.find(complement);
+
+if (it != mp.end()) {
+    return {it->second, i};
+}
+```
+
+Trong đó:
+
+```cpp
+it->first
+```
+
+là key.
+
+```cpp
+it->second
+```
+
+là value.
+
+Ví dụ:
+
+```text
+mp:
+
+2 → 0
+```
+
+thì:
+
+```text
+it->first  = 2
+it->second = 0
+```
+
+Code đầy đủ:
+
+```cpp
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+        unordered_map<int, int> mp;
+
+        for (int i = 0; i < nums.size(); i++) {
+            int complement = target - nums[i];
+
+            auto it = mp.find(complement);
+
+            if (it != mp.end()) {
+                return {it->second, i};
+            }
+
+            mp[nums[i]] = i;
+        }
+
+        return {};
+    }
+};
+```
+
+Cách này đặc biệt hữu ích khi bạn muốn tránh gọi:
+
+```cpp
+mp[complement]
+```
+
+lần thứ hai sau `find()`.
+
+---
+
+# 18. Những lỗi thường gặp
+
+## Lỗi 1 — Dùng hai vòng lặp không cần thiết
+
+```cpp
+for (...)
+    for (...)
+```
+
+Đây là:
+
+```text
+O(n²)
+```
+
+Trong khi Two Sum có thể giải quyết bằng Hash Map trong thời gian trung bình `O(n)`.
+
+---
+
+## Lỗi 2 — Lưu trước rồi mới tìm
+
+Không nên:
+
+```cpp
+mp[nums[i]] = i;
+
+if (mp.find(complement) != mp.end()) {
+    ...
+}
+```
+
+Vì có thể sử dụng chính phần tử hiện tại.
+
+Thứ tự nên là:
+
+```text
+Tìm → nếu không có thì lưu
+```
+
+---
+
+## Lỗi 3 — Chỉ lưu giá trị, không lưu index
+
+Nếu chỉ có:
+
+```cpp
+unordered_set<int> st;
+```
+
+ta có thể biết:
+
+```text
+complement có tồn tại
+```
+
+nhưng không biết:
+
+```text
+complement nằm ở index nào
+```
+
+Trong khi đề bài yêu cầu trả về index.
+
+Do đó cần:
+
+```cpp
+unordered_map<int, int>
+```
+
+---
+
+## Lỗi 4 — Sort trực tiếp mảng
+
+Ví dụ:
+
+```text
+nums = [3, 2, 4]
+```
+
+Sort:
+
+```text
+[2, 3, 4]
+```
+
+nhưng index ban đầu đã thay đổi.
+
+Nếu dùng Two Pointers thì phải lưu cả:
+
+```text
+giá trị + index ban đầu
+```
+
+---
+
+## Lỗi 5 — Nhầm `unordered_map` với Hash Function
+
+`unordered_map` là một **container / cấu trúc dữ liệu** của C++ sử dụng cơ chế hashing.
+
+Trong bài Two Sum, điều quan trọng cần hiểu là:
+
+```text
+key   → giá trị nums[i]
+value → index i
+```
+
+Ví dụ:
+
+```cpp
+mp[7] = 1;
+```
+
+có nghĩa:
+
+```text
+giá trị 7 xuất hiện tại index 1
+```
+
+---
+
+# 19. Cách tư duy tổng quát để nhận ra bài Hash Map
+
+Khi gặp bài toán dạng:
+
+```text
+Tìm hai phần tử
++
+thỏa mãn một điều kiện
++
+cần kiểm tra nhanh một giá trị đã xuất hiện chưa
+```
+
+hãy thử nghĩ đến Hash Map / Hash Set.
+
+Đặc biệt nếu có dạng:
+
+```text
+a + b = target
+```
+
+thì biến đổi:
+
+```text
+b = target - a
+```
+
+Sau đó:
+
+```text
+Tôi đang có a.
+Tôi cần b.
+b = target - a.
+b đã xuất hiện chưa?
+```
+
+Đây chính là pattern của Two Sum.
+
+---
+
+# 20. Pattern quan trọng cần ghi nhớ
+
+Có thể ghi nhớ bằng 4 bước:
+
+```text
+1. Duyệt từng phần tử
+       ↓
+2. Tính giá trị cần tìm
+       ↓
+3. Kiểm tra Hash Map
+       ↓
+4. Không tìm thấy → lưu phần tử hiện tại
+```
+
+Viết dưới dạng công thức:
+
+```text
+current = nums[i]
+
+need = target - current
+
+if need đã tồn tại:
+    return index của need, i
+
+else:
+    lưu current → i
+```
+
+---
+
+# 21. Pseudocode
+
+```text
+Tạo Hash Map mp
+
+for mỗi index i:
+    current = nums[i]
+
+    need = target - current
+
+    nếu need tồn tại trong mp:
+        trả về [index của need, i]
+
+    thêm current vào mp với index i
+
+```
+
+Đây là pseudocode nên thuộc trước khi viết C++.
+
+---
+
+# 22. Template tư duy có thể tái sử dụng
+
+Khi gặp bài tương tự, hãy tự hỏi:
+
+```text
+1. Mình đang duyệt đến phần tử nào?
+
+2. Để tạo ra đáp án, mình cần tìm giá trị nào?
+
+3. Giá trị cần tìm có thể được tính từ phần tử hiện tại không?
+
+4. Mình có cần biết vị trí của giá trị đó không?
+
+5. Nếu có → unordered_map
+6. Nếu chỉ cần biết tồn tại → unordered_set
+```
+
+Đối với Two Sum:
+
+```text
+current = nums[i]
+
+need = target - current
+
+Cần biết index của need
+→ unordered_map
+```
+
+---
+
+# 23. So sánh ba phương pháp
+
+| Phương pháp | Time | Space | Ghi chú |
+|---|---:|---:|---|
+| Brute Force | O(n²) | O(1) | Dễ hiểu nhất |
+| Sort + Two Pointers | O(n log n) | O(n) nếu cần giữ index | Phù hợp khi đã có dữ liệu được sort / cần two pointers |
+| Hash Map | O(n) trung bình | O(n) | Lời giải chuẩn cho Two Sum |
+
+Không chỉ nhìn vào Big-O.
+
+Cần hiểu **tại sao** Hash Map giảm được thời gian:
+
+```text
+Brute Force:
+
+phần tử hiện tại
+      ↓
+thử lần lượt rất nhiều phần tử khác
+      ↓
+O(n²)
+
+
+Hash Map:
+
+phần tử hiện tại
+      ↓
+tính complement
+      ↓
+tra cứu trực tiếp
+      ↓
+O(1) trung bình
+
+
+Toàn bộ:
+n phần tử × O(1)
+= O(n)
+```
+
+---
+
+# 24. Test case nên tự kiểm tra
+
+## Test 1 — Trường hợp cơ bản
+
+```text
+nums = [2, 7, 11, 15]
+target = 9
+
+Output:
+[0, 1]
+```
+
+---
+
+## Test 2 — Hai số trùng nhau
+
+```text
+nums = [3, 3]
+target = 6
+
+Output:
+[0, 1]
+```
+
+---
+
+## Test 3 — Đáp án nằm cuối mảng
+
+```text
+nums = [1, 5, 8, 12]
+target = 20
+
+Output:
+[2, 3]
+```
+
+---
+
+## Test 4 — Có số âm
+
+```text
+nums = [-3, 4, 7, 2]
+target = 1
+
+Output:
+[0, 1]
+```
+
+Vì:
+
+```text
+-3 + 4 = 1
+```
+
+---
+
+## Test 5 — Số âm với số âm
+
+```text
+nums = [-5, -2, -8, 10]
+target = -10
+
+Output:
+[1, 2]
+```
+
+Vì:
+
+```text
+-2 + -8 = -10
+```
+
+---
+
+## Test 6 — Số 0
+
+```text
+nums = [0, 4, 3, 0]
+target = 0
+
+Output:
+[0, 3]
+```
+
+---
+
+# 25. Những điều cần hiểu thật chắc sau bài Two Sum
+
+Sau khi giải xong bài này, không nên chỉ nhớ:
+
+```cpp
+unordered_map<int, int> mp;
+```
+
+Mà cần hiểu được các kiến thức sau:
+
+### 1. Complement
+
+Từ:
+
+```text
+a + b = target
+```
+
+suy ra:
+
+```text
+b = target - a
+```
+
+### 2. Hash Map
+
+Biết cách ánh xạ:
+
+```text
+value → index
+```
+
+### 3. Tra cứu
+
+Hiểu:
+
+```cpp
+mp.find(x)
+```
+
+### 4. Thứ tự xử lý
+
+Hiểu tại sao:
+
+```text
+find trước
+insert sau
+```
+
+### 5. Độ phức tạp
+
+Hiểu:
+
+```text
+O(n²) → O(n)
+```
+
+### 6. Trade-off
+
+Đánh đổi:
+
+```text
+Space O(1)
+        ↓
+Space O(n)
+
+để giảm:
+
+Time O(n²)
+        ↓
+Time O(n)
+```
+
+---
+
+# 26. Code hoàn chỉnh nên ghi nhớ
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+        unordered_map<int, int> mp;
+
+        for (int i = 0; i < nums.size(); i++) {
+            int complement = target - nums[i];
+
+            if (mp.find(complement) != mp.end()) {
+                return {mp[complement], i};
+            }
+
+            mp[nums[i]] = i;
+        }
+
+        return {};
+    }
+};
+```
+
+---
+
+# 27. Tóm tắt một trang
+
+```text
+                    TWO SUM
+                       │
+                       ↓
+              a + b = target
+                       │
+                       ↓
+              b = target - a
+                       │
+                       ↓
+           Tính complement của a
+                       │
+                       ↓
+       complement đã xuất hiện chưa?
+              /                 \
+            Có                   Không
+            ↓                      ↓
+      Lấy index của         Lưu a → index
+       complement                 │
+            ↓                     │
+       return [j, i] ←────────────┘
+```
+
+### Công thức quan trọng
+
+```text
+complement = target - nums[i]
+```
+
+### Cấu trúc dữ liệu
+
+```cpp
+unordered_map<int, int>
+```
+
+### Mapping
+
+```text
+nums[i] → i
+```
+
+### Thứ tự
+
+```text
+find → return nếu có → insert
+```
+
+### Độ phức tạp
+
+```text
+Time:
+O(n) trung bình
+
+Space:
+O(n)
+```
+
+### Ý tưởng cốt lõi
+
+> Đừng tìm kiếm đối tác của phần tử hiện tại bằng cách duyệt lại toàn bộ mảng. Hãy tính trực tiếp giá trị còn thiếu (`target - nums[i]`) và dùng Hash Map để kiểm tra xem giá trị đó đã xuất hiện hay chưa.
