@@ -1,0 +1,1458 @@
+# LeetCode – Search Insert Position
+
+## 1. Tổng quan bài toán
+
+Bài **Search Insert Position** yêu cầu tìm vị trí của một giá trị `target` trong một mảng số nguyên đã được **sắp xếp tăng dần**.
+
+Nếu `target` tồn tại trong mảng, trả về **index** của `target`.
+
+Nếu `target` không tồn tại, trả về **vị trí mà `target` nên được chèn vào** để mảng vẫn giữ nguyên thứ tự tăng dần.
+
+Ví dụ:
+
+```text
+nums = [1, 3, 5, 6]
+target = 5
+
+=> 2
+```
+
+Vì:
+
+```text
+nums[2] = 5
+```
+
+---
+
+Ví dụ target không tồn tại:
+
+```text
+nums = [1, 3, 5, 6]
+target = 2
+
+=> 1
+```
+
+Nếu chèn `2` vào index `1`:
+
+```text
+[1, 2, 3, 5, 6]
+```
+
+mảng vẫn tăng dần.
+
+---
+
+## 2. Nhận diện thuật toán
+
+Điểm quan trọng nhất của bài là:
+
+> Mảng đã được sắp xếp tăng dần.
+
+Khi gặp một mảng đã sort và cần tìm kiếm một giá trị, ta nên nghĩ ngay đến:
+
+```text
+Binary Search
+```
+
+Thay vì duyệt tuần tự:
+
+```text
+O(n)
+```
+
+ta có thể giảm phạm vi tìm kiếm xuống một nửa sau mỗi bước:
+
+```text
+O(log n)
+```
+
+Đây là ý tưởng cốt lõi của bài.
+
+---
+
+# 3. Code của bạn
+
+Code bạn cung cấp:
+
+```cpp
+class Solution {
+public:
+    int searchInsert(vector<int>& nums, int target) {
+        int l = 0, r = nums.size() - 1;
+        while (l <= r) {
+            int mid = (l + r) / 2;
+            if (nums[mid] == target) return mid;
+            else if (nums[mid] < target) l = mid + 1;
+            else r = mid - 1;
+        }
+        return l;
+    }
+};
+```
+
+## Kiểm tra
+
+Code này **đúng cho bài Search Insert Position**.
+
+Nó sử dụng Binary Search chuẩn và xử lý được cả hai trường hợp:
+
+1. `target` tồn tại.
+2. `target` không tồn tại nhưng cần tìm vị trí chèn.
+
+Đặc biệt, dòng:
+
+```cpp
+return l;
+```
+
+là phần quan trọng nhất của lời giải và sẽ được giải thích kỹ ở phía dưới.
+
+---
+
+# 4. Tư duy Binary Search
+
+Thông thường Binary Search được mô tả là:
+
+> Tìm một phần tử trong mảng đã được sắp xếp.
+
+Nhưng với bài này, ta cần tư duy rộng hơn:
+
+> Tìm vị trí đầu tiên mà `target` có thể đứng.
+
+Nói cách khác, khi `target` không tồn tại, ta không thất bại.
+
+Ta vẫn muốn biết:
+
+```text
+target nên đứng ở đâu?
+```
+
+Ví dụ:
+
+```text
+nums = [1, 3, 5, 6]
+target = 4
+```
+
+Ta muốn:
+
+```text
+[1, 3, 4, 5, 6]
+       ^
+     index 2
+```
+
+Kết quả:
+
+```text
+2
+```
+
+---
+
+# 5. Ý nghĩa của hai con trỏ `l` và `r`
+
+Code:
+
+```cpp
+int l = 0;
+int r = nums.size() - 1;
+```
+
+Ta duy trì một khoảng tìm kiếm:
+
+```text
+[l, r]
+```
+
+Ban đầu toàn bộ mảng nằm trong khoảng:
+
+```text
+0 ... n - 1
+```
+
+Ví dụ:
+
+```text
+nums = [1, 3, 5, 6]
+
+index   0  1  2  3
+        └─────────┘
+        [   search ]
+```
+
+Ta chưa biết `target` nằm ở đâu nên xét toàn bộ mảng.
+
+---
+
+# 6. Chọn phần tử giữa
+
+Ta tính:
+
+```cpp
+int mid = (l + r) / 2;
+```
+
+`mid` là vị trí ở giữa khoảng tìm kiếm.
+
+Ví dụ:
+
+```text
+l = 0
+r = 3
+
+mid = (0 + 3) / 2 = 1
+```
+
+Mảng:
+
+```text
+index:  0  1  2  3
+        1  3  5  6
+           ^
+          mid
+```
+
+Ta kiểm tra:
+
+```cpp
+nums[mid]
+```
+
+---
+
+# 7. Trường hợp 1 – Tìm thấy target
+
+Nếu:
+
+```cpp
+nums[mid] == target
+```
+
+thì ta đã tìm thấy chính xác vị trí cần trả về.
+
+Code:
+
+```cpp
+if (nums[mid] == target)
+    return mid;
+```
+
+Ví dụ:
+
+```text
+nums = [1, 3, 5, 6]
+target = 5
+```
+
+Nếu:
+
+```text
+mid = 2
+nums[2] = 5
+```
+
+thì:
+
+```cpp
+return 2;
+```
+
+Kết thúc ngay.
+
+---
+
+# 8. Trường hợp 2 – `nums[mid] < target`
+
+Code:
+
+```cpp
+else if (nums[mid] < target)
+    l = mid + 1;
+```
+
+Tại sao?
+
+Vì mảng đã được sắp xếp tăng dần.
+
+Nếu:
+
+```text
+nums[mid] < target
+```
+
+thì mọi phần tử ở bên trái hoặc tại `mid` đều không thể là vị trí cần tìm.
+
+Ví dụ:
+
+```text
+[1, 3, 5, 6]
+       ^
+      mid
+
+target = 6
+```
+
+Ta biết:
+
+```text
+1 < 6
+3 < 6
+5 < 6
+```
+
+Do đó không cần tìm ở:
+
+```text
+[0 ... mid]
+```
+
+Ta chỉ cần tìm:
+
+```text
+[mid + 1 ... r]
+```
+
+Vì vậy:
+
+```cpp
+l = mid + 1;
+```
+
+---
+
+# 9. Trường hợp 3 – `nums[mid] > target`
+
+Code:
+
+```cpp
+else
+    r = mid - 1;
+```
+
+Nếu:
+
+```text
+nums[mid] > target
+```
+
+thì `target` không thể nằm ở `mid` hoặc bên phải `mid`.
+
+Ví dụ:
+
+```text
+[1, 3, 5, 6]
+       ^
+      mid
+
+target = 2
+```
+
+Vì:
+
+```text
+5 > 2
+6 > 2
+```
+
+nên `target` chỉ có thể nằm bên trái.
+
+Ta bỏ phần:
+
+```text
+[mid ... r]
+```
+
+và giữ:
+
+```text
+[l ... mid - 1]
+```
+
+Do đó:
+
+```cpp
+r = mid - 1;
+```
+
+---
+
+# 10. Vì sao điều kiện là `while (l <= r)`?
+
+Code của bạn:
+
+```cpp
+while (l <= r)
+```
+
+Đây là một chi tiết quan trọng.
+
+Ta vẫn cần kiểm tra trường hợp:
+
+```text
+l == r
+```
+
+Ví dụ:
+
+```text
+nums = [1]
+target = 1
+```
+
+Ban đầu:
+
+```text
+l = 0
+r = 0
+```
+
+Ta cần xử lý index `0`.
+
+Nếu dùng:
+
+```cpp
+while (l < r)
+```
+
+thì vòng lặp sẽ không chạy.
+
+Vì vậy với cách cài đặt Binary Search này, điều kiện:
+
+```cpp
+l <= r
+```
+
+là phù hợp.
+
+---
+
+# 11. Điều gì xảy ra khi không tìm thấy target?
+
+Đây chính là phần hay nhất của bài.
+
+Giả sử:
+
+```text
+nums = [1, 3, 5, 6]
+target = 2
+```
+
+Ta bắt đầu:
+
+```text
+l = 0
+r = 3
+```
+
+### Lần 1
+
+```text
+mid = 1
+nums[mid] = 3
+```
+
+Vì:
+
+```text
+3 > 2
+```
+
+nên:
+
+```text
+r = mid - 1 = 0
+```
+
+Bây giờ:
+
+```text
+l = 0
+r = 0
+```
+
+---
+
+### Lần 2
+
+```text
+mid = 0
+nums[mid] = 1
+```
+
+Vì:
+
+```text
+1 < 2
+```
+
+nên:
+
+```text
+l = mid + 1 = 1
+```
+
+Bây giờ:
+
+```text
+l = 1
+r = 0
+```
+
+Điều kiện:
+
+```cpp
+l <= r
+```
+
+không còn đúng.
+
+Vòng lặp kết thúc.
+
+Ta có:
+
+```text
+l = 1
+r = 0
+```
+
+Và code:
+
+```cpp
+return l;
+```
+
+trả về:
+
+```text
+1
+```
+
+Đây chính xác là vị trí cần chèn `2`.
+
+---
+
+# 12. Tại sao `return l` lại đúng?
+
+Đây là phần quan trọng nhất cần hiểu.
+
+Khi Binary Search kết thúc:
+
+```text
+l > r
+```
+
+Hai con trỏ đã **cross** nhau.
+
+Ta có thể hình dung:
+
+```text
+... các phần tử < target | các phần tử > target ...
+                         ↑
+                         l
+                         r
+```
+
+Sau quá trình loại bỏ các vùng không thể chứa đáp án:
+
+- mọi vị trí trước `l` đều chứa giá trị `< target` hoặc đã được xác định là không thể là vị trí chèn.
+- vị trí `l` là vị trí đầu tiên mà `target` có thể được đặt vào mà không phá vỡ thứ tự tăng dần.
+
+Do đó:
+
+```cpp
+return l;
+```
+
+chính là đáp án.
+
+---
+
+# 13. Có thể hiểu `l` là gì?
+
+Một cách ghi nhớ rất hữu ích:
+
+> `l` là vị trí đầu tiên mà `target` có thể được đặt vào.
+
+Ví dụ:
+
+```text
+nums = [1, 3, 5, 6]
+```
+
+Các target khác nhau:
+
+```text
+target = 0
+
+[0, 1, 3, 5, 6]
+ ^
+ index 0
+```
+
+Kết quả:
+
+```text
+0
+```
+
+---
+
+```text
+target = 2
+
+[1, 2, 3, 5, 6]
+    ^
+   index 1
+```
+
+Kết quả:
+
+```text
+1
+```
+
+---
+
+```text
+target = 4
+
+[1, 3, 4, 5, 6]
+       ^
+      index 2
+```
+
+Kết quả:
+
+```text
+2
+```
+
+---
+
+```text
+target = 7
+
+[1, 3, 5, 6, 7]
+             ^
+            index 4
+```
+
+Kết quả:
+
+```text
+4
+```
+
+Trong cả bốn trường hợp, kết quả đều chính là vị trí mà `l` hội tụ tới.
+
+---
+
+# 14. Invariant của thuật toán
+
+Để hiểu Binary Search sâu hơn, hãy theo dõi invariant.
+
+Trong suốt quá trình:
+
+```text
+[l, r]
+```
+
+là vùng mà ta vẫn còn khả năng tìm thấy `target`.
+
+Mỗi lần so sánh:
+
+### Nếu:
+
+```cpp
+nums[mid] < target
+```
+
+ta loại bỏ:
+
+```text
+[l, mid]
+```
+
+vì toàn bộ vùng đó quá nhỏ.
+
+Sau đó:
+
+```cpp
+l = mid + 1;
+```
+
+---
+
+### Nếu:
+
+```cpp
+nums[mid] > target
+```
+
+ta loại bỏ:
+
+```text
+[mid, r]
+```
+
+vì toàn bộ vùng đó quá lớn.
+
+Sau đó:
+
+```cpp
+r = mid - 1;
+```
+
+---
+
+### Nếu:
+
+```cpp
+nums[mid] == target
+```
+
+đã tìm thấy đáp án:
+
+```cpp
+return mid;
+```
+
+---
+
+# 15. Visualize quá trình Binary Search
+
+Ví dụ:
+
+```text
+nums = [1, 3, 5, 6]
+target = 4
+```
+
+Ban đầu:
+
+```text
+index:  0  1  2  3
+value:  1  3  5  6
+        L     M     R
+```
+
+`nums[mid] = 3`
+
+Vì:
+
+```text
+3 < 4
+```
+
+nên bỏ bên trái:
+
+```text
+index:  0  1  2  3
+value:  1  3  5  6
+              L  R
+```
+
+Bây giờ:
+
+```text
+l = 2
+r = 3
+```
+
+Tính:
+
+```text
+mid = (2 + 3) / 2 = 2
+```
+
+Ta có:
+
+```text
+nums[2] = 5
+```
+
+Vì:
+
+```text
+5 > 4
+```
+
+nên:
+
+```cpp
+r = 1;
+```
+
+Cuối cùng:
+
+```text
+l = 2
+r = 1
+```
+
+Hai pointer cross:
+
+```text
+r  l
+↓  ↓
+0  1  2  3
+      ^
+    answer
+```
+
+Vì vậy:
+
+```cpp
+return l;
+```
+
+trả về:
+
+```text
+2
+```
+
+---
+
+# 16. Vì sao không return `r`?
+
+Khi không tìm thấy target, cuối cùng:
+
+```text
+l = r + 1
+```
+
+Do đó:
+
+```text
+r
+```
+
+là vị trí của phần tử cuối cùng nhỏ hơn `target`.
+
+Còn:
+
+```text
+l
+```
+
+là vị trí đầu tiên có thể đặt `target`.
+
+Ví dụ:
+
+```text
+[1, 3, 5, 6]
+target = 4
+```
+
+Kết thúc:
+
+```text
+r = 1
+l = 2
+```
+
+Ta có:
+
+```text
+nums[r] = 3 < 4
+nums[l] = 5 > 4
+```
+
+Target phải nằm giữa chúng:
+
+```text
+[1, 3, 4, 5, 6]
+       ^
+       2
+```
+
+Do đó đáp án là:
+
+```cpp
+l
+```
+
+chứ không phải `r`.
+
+---
+
+# 17. Edge Cases
+
+## 17.1. Target nằm ở đầu mảng
+
+```text
+nums = [1, 3, 5, 6]
+target = 0
+```
+
+Kết quả:
+
+```text
+0
+```
+
+Vì `0` cần được chèn trước `1`.
+
+---
+
+## 17.2. Target nằm ở cuối
+
+```text
+nums = [1, 3, 5, 6]
+target = 7
+```
+
+Kết quả:
+
+```text
+4
+```
+
+Đây là index ngay sau phần tử cuối.
+
+---
+
+## 17.3. Target bằng phần tử cuối
+
+```text
+nums = [1, 3, 5, 6]
+target = 6
+```
+
+Kết quả:
+
+```text
+3
+```
+
+---
+
+## 17.4. Mảng chỉ có một phần tử
+
+```text
+nums = [5]
+```
+
+Nếu:
+
+```text
+target = 5
+```
+
+thì:
+
+```text
+0
+```
+
+Nếu:
+
+```text
+target = 3
+```
+
+thì:
+
+```text
+0
+```
+
+Nếu:
+
+```text
+target = 7
+```
+
+thì:
+
+```text
+1
+```
+
+---
+
+# 18. Trường hợp `nums` rỗng
+
+Nếu constraint của bài cho phép:
+
+```cpp
+nums.size() == 0
+```
+
+thì:
+
+```cpp
+int r = nums.size() - 1;
+```
+
+có một điểm cần lưu ý.
+
+`nums.size()` có kiểu unsigned (`size_t`), nên biểu thức:
+
+```cpp
+nums.size() - 1
+```
+
+có thể gây hành vi không mong muốn trước khi được gán sang `int`.
+
+Với constraint chuẩn của bài Search Insert Position, mảng thường không rỗng, nên code của bạn vẫn phù hợp với bài.
+
+Nếu muốn viết implementation tổng quát và an toàn hơn, có thể dùng cách khác hoặc xử lý riêng trường hợp rỗng.
+
+---
+
+# 19. Cải thiện nhỏ: tính `mid` an toàn hơn
+
+Bạn viết:
+
+```cpp
+int mid = (l + r) / 2;
+```
+
+Đây là cách viết rất phổ biến.
+
+Tuy nhiên, về mặt kỹ thuật, nếu `l + r` vượt giới hạn của kiểu `int`, có thể xảy ra integer overflow.
+
+Cách an toàn hơn:
+
+```cpp
+int mid = l + (r - l) / 2;
+```
+
+Hai công thức cho cùng kết quả trong điều kiện thông thường:
+
+```text
+(l + r) / 2
+```
+
+và:
+
+```text
+l + (r - l) / 2
+```
+
+Nhưng công thức thứ hai tránh phép cộng trực tiếp giữa hai số lớn.
+
+Vì vậy có thể cải thiện code của bạn thành:
+
+```cpp
+class Solution {
+public:
+    int searchInsert(vector<int>& nums, int target) {
+        int l = 0;
+        int r = nums.size() - 1;
+
+        while (l <= r) {
+            int mid = l + (r - l) / 2;
+
+            if (nums[mid] == target) {
+                return mid;
+            } 
+            else if (nums[mid] < target) {
+                l = mid + 1;
+            } 
+            else {
+                r = mid - 1;
+            }
+        }
+
+        return l;
+    }
+};
+```
+
+---
+
+# 20. Đánh giá code của bạn
+
+## Logic
+
+```text
+Đúng
+```
+
+## Thuật toán
+
+```text
+Binary Search
+```
+
+## Time Complexity
+
+```text
+O(log n)
+```
+
+## Space Complexity
+
+```text
+O(1)
+```
+
+## Điểm tốt
+
+Bạn đã xử lý đúng ba trường hợp quan trọng:
+
+```cpp
+nums[mid] == target
+nums[mid] < target
+nums[mid] > target
+```
+
+và đặc biệt:
+
+```cpp
+return l;
+```
+
+là lựa chọn chính xác khi target không tồn tại.
+
+---
+
+# 21. Tại sao Binary Search có `O(log n)`?
+
+Giả sử có:
+
+```text
+n = 16
+```
+
+phần tử.
+
+Mỗi bước ta giảm khoảng tìm kiếm một nửa:
+
+```text
+16
+ ↓
+8
+ ↓
+4
+ ↓
+2
+ ↓
+1
+```
+
+Chỉ cần khoảng:
+
+```text
+log₂(16) = 4
+```
+
+lần chia là phạm vi gần như chỉ còn một phần tử.
+
+Tổng quát:
+
+```text
+O(log₂ n)
+```
+
+Trong Big-O, cơ số của logarithm không quan trọng, nên viết:
+
+```text
+O(log n)
+```
+
+---
+
+# 22. So sánh với Linear Search
+
+Một cách đơn giản hơn là:
+
+```cpp
+for (int i = 0; i < nums.size(); i++) {
+    if (nums[i] >= target) {
+        return i;
+    }
+}
+
+return nums.size();
+```
+
+Cách này cũng có thể giải bài.
+
+Nhưng trong trường hợp xấu nhất phải duyệt toàn bộ mảng:
+
+```text
+O(n)
+```
+
+Trong khi Binary Search:
+
+```text
+O(log n)
+```
+
+Do đề bài đảm bảo mảng đã được sắp xếp, Binary Search là cách khai thác trực tiếp cấu trúc của input.
+
+---
+
+# 23. Một cách nhìn khác: tìm "lower bound"
+
+Bài này có thể được hiểu như bài toán:
+
+> Tìm vị trí đầu tiên `i` sao cho `nums[i] >= target`.
+
+Đây chính là khái niệm thường gọi là:
+
+```text
+Lower Bound
+```
+
+Ví dụ:
+
+```text
+nums = [1, 3, 5, 6]
+target = 4
+```
+
+Ta tìm vị trí đầu tiên thỏa:
+
+```text
+nums[i] >= 4
+```
+
+Kiểm tra:
+
+```text
+nums[0] = 1  → không
+nums[1] = 3  → không
+nums[2] = 5  → có
+```
+
+Do đó:
+
+```text
+answer = 2
+```
+
+---
+
+# 24. Liên hệ giữa `return l` và Lower Bound
+
+Đây chính là lý do sâu hơn khiến:
+
+```cpp
+return l;
+```
+
+hoạt động.
+
+Sau khi Binary Search kết thúc, `l` chính là:
+
+```text
+first position where nums[i] >= target
+```
+
+Nếu:
+
+```text
+nums[l] == target
+```
+
+thì `l` là vị trí của target.
+
+Nếu:
+
+```text
+nums[l] > target
+```
+
+thì `l` là vị trí chèn target.
+
+Nếu:
+
+```text
+l == nums.size()
+```
+
+thì target lớn hơn toàn bộ phần tử và phải được chèn vào cuối.
+
+Vì vậy cùng một kết quả `l` xử lý được tất cả trường hợp.
+
+---
+
+# 25. Cách nhận diện dạng bài tương tự
+
+Khi thấy:
+
+```text
+Array đã sorted
++
+Tìm vị trí
++
+Tìm giá trị
++
+Tìm vị trí chèn
++
+Tìm phần tử đầu tiên >= target
++
+Tìm phần tử cuối cùng <= target
+```
+
+hãy nghĩ đến:
+
+```text
+Binary Search
+```
+
+Đặc biệt nên nhận diện các từ khóa:
+
+```text
+sorted
+ascending
+find
+position
+insert
+first
+last
+boundary
+```
+
+Đây thường là dấu hiệu của Binary Search hoặc một biến thể của Binary Search.
+
+---
+
+# 26. Template Binary Search cơ bản
+
+Template mà code của bạn đang sử dụng:
+
+```cpp
+int l = 0;
+int r = nums.size() - 1;
+
+while (l <= r) {
+    int mid = l + (r - l) / 2;
+
+    if (nums[mid] == target) {
+        return mid;
+    }
+    else if (nums[mid] < target) {
+        l = mid + 1;
+    }
+    else {
+        r = mid - 1;
+    }
+}
+```
+
+Sau vòng lặp:
+
+```cpp
+return l;
+```
+
+Đây là template rất hữu ích cho dạng:
+
+```text
+exact search
++
+insertion position
+```
+
+---
+
+# 27. Một cách suy nghĩ để tránh học thuộc
+
+Đừng chỉ học thuộc:
+
+```cpp
+return l;
+```
+
+Hãy tự hỏi:
+
+> Khi `target` không tồn tại, sau khi loại bỏ hết các vị trí không thể xảy ra, hai pointer nằm ở đâu?
+
+Ta có:
+
+```text
+r | l
+```
+
+và:
+
+```text
+r < l
+```
+
+Phần bên trái `r` chứa các giá trị nhỏ hơn `target`.
+
+Phần từ `l` trở đi là nơi `target` có thể được đặt.
+
+Do đó:
+
+```text
+answer = l
+```
+
+Khi hiểu được điều này, `return l` trở thành hệ quả tự nhiên chứ không phải một dòng code cần học thuộc.
+
+---
+
+# 28. Kết luận
+
+Code của bạn là một lời giải **đúng và tối ưu** cho bài:
+
+```text
+LeetCode – Search Insert Position
+```
+
+Phiên bản có thể cải thiện nhẹ:
+
+```cpp
+class Solution {
+public:
+    int searchInsert(vector<int>& nums, int target) {
+        int l = 0;
+        int r = nums.size() - 1;
+
+        while (l <= r) {
+            int mid = l + (r - l) / 2;
+
+            if (nums[mid] == target) {
+                return mid;
+            } else if (nums[mid] < target) {
+                l = mid + 1;
+            } else {
+                r = mid - 1;
+            }
+        }
+
+        return l;
+    }
+};
+```
+
+### Complexity
+
+```text
+Time Complexity  : O(log n)
+Space Complexity : O(1)
+```
+
+### Pattern cần ghi nhớ
+
+```text
+Sorted Array
+     ↓
+Binary Search
+     ↓
+So sánh nums[mid] với target
+     ↓
+< target → tìm bên phải
+> target → tìm bên trái
+= target → trả về mid
+     ↓
+Không tìm thấy
+     ↓
+l là vị trí chèn
+```
+
+Điểm quan trọng nhất của bài:
+
+> **`l` không đơn thuần là left pointer. Sau khi Binary Search kết thúc, `l` chính là vị trí đầu tiên mà `target` có thể được đặt vào để mảng vẫn giữ thứ tự tăng dần.**
