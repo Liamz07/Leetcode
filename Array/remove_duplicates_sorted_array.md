@@ -1,0 +1,817 @@
+# Remove Duplicates from Sorted Array — LeetCode
+
+## 1. Bài toán
+
+Cho một mảng số nguyên `nums` đã được **sắp xếp không giảm** (non-decreasing).
+
+Yêu cầu: loại bỏ các phần tử trùng lặp **ngay trên chính mảng `nums` (in-place)** sao cho mỗi giá trị chỉ còn xuất hiện đúng một lần.
+
+Ta trả về `k` — số lượng phần tử khác nhau.
+
+Sau khi hàm chạy xong:
+
+- `nums[0], nums[1], ..., nums[k - 1]` phải chứa các giá trị **khác nhau**.
+- Thứ tự các giá trị phải được giữ nguyên như thứ tự ban đầu.
+- Những phần tử sau vị trí `k - 1` không cần quan tâm.
+- Không cần tạo một mảng kết quả mới.
+
+Ví dụ:
+
+```text
+Input:  nums = [1,1,2,2,3]
+Output: 3
+Mảng sau khi xử lý: [1,2,3,_,_]
+```
+
+---
+
+## 2. Phân tích lời giải đang có
+
+Lời giải được cung cấp:
+
+```cpp
+class Solution {
+public:
+    int removeDuplicates(vector<int>& nums) {
+        set<int> s;
+        for (int x : nums) {
+            s.insert(x);
+        }
+
+        int idx = 0;
+        for (auto it = s.begin(); it != s.end(); ++it) {
+            nums[idx] = *it;
+            idx++;
+        }
+
+        return idx;
+    }
+};
+```
+
+### Ý tưởng
+
+Code sử dụng `set<int>` để:
+
+1. Duyệt qua toàn bộ `nums`.
+2. Chèn từng phần tử vào `set`.
+3. `set` tự động loại bỏ phần tử trùng nhau.
+4. Duyệt lại `set` và ghi các phần tử khác nhau trở lại đầu `nums`.
+5. Trả về kích thước của `set`.
+
+Về mặt **kết quả**, cách này có thể giải quyết bài toán.
+
+Tuy nhiên, đây **chưa phải cách tối ưu nhất** cho bài này.
+
+### Độ phức tạp
+
+Với `n = nums.size()`:
+
+- Mỗi lần `insert` vào `set` có độ phức tạp `O(log n)`.
+- Có `n` phần tử cần chèn.
+- Do đó thời gian tổng thể là:
+
+```text
+O(n log n)
+```
+
+- `set` có thể chứa tới `n` phần tử khác nhau nên bộ nhớ phụ là:
+
+```text
+O(n)
+```
+
+Trong khi đề bài đã cho một thông tin rất quan trọng:
+
+> `nums` đã được sắp xếp.
+
+Ta nên tận dụng tính chất này thay vì dùng thêm `set`.
+
+---
+
+# 3. Insight quan trọng: Mảng đã sorted
+
+Đây chính là chìa khóa của bài toán.
+
+Ví dụ:
+
+```text
+nums = [0,0,1,1,1,2,2,3,3,4]
+```
+
+Vì mảng đã được sắp xếp:
+
+```text
+0 0 1 1 1 2 2 3 3 4
+↑ ↑
+```
+
+Các phần tử trùng nhau luôn nằm **liền kề nhau**.
+
+Do đó, để biết một phần tử có phải là một giá trị mới hay không, ta không cần:
+
+- `set`
+- `unordered_set`
+- một mảng phụ
+- tìm kiếm toàn bộ mảng
+
+Chỉ cần so sánh nó với **phần tử khác nhau gần nhất đã được giữ lại**.
+
+Ví dụ:
+
+```text
+[0, 0, 1, 1, 2, 2, 3]
+```
+
+Ta có thể giữ:
+
+```text
+[0, 1, 2, 3]
+```
+
+và bỏ qua các bản sao.
+
+---
+
+# 4. Phương pháp Two Pointers
+
+Đây là cách tiếp cận tối ưu và là pattern rất quan trọng trong các bài LeetCode.
+
+Ta sử dụng hai con trỏ:
+
+```text
+i / slow
+j / fast
+```
+
+Có thể hiểu:
+
+- `fast`: đi qua từng phần tử trong mảng để tìm giá trị mới.
+- `slow`: chỉ vị trí tiếp theo cần ghi một giá trị **không trùng**.
+
+Một cách đặt tên dễ hiểu:
+
+```cpp
+int slow = 1;
+```
+
+`slow` đại diện cho vị trí mà phần tử khác nhau tiếp theo sẽ được ghi vào.
+
+Vì phần tử đầu tiên chắc chắn là duy nhất trong phạm vi cần xét, ta giữ nguyên:
+
+```text
+nums[0]
+```
+
+Sau đó bắt đầu duyệt từ:
+
+```cpp
+i = 1
+```
+
+---
+
+# 5. Invariant của thuật toán
+
+Đây là phần quan trọng nhất để hiểu sâu cách giải.
+
+Tại mọi thời điểm, ta duy trì điều kiện:
+
+```text
+nums[0 ... slow - 1]
+```
+
+chứa các phần tử **không trùng nhau**, theo đúng thứ tự tăng dần.
+
+Nói cách khác:
+
+```text
+[ vùng đã xử lý ][ vùng chưa xử lý ]
+        ↑
+      slow
+```
+
+Ví dụ:
+
+```text
+nums = [1,1,2,2,3,3]
+             ↑
+           slow
+```
+
+Nếu `slow = 2`, thì:
+
+```text
+nums[0 ... 1] = [1,2]
+```
+
+đã là phần kết quả đúng.
+
+Phần còn lại chưa cần quan tâm.
+
+---
+
+# 6. Tại sao chỉ cần so sánh với phần tử trước?
+
+Giả sử ta đang xét:
+
+```text
+[1, 1, 2, 2, 3]
+       ↑
+```
+
+Mảng đã sorted.
+
+Nếu phần tử hiện tại khác phần tử đứng ngay trước nó:
+
+```cpp
+nums[i] != nums[i - 1]
+```
+
+thì chắc chắn đây là một giá trị mới.
+
+Ví dụ:
+
+```text
+1 == 1   -> duplicate
+2 != 1   -> giá trị mới
+2 == 2   -> duplicate
+3 != 2   -> giá trị mới
+```
+
+Do mảng đã được sắp xếp, ta không cần kiểm tra xem `3` đã từng xuất hiện ở xa phía trước hay chưa.
+
+Nếu `3` từng xuất hiện trước đó thì tất cả các số ở giữa cũng phải đảm bảo thứ tự không giảm, và các số `3` sẽ nằm cạnh nhau.
+
+Đây chính là lý do `sorted array` giúp bài toán đơn giản từ việc "tìm phần tử đã xuất hiện" thành việc "kiểm tra phần tử có khác phần tử trước hay không".
+
+---
+
+# 7. Minh họa từng bước
+
+Xét:
+
+```text
+nums = [1,1,2,2,3]
+```
+
+Ban đầu:
+
+```text
+slow = 1
+```
+
+Ta giữ `1` đầu tiên:
+
+```text
+[1, _, _, _, _]
+    ↑
+   slow
+```
+
+## Bước 1
+
+`i = 1`
+
+```text
+nums[i] = 1
+nums[i - 1] = 1
+```
+
+Hai giá trị bằng nhau.
+
+Đây là duplicate → bỏ qua.
+
+```text
+[1, _, _, _, _]
+```
+
+---
+
+## Bước 2
+
+`i = 2`
+
+```text
+nums[i] = 2
+nums[i - 1] = 1
+```
+
+Khác nhau → tìm thấy giá trị mới.
+
+Ghi vào:
+
+```text
+nums[slow] = nums[i]
+```
+
+tức là:
+
+```text
+nums[1] = nums[2]
+```
+
+Kết quả tạm thời:
+
+```text
+[1,2,_,_,_]
+```
+
+Sau đó:
+
+```text
+slow = 2
+```
+
+---
+
+## Bước 3
+
+`i = 3`
+
+```text
+nums[i] = 2
+nums[i - 1] = 2
+```
+
+Duplicate → bỏ qua.
+
+```text
+[1,2,_,_,_]
+```
+
+---
+
+## Bước 4
+
+`i = 4`
+
+```text
+nums[i] = 3
+nums[i - 1] = 2
+```
+
+Khác nhau → giữ lại.
+
+```text
+nums[2] = nums[4]
+```
+
+Ta có:
+
+```text
+[1,2,3,_,_]
+```
+
+Sau đó:
+
+```text
+slow = 3
+```
+
+Kết thúc.
+
+Trả về:
+
+```text
+3
+```
+
+LeetCode chỉ quan tâm phần:
+
+```text
+nums[0 ... k-1]
+```
+
+tức:
+
+```text
+[1,2,3]
+```
+
+---
+
+# 8. Code tối ưu
+
+```cpp
+class Solution {
+public:
+    int removeDuplicates(vector<int>& nums) {
+        int n = nums.size();
+
+        if (n == 0) {
+            return 0;
+        }
+
+        int slow = 1;
+
+        for (int fast = 1; fast < n; ++fast) {
+            if (nums[fast] != nums[fast - 1]) {
+                nums[slow] = nums[fast];
+                ++slow;
+            }
+        }
+
+        return slow;
+    }
+};
+```
+
+---
+
+# 9. Giải thích từng dòng code
+
+```cpp
+int n = nums.size();
+```
+
+Lưu số lượng phần tử của mảng.
+
+---
+
+```cpp
+if (n == 0) {
+    return 0;
+}
+```
+
+Nếu mảng rỗng thì không có phần tử khác nhau nào.
+
+Trả về:
+
+```text
+0
+```
+
+---
+
+```cpp
+int slow = 1;
+```
+
+Phần tử đầu tiên `nums[0]` luôn được giữ lại.
+
+Vì vậy, vị trí tiếp theo có thể ghi phần tử mới là `1`.
+
+---
+
+```cpp
+for (int fast = 1; fast < n; ++fast)
+```
+
+`fast` duyệt từ phần tử thứ hai đến cuối mảng.
+
+---
+
+```cpp
+if (nums[fast] != nums[fast - 1])
+```
+
+Kiểm tra xem phần tử hiện tại có khác phần tử ngay trước nó hay không.
+
+- Nếu bằng → duplicate → bỏ qua.
+- Nếu khác → đây là một giá trị mới.
+
+---
+
+```cpp
+nums[slow] = nums[fast];
+```
+
+Nếu tìm thấy giá trị mới, ghi nó vào vùng kết quả.
+
+Đây chính là thao tác **in-place**.
+
+Không tạo thêm mảng.
+
+---
+
+```cpp
+++slow;
+```
+
+Sau khi ghi một giá trị mới, vị trí ghi tiếp theo dịch sang phải một ô.
+
+---
+
+```cpp
+return slow;
+```
+
+`slow` chính là số lượng phần tử khác nhau.
+
+---
+
+# 10. Độ phức tạp
+
+Với `n` là số phần tử:
+
+### Time Complexity
+
+Ta chỉ duyệt mảng đúng một lần:
+
+```text
+O(n)
+```
+
+### Space Complexity
+
+Chỉ sử dụng một vài biến:
+
+```text
+O(1)
+```
+
+Đây là **constant extra space**.
+
+So với lời giải dùng `set`:
+
+| Cách | Time | Extra Space |
+|---|---:|---:|
+| `set` | `O(n log n)` | `O(n)` |
+| Two Pointers | **`O(n)`** | **`O(1)`** |
+
+Vì vậy, two pointers là cách phù hợp với yêu cầu của bài hơn.
+
+---
+
+# 11. Tại sao không cần `sort()`?
+
+Đề bài đã đảm bảo `nums` được sắp xếp.
+
+Nếu ta gọi:
+
+```cpp
+sort(nums.begin(), nums.end());
+```
+
+thì không cần thiết và làm thay đổi/tiêu tốn thêm thời gian xử lý.
+
+Quan trọng hơn, bài này đang kiểm tra khả năng tận dụng tính chất:
+
+```text
+SORTED ARRAY
+```
+
+để giải quyết duplicate bằng Two Pointers.
+
+---
+
+# 12. Một phiên bản khác thường gặp
+
+Ta cũng có thể viết theo cách so sánh với phần tử cuối cùng đã giữ:
+
+```cpp
+class Solution {
+public:
+    int removeDuplicates(vector<int>& nums) {
+        if (nums.empty()) {
+            return 0;
+        }
+
+        int slow = 1;
+
+        for (int fast = 1; fast < nums.size(); ++fast) {
+            if (nums[fast] != nums[slow - 1]) {
+                nums[slow] = nums[fast];
+                ++slow;
+            }
+        }
+
+        return slow;
+    }
+};
+```
+
+Phiên bản này sử dụng:
+
+```cpp
+nums[slow - 1]
+```
+
+thay vì:
+
+```cpp
+nums[fast - 1]
+```
+
+### Ý nghĩa
+
+`nums[slow - 1]` luôn là **phần tử khác nhau cuối cùng đã được giữ lại**.
+
+Vì vậy, ta có thể diễn giải:
+
+> Nếu phần tử đang xét khác phần tử unique cuối cùng, hãy giữ nó.
+
+Đây là một invariant rất hữu ích trong các bài Two Pointers.
+
+---
+
+# 13. Trace với một ví dụ phức tạp hơn
+
+Input:
+
+```text
+[0,0,1,1,1,2,2,3,3,4]
+```
+
+Ta có:
+
+```text
+slow = 1
+```
+
+| fast | nums[fast] | Giá trị trước | Hành động | Mảng phần kết quả |
+|---:|---:|---:|---|---|
+| 1 | 0 | 0 | bỏ qua | `[0]` |
+| 2 | 1 | 0 | giữ `1` | `[0,1]` |
+| 3 | 1 | 1 | bỏ qua | `[0,1]` |
+| 4 | 1 | 1 | bỏ qua | `[0,1]` |
+| 5 | 2 | 1 | giữ `2` | `[0,1,2]` |
+| 6 | 2 | 2 | bỏ qua | `[0,1,2]` |
+| 7 | 3 | 2 | giữ `3` | `[0,1,2,3]` |
+| 8 | 3 | 3 | bỏ qua | `[0,1,2,3]` |
+| 9 | 4 | 3 | giữ `4` | `[0,1,2,3,4]` |
+
+Cuối cùng:
+
+```text
+slow = 5
+```
+
+Kết quả:
+
+```text
+k = 5
+nums = [0,1,2,3,4, ...]
+```
+
+---
+
+# 14. Vì sao thuật toán đúng?
+
+Có thể chứng minh bằng invariant.
+
+### Invariant
+
+Trước mỗi vòng lặp, đoạn:
+
+```text
+nums[0 ... slow - 1]
+```
+
+chứa chính xác các giá trị khác nhau đã gặp, theo thứ tự ban đầu.
+
+### Khởi tạo
+
+Ban đầu:
+
+```text
+slow = 1
+```
+
+`nums[0]` là phần tử đầu tiên nên chắc chắn là một giá trị duy nhất.
+
+Invariant đúng.
+
+### Duy trì
+
+Xét `nums[fast]`:
+
+#### Trường hợp 1: `nums[fast] == nums[fast - 1]`
+
+Vì mảng sorted, phần tử hiện tại là duplicate của giá trị vừa xuất hiện.
+
+Không cần thêm vào kết quả.
+
+Invariant vẫn đúng.
+
+#### Trường hợp 2: `nums[fast] != nums[fast - 1]`
+
+Đây là một giá trị mới.
+
+Ta ghi:
+
+```cpp
+nums[slow] = nums[fast];
+```
+
+và tăng:
+
+```cpp
+slow++;
+```
+
+Do đó vùng kết quả lại chứa toàn bộ các giá trị unique đã gặp.
+
+Invariant tiếp tục đúng.
+
+### Kết thúc
+
+Khi `fast` đã đi qua toàn bộ mảng, `nums[0 ... slow - 1]` chứa toàn bộ giá trị khác nhau.
+
+Vì vậy:
+
+```cpp
+return slow;
+```
+
+là chính xác.
+
+---
+
+# 15. Những điều cần rút ra cho các bài LeetCode khác
+
+Bài này rất đáng học vì nó giới thiệu một pattern phổ biến:
+
+## Pattern: Read Pointer + Write Pointer
+
+Có thể hình dung:
+
+```text
+fast  → đọc / khám phá dữ liệu
+slow  → ghi / xây dựng kết quả
+```
+
+Hai con trỏ không nhất thiết phải di chuyển cùng tốc độ.
+
+Ví dụ tổng quát:
+
+```cpp
+int slow = 0;
+
+for (int fast = 0; fast < n; ++fast) {
+    if (condition(nums[fast])) {
+        nums[slow] = nums[fast];
+        ++slow;
+    }
+}
+
+return slow;
+```
+
+Pattern này xuất hiện trong nhiều bài:
+
+- Remove Duplicates
+- Remove Element
+- Move Zeroes
+- Partition
+- lọc phần tử thỏa điều kiện
+- xử lý mảng in-place
+
+Khi gặp yêu cầu:
+
+> "Modify array in-place và giữ lại các phần tử thỏa điều kiện"
+
+hãy nghĩ ngay đến **Two Pointers**.
+
+---
+
+# 16. Kết luận
+
+Lời giải dùng `set` của bạn **đúng về ý tưởng kết quả**, nhưng chưa tận dụng được đặc điểm quan trọng nhất của đề bài: **mảng đã được sorted**.
+
+Thay vì:
+
+```text
+nums → set → nums
+```
+
+ta có thể xử lý trực tiếp:
+
+```text
+nums → Two Pointers → nums
+```
+
+Lời giải tối ưu đạt:
+
+```text
+Time:  O(n)
+Space: O(1)
+```
+
+Đây cũng là cách tiếp cận nên ưu tiên khi mục tiêu là đáp ứng đầy đủ yêu cầu **in-place** và **constant extra space** của bài.
+
+## Final Code
+
+```cpp
+class Solution {
+public:
+    int removeDuplicates(vector<int>& nums) {
+        if (nums.empty()) {
+            return 0;
+        }
+
+        int slow = 1;
+
+        for (int fast = 1; fast < nums.size(); ++fast) {
+            if (nums[fast] != nums[slow - 1]) {
+                nums[slow] = nums[fast];
+                ++slow;
+            }
+        }
+
+        return slow;
+    }
+};
+```
