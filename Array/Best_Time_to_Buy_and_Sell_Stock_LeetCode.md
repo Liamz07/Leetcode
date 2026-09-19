@@ -1,0 +1,1237 @@
+# Best Time to Buy and Sell Stock — LeetCode
+
+## 1. Thông tin bài toán
+
+**Bài toán:** Best Time to Buy and Sell Stock  
+**LeetCode:** 121 — Best Time to Buy and Sell Stock
+
+### Mô tả
+
+Cho một mảng `prices`, trong đó:
+
+```text
+prices[i]
+```
+
+là giá của cổ phiếu vào ngày thứ `i`.
+
+Bạn được phép thực hiện **tối đa một giao dịch**, gồm:
+
+1. Mua cổ phiếu vào một ngày.
+2. Bán cổ phiếu vào một ngày **sau ngày mua**.
+
+Hãy tìm **lợi nhuận lớn nhất** có thể đạt được.
+
+Nếu không thể tạo ra lợi nhuận dương thì trả về:
+
+```text
+0
+```
+
+---
+
+# 2. Ví dụ
+
+## Ví dụ 1
+
+```text
+Input:
+prices = [7, 1, 5, 3, 6, 4]
+
+Output:
+5
+```
+
+Cách tối ưu:
+
+```text
+Mua tại giá 1
+Bán tại giá 6
+
+Profit = 6 - 1 = 5
+```
+
+---
+
+## Ví dụ 2
+
+```text
+Input:
+prices = [7, 6, 4, 3, 1]
+
+Output:
+0
+```
+
+Giá cổ phiếu liên tục giảm:
+
+```text
+7 → 6 → 4 → 3 → 1
+```
+
+Không có thời điểm nào mà:
+
+```text
+giá bán > giá mua
+```
+
+Do đó không thực hiện giao dịch.
+
+Kết quả:
+
+```text
+0
+```
+
+---
+
+# 3. Điều quan trọng nhất của bài toán
+
+Có hai điều kiện phải đồng thời thỏa mãn:
+
+```text
+1. Mua trước
+2. Bán sau
+```
+
+Tức là nếu:
+
+```text
+buy = i
+sell = j
+```
+
+thì bắt buộc:
+
+```text
+i < j
+```
+
+Lợi nhuận:
+
+```text
+prices[j] - prices[i]
+```
+
+Mục tiêu:
+
+```text
+max(prices[j] - prices[i])
+```
+
+với:
+
+```text
+i < j
+```
+
+---
+
+# 4. Cách nghĩ brute force
+
+Cách nghĩ đầu tiên rất tự nhiên:
+
+> Thử tất cả các cặp ngày mua và ngày bán.
+
+Ví dụ:
+
+```text
+prices = [7, 1, 5, 3, 6, 4]
+```
+
+Ta có thể thử:
+
+```text
+Mua ngày 0 → bán ngày 1
+Mua ngày 0 → bán ngày 2
+Mua ngày 0 → bán ngày 3
+...
+```
+
+Sau đó:
+
+```text
+Mua ngày 1 → bán ngày 2
+Mua ngày 1 → bán ngày 3
+...
+```
+
+Công thức:
+
+```cpp
+profit = prices[j] - prices[i];
+```
+
+và lấy giá trị lớn nhất.
+
+### Độ phức tạp
+
+Có khoảng:
+
+```text
+n × n
+```
+
+cặp cần kiểm tra.
+
+Do đó:
+
+```text
+Time Complexity: O(n²)
+```
+
+Cách này đúng về mặt logic nhưng chưa tối ưu.
+
+---
+
+# 5. Quan sát quan trọng để tối ưu
+
+Ta có:
+
+```text
+profit = giá bán - giá mua
+```
+
+Muốn lợi nhuận lớn nhất:
+
+```text
+profit = prices[j] - prices[i]
+```
+
+thì tại ngày `j`, ta muốn:
+
+```text
+prices[i]
+```
+
+nhỏ nhất có thể.
+
+Nói cách khác:
+
+> Khi đang xét ngày bán hiện tại, chỉ cần biết **giá mua thấp nhất đã xuất hiện trước đó**.
+
+Đây chính là chìa khóa của bài toán.
+
+---
+
+# 6. Ví dụ để hiểu ý tưởng
+
+Xét:
+
+```text
+prices = [7, 1, 5, 3, 6, 4]
+```
+
+Ta duyệt từ trái sang phải.
+
+Ban đầu:
+
+```text
+giá thấp nhất = 7
+lợi nhuận lớn nhất = 0
+```
+
+---
+
+## Ngày 1 — giá 1
+
+Giá hiện tại:
+
+```text
+1
+```
+
+Nhỏ hơn giá thấp nhất:
+
+```text
+1 < 7
+```
+
+Cập nhật:
+
+```text
+giá thấp nhất = 1
+```
+
+---
+
+## Ngày 2 — giá 5
+
+Giá hiện tại:
+
+```text
+5
+```
+
+Giá mua tốt nhất trước đó:
+
+```text
+1
+```
+
+Nếu bán hôm nay:
+
+```text
+profit = 5 - 1 = 4
+```
+
+Cập nhật:
+
+```text
+lợi nhuận lớn nhất = 4
+```
+
+---
+
+## Ngày 3 — giá 3
+
+Nếu bán:
+
+```text
+3 - 1 = 2
+```
+
+Không tốt hơn:
+
+```text
+4
+```
+
+nên:
+
+```text
+maxProfit = 4
+```
+
+---
+
+## Ngày 4 — giá 6
+
+Nếu bán:
+
+```text
+6 - 1 = 5
+```
+
+Cập nhật:
+
+```text
+maxProfit = 5
+```
+
+---
+
+## Ngày 5 — giá 4
+
+Nếu bán:
+
+```text
+4 - 1 = 3
+```
+
+Không vượt qua:
+
+```text
+5
+```
+
+Kết quả cuối cùng:
+
+```text
+5
+```
+
+---
+
+# 7. Hai biến quan trọng
+
+Ta chỉ cần hai biến:
+
+```cpp
+int giaMuaThapNhat;
+int loiNhuanLonNhat;
+```
+
+Có thể đặt theo cách bạn thường dùng:
+
+```cpp
+int giaThapNhat;
+int loiNhuan;
+```
+
+Ý nghĩa:
+
+### `giaThapNhat`
+
+Là:
+
+> Giá cổ phiếu thấp nhất đã xuất hiện từ đầu mảng đến vị trí hiện tại.
+
+### `loiNhuan`
+
+Là:
+
+> Lợi nhuận lớn nhất có thể đạt được với các ngày đã xét.
+
+---
+
+# 8. Vì sao chỉ cần giữ giá thấp nhất?
+
+Giả sử trước ngày hiện tại ta có:
+
+```text
+7
+1
+5
+3
+```
+
+Hiện tại:
+
+```text
+6
+```
+
+Ta muốn biết nên mua ở ngày nào.
+
+Các giá mua có thể là:
+
+```text
+7
+1
+5
+3
+```
+
+Trong số đó:
+
+```text
+1
+```
+
+là nhỏ nhất.
+
+Vậy nếu bán hôm nay:
+
+```text
+6 - 1 = 5
+```
+
+Sẽ luôn tốt hơn hoặc bằng việc mua ở bất kỳ giá nào lớn hơn `1`.
+
+Do đó:
+
+> Không cần nhớ tất cả các giá trước đó. Chỉ cần nhớ giá nhỏ nhất.
+
+Đây là lý do từ:
+
+```text
+O(n²)
+```
+
+có thể giảm xuống:
+
+```text
+O(n)
+```
+
+---
+
+# 9. Công thức tại mỗi ngày
+
+Giả sử đang xét:
+
+```text
+prices[i]
+```
+
+Ta coi hôm nay là ngày bán.
+
+Giá mua tốt nhất trước hôm nay là:
+
+```text
+giaThapNhat
+```
+
+Lợi nhuận nếu bán hôm nay:
+
+```cpp
+loiNhuanHienTai = prices[i] - giaThapNhat;
+```
+
+Sau đó:
+
+```cpp
+loiNhuan = max(loiNhuan, loiNhuanHienTai);
+```
+
+Đồng thời phải cập nhật giá mua thấp nhất:
+
+```cpp
+giaThapNhat = min(giaThapNhat, prices[i]);
+```
+
+---
+
+# 10. Thứ tự cập nhật rất quan trọng
+
+Ta cần đảm bảo:
+
+```text
+Mua trước
+Bán sau
+```
+
+Một cách tư duy rõ ràng là:
+
+```text
+Duyệt đến ngày i:
+
+1. Dùng giá thấp nhất trước đó để thử bán hôm nay.
+2. Cập nhật lợi nhuận.
+3. Sau đó mới cập nhật giá thấp nhất bằng giá hôm nay.
+```
+
+Như vậy giá hôm nay chỉ trở thành giá mua cho **những ngày sau**, không thể vừa mua vừa bán cùng một ngày.
+
+Có thể viết:
+
+```cpp
+loiNhuan = max(loiNhuan, prices[i] - giaThapNhat);
+giaThapNhat = min(giaThapNhat, prices[i]);
+```
+
+Hoặc cập nhật giá thấp nhất trước rồi xử lý lợi nhuận nếu ta bắt đầu vòng lặp từ ngày thứ hai.
+
+---
+
+# 11. Cách triển khai đơn giản nhất
+
+Một cách dễ hiểu là:
+
+```cpp
+int giaThapNhat = prices[0];
+int loiNhuan = 0;
+
+for (int i = 1; i < prices.size(); i++) {
+    giaThapNhat = min(giaThapNhat, prices[i]);
+
+    loiNhuan = max(loiNhuan, prices[i] - giaThapNhat);
+}
+```
+
+Tuy nhiên ở đây có một điểm nhỏ về cách diễn giải:
+
+Sau khi cập nhật:
+
+```cpp
+giaThapNhat
+```
+
+ta đang cho phép giá hôm nay trở thành giá mua.
+
+Vì:
+
+```text
+prices[i] - prices[i] = 0
+```
+
+nên điều này không làm sai kết quả. Tuy nhiên, để thể hiện rõ điều kiện "mua trước, bán sau", ta có thể viết theo hướng:
+
+```cpp
+for (int i = 1; i < prices.size(); i++) {
+    loiNhuan = max(loiNhuan, prices[i] - giaThapNhat);
+    giaThapNhat = min(giaThapNhat, prices[i]);
+}
+```
+
+Cách thứ hai rất trực quan khi học bài toán.
+
+---
+
+# 12. Lời giải C++ tối ưu
+
+```cpp
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        int giaThapNhat = prices[0];
+        int loiNhuan = 0;
+
+        for (int i = 1; i < prices.size(); i++) {
+            // Thử bán tại ngày i
+            loiNhuan = max(loiNhuan, prices[i] - giaThapNhat);
+
+            // Cập nhật giá mua thấp nhất cho các ngày sau
+            giaThapNhat = min(giaThapNhat, prices[i]);
+        }
+
+        return loiNhuan;
+    }
+};
+```
+
+---
+
+# 13. Phân tích từng dòng code
+
+## Khai báo hàm
+
+```cpp
+int maxProfit(vector<int>& prices)
+```
+
+Hàm nhận:
+
+```cpp
+prices
+```
+
+là mảng giá cổ phiếu.
+
+Trả về:
+
+```cpp
+int
+```
+
+là lợi nhuận lớn nhất.
+
+---
+
+## Khởi tạo giá thấp nhất
+
+```cpp
+int giaThapNhat = prices[0];
+```
+
+Ta coi ngày đầu tiên là ứng viên mua đầu tiên.
+
+Ví dụ:
+
+```text
+prices = [7, 1, 5, 3, 6, 4]
+```
+
+Ban đầu:
+
+```text
+giaThapNhat = 7
+```
+
+---
+
+## Khởi tạo lợi nhuận
+
+```cpp
+int loiNhuan = 0;
+```
+
+Nếu không có giao dịch có lãi:
+
+```text
+profit = 0
+```
+
+Đây cũng chính là đáp án trong trường hợp giá chỉ giảm.
+
+---
+
+## Duyệt từ ngày thứ hai
+
+```cpp
+for (int i = 1; i < prices.size(); i++)
+```
+
+Tại mỗi ngày `i`, ta coi:
+
+```text
+prices[i]
+```
+
+là giá bán tiềm năng.
+
+---
+
+## Tính lợi nhuận nếu bán hôm nay
+
+```cpp
+loiNhuan = max(loiNhuan, prices[i] - giaThapNhat);
+```
+
+Ta lấy:
+
+```text
+giá bán hôm nay
+-
+giá mua thấp nhất trước đó
+```
+
+Ví dụ:
+
+```text
+prices[i] = 6
+giaThapNhat = 1
+```
+
+thì:
+
+```text
+profit = 6 - 1 = 5
+```
+
+Sau đó so sánh với lợi nhuận tốt nhất trước đó.
+
+---
+
+## Cập nhật giá mua thấp nhất
+
+```cpp
+giaThapNhat = min(giaThapNhat, prices[i]);
+```
+
+Nếu hôm nay có giá thấp hơn:
+
+```text
+giaThapNhat
+```
+
+thì lưu lại.
+
+Ví dụ:
+
+```text
+giaThapNhat = 7
+prices[i] = 1
+```
+
+thì:
+
+```text
+giaThapNhat = 1
+```
+
+---
+
+## Trả kết quả
+
+```cpp
+return loiNhuan;
+```
+
+Sau khi duyệt hết các ngày:
+
+```text
+loiNhuan
+```
+
+là lợi nhuận lớn nhất.
+
+---
+
+# 14. Mô phỏng bằng bảng
+
+Với:
+
+```text
+prices = [7, 1, 5, 3, 6, 4]
+```
+
+Ta có:
+
+| Ngày | Giá | `giaThapNhat` trước khi xử lý | Lợi nhuận nếu bán hôm nay | `loiNhuan` |
+|---:|---:|---:|---:|---:|
+| 0 | 7 | 7 | - | 0 |
+| 1 | 1 | 7 | -6 | 0 |
+| 2 | 5 | 1 | 4 | 4 |
+| 3 | 3 | 1 | 2 | 4 |
+| 4 | 6 | 1 | 5 | 5 |
+| 5 | 4 | 1 | 3 | 5 |
+
+Kết quả:
+
+```text
+5
+```
+
+Giao dịch tương ứng:
+
+```text
+Mua: 1
+Bán: 6
+
+Profit = 5
+```
+
+---
+
+# 15. Chứng minh tính đúng đắn
+
+Ta duy trì hai điều:
+
+### Invariant 1
+
+Sau khi xét đến ngày `i`:
+
+```text
+giaThapNhat
+```
+
+là giá nhỏ nhất trong các ngày đã đi qua.
+
+### Invariant 2
+
+Sau khi xét đến ngày `i`:
+
+```text
+loiNhuan
+```
+
+là lợi nhuận lớn nhất có thể đạt được bằng một giao dịch với ngày bán không vượt quá `i`.
+
+---
+
+## Vì sao invariant 1 đúng?
+
+Ban đầu:
+
+```cpp
+giaThapNhat = prices[0];
+```
+
+nên đúng với ngày đầu tiên.
+
+Mỗi ngày:
+
+```cpp
+giaThapNhat = min(giaThapNhat, prices[i]);
+```
+
+Do đó sau mỗi bước, nó luôn là giá thấp nhất đã gặp.
+
+---
+
+## Vì sao invariant 2 đúng?
+
+Tại ngày `i`, nếu bán hôm nay thì giá mua tốt nhất có thể chọn trong quá khứ là:
+
+```text
+giaThapNhat
+```
+
+Vì vậy lợi nhuận tốt nhất nếu bán hôm nay là:
+
+```cpp
+prices[i] - giaThapNhat
+```
+
+Ta so sánh giá trị này với:
+
+```text
+loiNhuan
+```
+
+đã tìm được trước đó.
+
+Do đó:
+
+```cpp
+loiNhuan = max(loiNhuan, prices[i] - giaThapNhat);
+```
+
+luôn giữ lại lợi nhuận tốt nhất.
+
+Sau khi xét hết tất cả các ngày, `loiNhuan` chính là đáp án.
+
+---
+
+# 16. Độ phức tạp
+
+Ta chỉ duyệt mảng một lần:
+
+```cpp
+for (int i = 1; i < prices.size(); i++)
+```
+
+Mỗi ngày chỉ thực hiện một số phép toán `min`, `max` và phép trừ.
+
+Do đó:
+
+```text
+Time Complexity: O(n)
+```
+
+Bộ nhớ chỉ sử dụng hai biến:
+
+```text
+giaThapNhat
+loiNhuan
+```
+
+Không tạo mảng phụ.
+
+Do đó:
+
+```text
+Space Complexity: O(1)
+```
+
+Đây là lời giải tối ưu về độ phức tạp:
+
+```text
+O(n) time
+O(1) extra space
+```
+
+---
+
+# 17. Tại sao không cần Dynamic Programming?
+
+Bài này có thể được nhìn dưới góc độ DP, nhưng không cần dùng mảng `dp`.
+
+Ta chỉ cần lưu trạng thái cần thiết:
+
+```text
+giá mua thấp nhất
+lợi nhuận lớn nhất
+```
+
+Nói cách khác, ta đã **nén trạng thái**.
+
+Nếu viết tư duy DP:
+
+```text
+bestBuy[i] = giá nhỏ nhất từ ngày 0 đến i
+```
+
+thì:
+
+```text
+bestBuy[i] = min(bestBuy[i - 1], prices[i])
+```
+
+Và:
+
+```text
+bestProfit[i] = max(
+    bestProfit[i - 1],
+    prices[i] - bestBuy[i - 1]
+)
+```
+
+Nhưng vì mỗi trạng thái chỉ phụ thuộc vào trạng thái ngay trước đó, không cần lưu toàn bộ mảng.
+
+Chỉ cần:
+
+```text
+giaThapNhat
+loiNhuan
+```
+
+là đủ.
+
+Đây là một ví dụ rất tốt về:
+
+> **Space Optimization / State Compression**
+
+---
+
+# 18. Một cách nhìn rất quan trọng: Prefix Minimum
+
+Bài này thực chất có thể hiểu là:
+
+> Với mỗi ngày bán `i`, tìm giá nhỏ nhất ở bên trái `i`.
+
+Ví dụ:
+
+```text
+prices:
+7  1  5  3  6  4
+```
+
+Prefix minimum:
+
+```text
+7  1  1  1  1  1
+```
+
+Tại giá `6`:
+
+```text
+6 - 1 = 5
+```
+
+Tại giá `4`:
+
+```text
+4 - 1 = 3
+```
+
+Sau đó lấy maximum.
+
+Do đó có thể nhìn bài toán dưới dạng:
+
+```text
+Prefix Minimum
+        +
+Maximum Difference
+```
+
+Đây là một pattern rất quan trọng trong DSA.
+
+---
+
+# 19. Pattern tổng quát cần ghi nhớ
+
+Khi gặp bài dạng:
+
+```text
+Tìm max/min của:
+giá trị hiện tại - giá trị tốt nhất trước đó
+```
+
+hãy nghĩ đến:
+
+```text
+Duyệt từ trái sang phải
++
+lưu giá trị tốt nhất đã gặp
++
+cập nhật đáp án
+```
+
+Mẫu:
+
+```cpp
+int tot = giaTriBanDau;
+int dapAn = 0;
+
+for (int i = 1; i < n; i++) {
+    dapAn = max(dapAn, giaTriHienTai - tot);
+    tot = min(tot, giaTriHienTai);
+}
+```
+
+Trong bài này:
+
+```text
+tot = giá mua thấp nhất
+dapAn = lợi nhuận lớn nhất
+```
+
+---
+
+# 20. Những lỗi thường gặp
+
+## Lỗi 1: Mua sau khi bán
+
+Ví dụ:
+
+```text
+prices = [7, 6, 1, 5]
+```
+
+Không được chọn:
+
+```text
+Mua 5
+Bán 7
+```
+
+vì:
+
+```text
+5 xuất hiện sau 7
+```
+
+Điều kiện bắt buộc:
+
+```text
+buy < sell
+```
+
+---
+
+## Lỗi 2: Chỉ tìm min và max toàn mảng
+
+Không thể đơn giản làm:
+
+```text
+max(prices) - min(prices)
+```
+
+vì giá thấp nhất phải xuất hiện **trước** giá cao nhất.
+
+Ví dụ:
+
+```text
+[7, 6, 4, 3, 1]
+```
+
+Ta có:
+
+```text
+min = 1
+max = 7
+```
+
+Nếu lấy:
+
+```text
+7 - 1 = 6
+```
+
+thì sai.
+
+Vì:
+
+```text
+7 xuất hiện trước 1
+```
+
+Ta không thể mua ở `1` rồi bán ở `7`.
+
+Đáp án đúng:
+
+```text
+0
+```
+
+---
+
+## Lỗi 3: Dùng hai vòng `for`
+
+Ví dụ:
+
+```cpp
+for (int i = 0; i < n; i++) {
+    for (int j = i + 1; j < n; j++) {
+        ...
+    }
+}
+```
+
+Cách này đúng nhưng:
+
+```text
+O(n²)
+```
+
+Trong khi bài có thể giải bằng:
+
+```text
+O(n)
+```
+
+---
+
+## Lỗi 4: Quên trường hợp không có lợi nhuận
+
+Ví dụ:
+
+```text
+[7, 6, 4, 3, 1]
+```
+
+Không nên trả về số âm.
+
+Đề yêu cầu:
+
+```text
+0
+```
+
+Do đó khởi tạo:
+
+```cpp
+int loiNhuan = 0;
+```
+
+---
+
+# 21. Checklist tư duy khi gặp bài
+
+Khi gặp bài Best Time to Buy and Sell Stock, hãy tự hỏi:
+
+```text
+1. Lợi nhuận được tính thế nào?
+        ↓
+   giá bán - giá mua
+
+2. Giá mua phải nằm ở đâu?
+        ↓
+   trước ngày bán
+
+3. Nếu đang xét ngày bán i,
+   ta cần thông tin gì?
+        ↓
+   giá mua nhỏ nhất trước i
+
+4. Có cần lưu tất cả giá trước đó không?
+        ↓
+   Không
+
+5. Chỉ cần lưu gì?
+        ↓
+   giá thấp nhất
+
+6. Sau khi tính profit hôm nay,
+   cần cập nhật gì?
+        ↓
+   max profit
+
+7. Độ phức tạp?
+        ↓
+   O(n) time, O(1) space
+```
+
+---
+
+# 22. Tóm tắt cực ngắn
+
+Ý tưởng:
+
+```text
+Duyệt từ trái sang phải.
+
+giaThapNhat:
+    giá thấp nhất đã gặp.
+
+loiNhuan:
+    lợi nhuận lớn nhất đã tìm được.
+
+Mỗi ngày:
+    profit = prices[i] - giaThapNhat
+    loiNhuan = max(loiNhuan, profit)
+    giaThapNhat = min(giaThapNhat, prices[i])
+```
+
+Code:
+
+```cpp
+class Solution {
+public:
+    int maxProfit(vector<int>& prices) {
+        int giaThapNhat = prices[0];
+        int loiNhuan = 0;
+
+        for (int i = 1; i < prices.size(); i++) {
+            loiNhuan = max(loiNhuan, prices[i] - giaThapNhat);
+            giaThapNhat = min(giaThapNhat, prices[i]);
+        }
+
+        return loiNhuan;
+    }
+};
+```
+
+Độ phức tạp:
+
+```text
+Time  = O(n)
+Space = O(1)
+```
+
+## Câu cần nhớ
+
+> **Mỗi ngày coi hôm nay là ngày bán, chỉ cần nhớ giá mua thấp nhất đã xuất hiện trước đó.**
