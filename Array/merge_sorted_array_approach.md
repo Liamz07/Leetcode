@@ -1,0 +1,1494 @@
+# LeetCode – Merge Sorted Array
+
+> Lưu ý: tên bài trên LeetCode là **Merge Sorted Array** (không phải "Merged Sort Array").
+
+## 1. Tổng quan bài toán
+
+Bài toán cho hai mảng đã được sắp xếp tăng dần:
+
+```text
+nums1
+nums2
+```
+
+Trong đó:
+
+- `nums1` có tổng kích thước `m + n`.
+- `m` phần tử đầu tiên của `nums1` là dữ liệu thực sự cần giữ.
+- `n` vị trí cuối của `nums1` được dành sẵn để chứa các phần tử của `nums2`.
+- `nums2` có `n` phần tử.
+- Cả hai phần dữ liệu đều đã được sắp xếp tăng dần.
+
+Nhiệm vụ là merge `nums2` vào `nums1` sao cho `nums1` cuối cùng vẫn được sắp xếp tăng dần.
+
+Ví dụ:
+
+```text
+nums1 = [1, 2, 3, 0, 0, 0]
+m = 3
+
+nums2 = [2, 5, 6]
+n = 3
+```
+
+Ba số `0` cuối `nums1` chỉ là các ô trống được dành sẵn.
+
+Ta cần nhận được:
+
+```text
+[1, 2, 2, 3, 5, 6]
+```
+
+---
+
+# 2. Điểm mấu chốt của bài
+
+Có hai đặc điểm cực kỳ quan trọng:
+
+1. `nums1` và `nums2` **đã được sắp xếp**.
+2. `nums1` đã có sẵn đủ `m + n` vị trí.
+
+Nếu chỉ cần tạo một mảng thứ ba, bài toán khá đơn giản.
+
+Nhưng đề yêu cầu:
+
+> Merge trực tiếp vào `nums1`.
+
+Do đó, câu hỏi quan trọng là:
+
+> Ta nên merge từ đâu để không ghi đè lên dữ liệu chưa xử lý trong `nums1`?
+
+Đây chính là nơi xuất hiện kỹ thuật **Two Pointers từ phải sang trái**.
+
+---
+
+# 3. Tại sao không merge từ trái sang phải?
+
+Cách suy nghĩ đầu tiên có thể là:
+
+```text
+nums1: [1, 2, 3, 0, 0, 0]
+nums2: [2, 5, 6]
+```
+
+Ta muốn đặt phần tử nhỏ nhất vào đầu:
+
+```text
+1
+```
+
+sau đó:
+
+```text
+2
+```
+
+sau đó:
+
+```text
+2
+```
+
+Nhưng nếu ghi trực tiếp vào `nums1`, ta có nguy cơ ghi đè lên những phần tử ban đầu của `nums1` mà ta **chưa xử lý**.
+
+Ví dụ:
+
+```text
+nums1 = [1, 2, 3, 0, 0, 0]
+          ^
+```
+
+Nếu dịch chuyển các phần tử sang phải để tạo chỗ cho dữ liệu từ `nums2`, ta phải thực hiện nhiều thao tác dịch chuyển.
+
+Điều này làm thuật toán phức tạp hơn và có thể dẫn tới:
+
+```text
+O((m+n)^2)
+```
+
+nếu triển khai không khéo.
+
+---
+
+# 4. Ý tưởng tối ưu: Merge từ phải sang trái
+
+Đây là insight quan trọng nhất của bài.
+
+`nums1` có các vị trí trống **ở cuối**.
+
+Vì vậy thay vì cố gắng xây dựng kết quả từ đầu, ta xây dựng kết quả từ cuối.
+
+Ví dụ:
+
+```text
+nums1 = [1, 2, 3, 0, 0, 0]
+                  ↑  ↑  ↑
+                vùng trống
+```
+
+Phần tử lớn nhất của kết quả chắc chắn là một trong:
+
+```text
+nums1[m - 1]
+```
+
+hoặc:
+
+```text
+nums2[n - 1]
+```
+
+Ta lấy phần tử lớn hơn đặt vào vị trí cuối cùng.
+
+Sau đó tiếp tục đi sang trái.
+
+Đây là một dạng **Two Pointers**.
+
+---
+
+# 5. Ba con trỏ
+
+Ta sử dụng ba biến:
+
+```cpp
+i
+j
+k
+```
+
+Ý nghĩa:
+
+### `i`
+
+Trỏ tới phần tử cuối cùng trong phần dữ liệu thực sự của `nums1`.
+
+```cpp
+i = m - 1;
+```
+
+Không phải:
+
+```cpp
+nums1.size() - 1
+```
+
+vì các vị trí cuối đang là vùng trống.
+
+---
+
+### `j`
+
+Trỏ tới phần tử cuối cùng của `nums2`.
+
+```cpp
+j = n - 1;
+```
+
+---
+
+### `k`
+
+Trỏ tới vị trí cuối cùng của vùng kết quả trong `nums1`.
+
+```cpp
+k = m + n - 1;
+```
+
+Ban đầu:
+
+```text
+nums1 = [1, 2, 3, 0, 0, 0]
+               ↑        ↑
+               i        k
+
+nums2 = [2, 5, 6]
+            ↑
+            j
+```
+
+Cụ thể:
+
+```text
+i = 2
+j = 2
+k = 5
+```
+
+---
+
+# 6. Tại sao chọn phần tử lớn hơn?
+
+Ta đang xây dựng kết quả từ phải sang trái.
+
+Vị trí:
+
+```text
+k
+```
+
+là vị trí cuối cùng chưa được điền.
+
+Do mảng kết quả phải tăng dần, vị trí cuối cùng phải chứa **phần tử lớn nhất còn lại**.
+
+Mà vì hai mảng đều đã được sort, phần tử lớn nhất còn lại chỉ có thể nằm ở:
+
+```text
+nums1[i]
+```
+
+hoặc:
+
+```text
+nums2[j]
+```
+
+Do đó:
+
+```cpp
+if (nums1[i] > nums2[j])
+    nums1[k] = nums1[i];
+else
+    nums1[k] = nums2[j];
+```
+
+Sau đó di chuyển pointer tương ứng.
+
+Đây chính là toàn bộ insight của lời giải.
+
+---
+
+# 7. Dry Run chi tiết
+
+Xét:
+
+```text
+nums1 = [1, 2, 3, 0, 0, 0]
+m = 3
+
+nums2 = [2, 5, 6]
+n = 3
+```
+
+Khởi tạo:
+
+```text
+i = 2
+j = 2
+k = 5
+```
+
+Ta có:
+
+```text
+nums1[i] = 3
+nums2[j] = 6
+```
+
+So sánh:
+
+```text
+3 < 6
+```
+
+Vì `6` lớn hơn nên:
+
+```cpp
+nums1[5] = 6;
+```
+
+Mảng:
+
+```text
+[1, 2, 3, 0, 0, 6]
+```
+
+Sau đó:
+
+```text
+j--
+k--
+```
+
+thành:
+
+```text
+i = 2
+j = 1
+k = 4
+```
+
+---
+
+## Bước 2
+
+So sánh:
+
+```text
+nums1[2] = 3
+nums2[1] = 5
+```
+
+Ta có:
+
+```text
+3 < 5
+```
+
+Đặt:
+
+```text
+nums1[4] = 5
+```
+
+Mảng:
+
+```text
+[1, 2, 3, 0, 5, 6]
+```
+
+Sau đó:
+
+```text
+j = 0
+k = 3
+```
+
+---
+
+## Bước 3
+
+So sánh:
+
+```text
+nums1[2] = 3
+nums2[0] = 2
+```
+
+Ta có:
+
+```text
+3 > 2
+```
+
+Đặt:
+
+```text
+nums1[3] = 3
+```
+
+Mảng:
+
+```text
+[1, 2, 3, 3, 5, 6]
+```
+
+Sau đó:
+
+```text
+i = 1
+k = 2
+```
+
+---
+
+## Bước 4
+
+So sánh:
+
+```text
+nums1[1] = 2
+nums2[0] = 2
+```
+
+Ta có thể chọn `nums2[j]`:
+
+```text
+nums1[2] = 2
+```
+
+Mảng:
+
+```text
+[1, 2, 2, 3, 5, 6]
+```
+
+Sau đó:
+
+```text
+j = -1
+k = 1
+```
+
+`nums2` đã được merge hết.
+
+Kết quả:
+
+```text
+[1, 2, 2, 3, 5, 6]
+```
+
+---
+
+# 8. Tại sao khi bằng nhau có thể lấy `nums2[j]`?
+
+Ta có:
+
+```cpp
+if (nums1[i] > nums2[j])
+    ...
+else
+    ...
+```
+
+Tức là khi:
+
+```text
+nums1[i] == nums2[j]
+```
+
+ta lấy phần tử từ `nums2`.
+
+Điều này hoàn toàn đúng vì hai giá trị bằng nhau.
+
+Ví dụ:
+
+```text
+nums1[i] = 2
+nums2[j] = 2
+```
+
+Chọn cái nào trước cũng cho kết quả:
+
+```text
+..., 2, 2, ...
+```
+
+Không ảnh hưởng đến tính đúng đắn.
+
+---
+
+# 9. Code C++ tối ưu
+
+```cpp
+class Solution {
+public:
+    void merge(vector<int>& nums1, int m, vector<int>& nums2, int n) {
+        int i = m - 1;
+        int j = n - 1;
+        int k = m + n - 1;
+
+        while (j >= 0) {
+            if (i >= 0 && nums1[i] > nums2[j]) {
+                nums1[k] = nums1[i];
+                i--;
+            } else {
+                nums1[k] = nums2[j];
+                j--;
+            }
+
+            k--;
+        }
+    }
+};
+```
+
+Đây là phiên bản nên dùng.
+
+---
+
+# 10. Tại sao vòng lặp chỉ cần `while (j >= 0)`?
+
+Đây là một insight rất đáng nhớ.
+
+Ta có hai trường hợp.
+
+## Trường hợp 1: `nums2` còn phần tử
+
+Ta vẫn phải merge:
+
+```text
+j >= 0
+```
+
+Do đó tiếp tục.
+
+---
+
+## Trường hợp 2: `nums2` đã hết
+
+Nếu:
+
+```text
+j < 0
+```
+
+thì toàn bộ `nums2` đã được đặt vào `nums1`.
+
+Những phần tử còn lại của `nums1` đã nằm đúng vị trí.
+
+Tại sao?
+
+Vì các phần tử còn lại của `nums1` vốn đã nằm trong vùng đầu và đã được sắp xếp.
+
+Ví dụ:
+
+```text
+nums1 = [1, 2, 3, 0, 0, 0]
+nums2 = [4, 5, 6]
+```
+
+Ta lần lượt đặt:
+
+```text
+6
+5
+4
+```
+
+vào cuối.
+
+Kết quả:
+
+```text
+[1, 2, 3, 4, 5, 6]
+```
+
+Khi `nums2` hết, phần:
+
+```text
+[1, 2, 3]
+```
+
+đã đúng vị trí.
+
+Không cần copy lại.
+
+---
+
+# 11. Tại sao phải kiểm tra `i >= 0`?
+
+Điều kiện:
+
+```cpp
+if (i >= 0 && nums1[i] > nums2[j])
+```
+
+rất quan trọng.
+
+Có trường hợp toàn bộ phần tử còn lại của `nums1` đã được lấy.
+
+Ví dụ:
+
+```text
+nums1 = [4, 5, 6, 0, 0, 0]
+nums2 = [1, 2, 3]
+```
+
+Sau khi xử lý:
+
+```text
+6
+5
+4
+```
+
+thì:
+
+```text
+i = -1
+```
+
+Nhưng `nums2` vẫn còn:
+
+```text
+1, 2, 3
+```
+
+Lúc này không được truy cập:
+
+```cpp
+nums1[i]
+```
+
+vì `i == -1`.
+
+Do đó phải kiểm tra:
+
+```cpp
+i >= 0
+```
+
+trước.
+
+---
+
+# 12. Một cách viết khác với hai vòng lặp
+
+Có thể viết:
+
+```cpp
+while (i >= 0 && j >= 0) {
+    if (nums1[i] > nums2[j]) {
+        nums1[k] = nums1[i];
+        i--;
+    } else {
+        nums1[k] = nums2[j];
+        j--;
+    }
+
+    k--;
+}
+
+while (j >= 0) {
+    nums1[k] = nums2[j];
+    j--;
+    k--;
+}
+```
+
+Cách này cũng đúng.
+
+Tuy nhiên phiên bản:
+
+```cpp
+while (j >= 0)
+```
+
+với điều kiện:
+
+```cpp
+i >= 0
+```
+
+ở bên trong thường gọn hơn.
+
+---
+
+# 13. Invariant của thuật toán
+
+Một invariant hữu ích để hiểu lời giải:
+
+> Sau mỗi vòng lặp, đoạn `nums1[k+1 ... m+n-1]` đã chứa chính xác các phần tử lớn nhất của hai vùng chưa xử lý và đã được sắp xếp đúng.
+
+Nói đơn giản hơn:
+
+```text
+phần bên phải của nums1
+```
+
+đã hoàn thành.
+
+Ví dụ:
+
+```text
+[1, 2, 3, 0, 0, 6]
+               ↑
+          vùng đã đúng
+```
+
+Sau bước tiếp theo:
+
+```text
+[1, 2, 3, 0, 5, 6]
+            ↑
+       vùng đã đúng
+```
+
+Sau đó:
+
+```text
+[1, 2, 3, 3, 5, 6]
+         ↑
+    vùng đã đúng
+```
+
+Ta luôn mở rộng vùng đã hoàn thành từ phải sang trái.
+
+---
+
+# 14. Tại sao thuật toán không ghi đè dữ liệu?
+
+Đây là lý do quan trọng nhất khiến ta merge từ phải sang trái.
+
+Ban đầu:
+
+```text
+nums1 = [1, 2, 3, 0, 0, 0]
+```
+
+Các vị trí:
+
+```text
+3, 4, 5
+```
+
+đã trống.
+
+Ta bắt đầu ghi từ:
+
+```text
+index 5
+```
+
+sau đó:
+
+```text
+index 4
+index 3
+...
+```
+
+Trong khi đó dữ liệu thực sự của `nums1` nằm từ:
+
+```text
+index 0 -> m-1
+```
+
+Do ta luôn ghi vào vùng cuối chưa được xử lý, ta không phá hủy các phần tử `nums1[i]` mà vẫn cần so sánh.
+
+Đây là lý do sâu xa của chiến lược:
+
+```text
+right → left
+```
+
+---
+
+# 15. Tại sao merge từ phải sang trái là tối ưu?
+
+Nếu merge từ trái sang phải, khi cần đưa một phần tử mới vào giữa `nums1`, ta phải dịch chuyển các phần tử.
+
+Ví dụ:
+
+```text
+[1, 4, 5, 0, 0]
+```
+
+và:
+
+```text
+[2, 3]
+```
+
+Muốn đưa `2` vào giữa `1` và `4`, ta phải dịch:
+
+```text
+4
+5
+```
+
+sang phải.
+
+Sau đó lại có thể phải dịch tiếp cho `3`.
+
+Ngược lại, khi đi từ phải:
+
+```text
+5
+4
+```
+
+đã có sẵn vị trí trống ở cuối.
+
+Không cần dịch chuyển.
+
+Do đó ta đạt được:
+
+```text
+O(m+n)
+```
+
+thời gian và:
+
+```text
+O(1)
+```
+
+extra space.
+
+---
+
+# 16. Độ phức tạp
+
+Gọi:
+
+```text
+m = số phần tử thực sự trong nums1
+n = số phần tử trong nums2
+```
+
+Mỗi phần tử của hai mảng được xử lý nhiều nhất một lần.
+
+Do đó:
+
+```text
+Time Complexity = O(m + n)
+```
+
+Ta không tạo mảng phụ.
+
+Chỉ dùng:
+
+```text
+i, j, k
+```
+
+nên:
+
+```text
+Space Complexity = O(1)
+```
+
+Đây là mức tối ưu theo yêu cầu in-place của bài.
+
+---
+
+# 17. Edge Case: `nums2` rỗng
+
+Ví dụ:
+
+```text
+nums1 = [1, 2, 3]
+m = 3
+
+nums2 = []
+n = 0
+```
+
+Ban đầu:
+
+```text
+j = -1
+```
+
+Vòng:
+
+```cpp
+while (j >= 0)
+```
+
+không chạy.
+
+`nums1` đã đúng sẵn.
+
+---
+
+# 18. Edge Case: `nums1` không có phần tử thực
+
+Ví dụ:
+
+```text
+nums1 = [0, 0, 0]
+m = 0
+
+nums2 = [1, 2, 3]
+n = 3
+```
+
+Ban đầu:
+
+```text
+i = -1
+j = 2
+k = 2
+```
+
+Do:
+
+```text
+i < 0
+```
+
+ta luôn lấy từ `nums2`:
+
+```text
+3
+2
+1
+```
+
+Kết quả:
+
+```text
+[1, 2, 3]
+```
+
+Điều kiện:
+
+```cpp
+i >= 0
+```
+
+giúp xử lý chính xác trường hợp này.
+
+---
+
+# 19. Edge Case: Tất cả phần tử của `nums2` nhỏ hơn `nums1`
+
+Ví dụ:
+
+```text
+nums1 = [4, 5, 6, 0, 0, 0]
+nums2 = [1, 2, 3]
+```
+
+Ta lấy từ `nums1` trước:
+
+```text
+6
+5
+4
+```
+
+Sau đó `i = -1`.
+
+Các phần tử còn lại của `nums2` được đưa vào:
+
+```text
+3
+2
+1
+```
+
+Kết quả:
+
+```text
+[1, 2, 3, 4, 5, 6]
+```
+
+---
+
+# 20. Edge Case: Tất cả phần tử của `nums2` lớn hơn `nums1`
+
+Ví dụ:
+
+```text
+nums1 = [1, 2, 3, 0, 0, 0]
+nums2 = [4, 5, 6]
+```
+
+Ta lấy:
+
+```text
+6
+5
+4
+```
+
+từ `nums2`.
+
+Kết quả:
+
+```text
+[1, 2, 3, 4, 5, 6]
+```
+
+Khi `j < 0`, dừng.
+
+Các phần tử của `nums1` đã đúng vị trí.
+
+---
+
+# 21. Edge Case: Có phần tử trùng nhau
+
+Ví dụ:
+
+```text
+nums1 = [1, 2, 2, 0, 0, 0]
+nums2 = [2, 2, 3]
+```
+
+Ta có thể lấy các phần tử bằng nhau từ `nums2` trước.
+
+Kết quả:
+
+```text
+[1, 2, 2, 2, 2, 3]
+```
+
+Không có vấn đề gì vì thứ tự tương đối của các phần tử bằng nhau không ảnh hưởng đến kết quả.
+
+---
+
+# 22. Một lỗi thường gặp: dùng `nums1.size()` làm vị trí bắt đầu
+
+Sai:
+
+```cpp
+int i = nums1.size() - 1;
+```
+
+Vì:
+
+```text
+nums1.size() = m + n
+```
+
+nhưng phần tử thực sự của `nums1` chỉ nằm đến:
+
+```text
+m - 1
+```
+
+Ví dụ:
+
+```text
+nums1 = [1, 2, 3, 0, 0, 0]
+m = 3
+n = 3
+```
+
+Phần tử cuối thực sự của `nums1` là:
+
+```text
+nums1[2] = 3
+```
+
+chứ không phải:
+
+```text
+nums1[5]
+```
+
+Do đó:
+
+```cpp
+int i = m - 1;
+```
+
+là bắt buộc.
+
+---
+
+# 23. Một lỗi thường gặp: sử dụng thêm vector kết quả
+
+Ví dụ:
+
+```cpp
+vector<int> result;
+
+while (...) {
+    result.push_back(...);
+}
+
+nums1 = result;
+```
+
+Cách này có thể đúng về kết quả, nhưng sử dụng:
+
+```text
+O(m+n)
+```
+
+extra space.
+
+Trong khi đề đã cung cấp sẵn vùng trống trong `nums1`.
+
+Vì vậy ta nên tận dụng vùng đó.
+
+---
+
+# 24. Một lỗi thường gặp: merge từ trái sang phải trực tiếp
+
+Ví dụ:
+
+```text
+nums1 = [1, 4, 5, 0, 0]
+nums2 = [2, 3]
+```
+
+Nếu ghi `2` vào vị trí `1`:
+
+```text
+[1, 2, 5, 0, 0]
+```
+
+ta đã ghi đè mất `4`.
+
+Muốn tránh phải dịch chuyển:
+
+```text
+[1, 4, 5, 0, 0]
+```
+
+thành:
+
+```text
+[1, 4, 4, 5, 0]
+```
+
+rồi mới chèn.
+
+Điều này làm thuật toán phức tạp.
+
+Merge từ cuối tránh hoàn toàn vấn đề này.
+
+---
+
+# 25. Một lỗi khác: quên rằng `nums1` có vùng dữ liệu và vùng trống
+
+Cần phân biệt:
+
+```text
+nums1 = [1, 2, 3, 0, 0, 0]
+          ← m →  ← n →
+```
+
+Không phải cả sáu phần tử đều là dữ liệu.
+
+Chỉ:
+
+```text
+nums1[0 ... m-1]
+```
+
+là dữ liệu ban đầu.
+
+Các phần tử:
+
+```text
+nums1[m ... m+n-1]
+```
+
+là vùng đệm dành cho kết quả.
+
+Đây là lý do `i` bắt đầu ở:
+
+```cpp
+m - 1
+```
+
+nhưng `k` bắt đầu ở:
+
+```cpp
+m + n - 1
+```
+
+---
+
+# 26. Tại sao `k = m + n - 1`?
+
+Kết quả cuối cùng có tổng cộng:
+
+```text
+m + n
+```
+
+phần tử.
+
+Index cuối cùng là:
+
+```text
+m + n - 1
+```
+
+Do đó:
+
+```cpp
+int k = m + n - 1;
+```
+
+Ví dụ:
+
+```text
+m = 3
+n = 3
+```
+
+thì tổng cộng:
+
+```text
+6 phần tử
+```
+
+index cuối:
+
+```text
+5
+```
+
+---
+
+# 27. Mối quan hệ giữa ba pointer
+
+Có thể ghi nhớ:
+
+```text
+i = phần tử cuối của nums1 chưa xử lý
+j = phần tử cuối của nums2 chưa xử lý
+k = vị trí cuối của kết quả chưa điền
+```
+
+Ban đầu:
+
+```text
+i = m - 1
+j = n - 1
+k = m + n - 1
+```
+
+Sau mỗi bước:
+
+```text
+k--
+```
+
+và một trong hai:
+
+```text
+i--
+```
+
+hoặc:
+
+```text
+j--
+```
+
+Do đó mỗi iteration đều làm giảm số lượng phần tử chưa xử lý.
+
+---
+
+# 28. Chứng minh trực giác tính đúng đắn
+
+Tại mỗi bước, ta cần điền vị trí `k`, là vị trí lớn nhất còn trống.
+
+Hai ứng viên lớn nhất còn lại là:
+
+```text
+nums1[i]
+nums2[j]
+```
+
+Không có phần tử nào khác có thể lớn hơn chúng, vì:
+
+- `nums1` đã sort.
+- `nums2` đã sort.
+- `i` và `j` đều trỏ tới cuối phần chưa xử lý.
+
+Do đó:
+
+```text
+max(nums1[i], nums2[j])
+```
+
+chính là phần tử phải đặt vào `nums1[k]`.
+
+Sau khi đặt nó:
+
+- nếu lấy từ `nums1`, giảm `i`;
+- nếu lấy từ `nums2`, giảm `j`;
+- luôn giảm `k`.
+
+Ta lặp lại cùng lập luận cho vị trí kế tiếp.
+
+Vì vậy toàn bộ mảng cuối cùng được sắp xếp đúng.
+
+---
+
+# 29. Pattern Two Pointers quan trọng
+
+Bài này là một ví dụ rất điển hình của:
+
+```text
+Two Pointers
+```
+
+nhưng đặc biệt ở chỗ:
+
+```text
+hai pointer cùng di chuyển từ phải sang trái
+```
+
+Pattern:
+
+```text
+A: [ ... i ]
+B: [ ... j ]
+
+Result position:
+             k
+```
+
+Sau mỗi bước:
+
+```text
+choose max(A[i], B[j])
+```
+
+đặt vào:
+
+```text
+result[k]
+```
+
+rồi di chuyển pointer.
+
+Đây là pattern rất đáng ghi nhớ vì nó xuất hiện trong nhiều bài merge.
+
+---
+
+# 30. So sánh với Merge trong Merge Sort
+
+Ý tưởng này liên quan trực tiếp đến bước **merge** của Merge Sort.
+
+Trong Merge Sort thông thường:
+
+```text
+left  = [1, 3, 5]
+right = [2, 4, 6]
+```
+
+ta thường merge từ trái sang phải:
+
+```text
+1, 2, 3, 4, 5, 6
+```
+
+Nhưng trong bài này:
+
+> `nums1` phải được sửa trực tiếp và vùng trống nằm ở cuối.
+
+Vì vậy ta đảo hướng:
+
+```text
+6, 5, 4, 3, 2, 1
+```
+
+để tận dụng vùng trống ở cuối.
+
+Đây là một insight rất quan trọng:
+
+> **Không chỉ cần biết thuật toán merge, mà còn phải xem cấu trúc của bộ nhớ và vị trí vùng trống để chọn hướng merge phù hợp.**
+
+---
+
+# 31. Complexity so với cách dùng mảng phụ
+
+### Dùng mảng phụ
+
+```text
+Time  = O(m+n)
+Space = O(m+n)
+```
+
+### Merge trực tiếp từ cuối
+
+```text
+Time  = O(m+n)
+Space = O(1)
+```
+
+Vì đề yêu cầu sửa `nums1` trực tiếp, cách Two Pointers từ cuối là lựa chọn tối ưu.
+
+---
+
+# 32. Code hoàn chỉnh đề xuất
+
+```cpp
+class Solution {
+public:
+    void merge(vector<int>& nums1, int m, vector<int>& nums2, int n) {
+        int i = m - 1;
+        int j = n - 1;
+        int k = m + n - 1;
+
+        while (j >= 0) {
+            if (i >= 0 && nums1[i] > nums2[j]) {
+                nums1[k] = nums1[i];
+                i--;
+            } else {
+                nums1[k] = nums2[j];
+                j--;
+            }
+
+            k--;
+        }
+    }
+};
+```
+
+---
+
+# 33. Cách ghi nhớ trong một câu
+
+Khi gặp **Merge Sorted Array**, hãy nhớ:
+
+> **Vì `nums1` có vùng trống ở cuối, hãy lấy phần tử lớn hơn ở cuối hai mảng và đặt nó vào cuối kết quả, sau đó đi dần sang trái.**
+
+Hay ngắn hơn:
+
+```text
+Compare from the back
+→ Put the larger at the back
+→ Move left
+```
+
+---
+
+# 34. Tổng kết
+
+### Insight
+
+Hai mảng đã sort:
+
+```text
+nums1: [ ... ]
+nums2: [ ... ]
+```
+
+Và `nums1` có vùng trống ở cuối.
+
+Do đó:
+
+```text
+1. i = m - 1
+2. j = n - 1
+3. k = m + n - 1
+4. So sánh nums1[i] và nums2[j]
+5. Đưa phần tử lớn hơn vào nums1[k]
+6. Di chuyển pointer tương ứng
+7. Giảm k
+8. Khi nums2 hết, kết thúc
+```
+
+### Complexity
+
+```text
+Time  : O(m + n)
+Space : O(1)
+```
+
+### Điều quan trọng nhất
+
+> **Không merge từ đầu khi vùng trống nằm ở cuối. Merge từ cuối cho phép ta ghi trực tiếp vào vùng trống mà không ghi đè dữ liệu chưa xử lý.**
+
+---
+
+# 35. Checklist khi gặp bài tương tự
+
+Trước khi code, hãy tự hỏi:
+
+```text
+[ ] Hai mảng đã được sort chưa?
+[ ] Có cần merge chúng không?
+[ ] Có vùng bộ nhớ trống sẵn không?
+[ ] Vùng trống nằm ở đâu?
+[ ] Nếu vùng trống ở cuối, có thể merge từ phải sang trái không?
+[ ] Phần tử nào chắc chắn phải được đặt ở vị trí cuối?
+[ ] Có cần mảng phụ không?
+```
+
+Nếu câu trả lời là:
+
+```text
+Hai mảng đã sort
++
+nums1 có vùng trống ở cuối
+```
+
+thì gần như ngay lập tức nên nghĩ đến:
+
+```text
+Two Pointers từ phải sang trái
+```
