@@ -1,0 +1,1048 @@
+# Intersection of Two Arrays — LeetCode
+
+## 1. Tổng quan bài toán
+
+Bài toán **Intersection of Two Arrays** yêu cầu tìm **giao của hai mảng số nguyên**.
+
+Với hai mảng `nums1` và `nums2`, ta cần trả về một mảng chứa **những phần tử xuất hiện trong cả hai mảng**.
+
+Điểm quan trọng của bài toán:
+
+- Kết quả **không chứa phần tử trùng lặp**.
+- Thứ tự các phần tử trong kết quả **không quan trọng**.
+- Mỗi giá trị chỉ cần xuất hiện **một lần** trong kết quả.
+
+Ví dụ:
+
+```text
+nums1 = [1, 2, 2, 1]
+nums2 = [2, 2]
+
+Kết quả:
+[2]
+```
+
+Mặc dù `2` xuất hiện hai lần trong `nums2`, kết quả chỉ chứa một `2`.
+
+---
+
+## 2. Phân tích yêu cầu
+
+Có thể hiểu bài toán dưới dạng tập hợp:
+
+```text
+nums1 = [1, 2, 2, 1]
+nums2 = [2, 2, 3]
+
+Set(nums1) = {1, 2}
+Set(nums2) = {2, 3}
+
+Intersection = {2}
+```
+
+Do đó, vấn đề cốt lõi không phải là đếm số lần xuất hiện, mà là:
+
+> Một giá trị có xuất hiện ở cả hai mảng hay không?
+
+Đây là dấu hiệu rất rõ để nghĩ đến cấu trúc dữ liệu **set** hoặc **unordered_set**.
+
+---
+
+# 3. Các hướng tiếp cận
+
+Có nhiều cách giải bài toán này.
+
+## Cách 1 — Brute Force
+
+Ta có thể duyệt từng phần tử của `nums1`, sau đó tìm xem nó có xuất hiện trong `nums2` hay không.
+
+Ý tưởng:
+
+```text
+for mỗi x trong nums1:
+    tìm x trong nums2
+    nếu tìm thấy:
+        thêm x vào kết quả
+```
+
+Nhưng có một vấn đề:
+
+- Tìm kiếm tuyến tính trong `nums2` mất `O(n)`.
+- Ta có thể phải thực hiện việc tìm kiếm này `m` lần.
+
+Vì vậy độ phức tạp có thể lên tới:
+
+```text
+O(m * n)
+```
+
+Ngoài ra còn phải xử lý việc loại bỏ phần tử trùng lặp.
+
+Đây không phải lựa chọn tối ưu.
+
+---
+
+# 4. Cách 2 — Sắp xếp rồi dùng Two Pointers
+
+Một hướng khác là:
+
+1. Sắp xếp `nums1`.
+2. Sắp xếp `nums2`.
+3. Dùng hai con trỏ để tìm các giá trị chung.
+
+Ví dụ:
+
+```text
+nums1 = [1, 2, 2, 4]
+nums2 = [2, 2, 3]
+
+             i
+nums1 = [1, 2, 2, 4]
+             j
+nums2 = [2, 2, 3]
+```
+
+Nếu:
+
+```text
+nums1[i] < nums2[j]
+```
+
+thì tăng `i`.
+
+Nếu:
+
+```text
+nums1[i] > nums2[j]
+```
+
+thì tăng `j`.
+
+Nếu:
+
+```text
+nums1[i] == nums2[j]
+```
+
+thì tìm được một phần tử chung.
+
+Do đề bài yêu cầu mỗi giá trị chỉ xuất hiện một lần, ta cần tránh thêm cùng một giá trị nhiều lần.
+
+### Độ phức tạp
+
+Nếu:
+
+```text
+n = nums1.size()
+m = nums2.size()
+```
+
+Chi phí sắp xếp:
+
+```text
+O(n log n + m log m)
+```
+
+Sau đó two pointers:
+
+```text
+O(n + m)
+```
+
+Tổng:
+
+```text
+O(n log n + m log m)
+```
+
+Cách này tốt, nhưng vẫn chưa phải lựa chọn tối ưu nếu mục tiêu là tận dụng việc tìm kiếm `O(1)` trung bình của hash set.
+
+---
+
+# 5. Cách 3 — Dùng `unordered_set`
+
+Đây là hướng tiếp cận phù hợp và có độ phức tạp kỳ vọng tốt.
+
+## Ý tưởng chính
+
+Ta xây dựng một `unordered_set` chứa tất cả giá trị xuất hiện trong một mảng.
+
+Ví dụ:
+
+```text
+nums1 = [4, 9, 5]
+
+set1 = {4, 9, 5}
+```
+
+Sau đó duyệt `nums2`.
+
+Với mỗi `x` trong `nums2`:
+
+- Nếu `x` tồn tại trong `set1` → `x` là phần tử giao.
+- Nếu chưa từng thêm `x` vào kết quả → thêm `x`.
+
+Ví dụ:
+
+```text
+nums1 = [4, 9, 5]
+nums2 = [9, 4, 9, 8, 4]
+
+set1 = {4, 5, 9}
+```
+
+Duyệt `nums2`:
+
+```text
+9 → có trong set1 → thêm 9
+4 → có trong set1 → thêm 4
+9 → đã thêm → bỏ qua
+8 → không có → bỏ qua
+4 → đã thêm → bỏ qua
+```
+
+Kết quả:
+
+```text
+[9, 4]
+```
+
+Thứ tự không quan trọng nên `[4, 9]` cũng hoàn toàn hợp lệ.
+
+---
+
+# 6. Tại sao cần `unordered_set`?
+
+`unordered_set` cung cấp thao tác tìm kiếm trung bình trong:
+
+```text
+O(1)
+```
+
+Ví dụ:
+
+```cpp
+unordered_set<int> s;
+
+s.insert(10);
+
+if (s.count(10)) {
+    // 10 tồn tại
+}
+```
+
+Thay vì phải tìm tuyến tính:
+
+```text
+O(n)
+```
+
+ta có thể kiểm tra sự tồn tại của một giá trị trong thời gian kỳ vọng:
+
+```text
+O(1)
+```
+
+Đây chính là điểm giúp thuật toán hiệu quả.
+
+---
+
+# 7. Tránh phần tử trùng lặp
+
+Đây là phần rất quan trọng.
+
+Giả sử:
+
+```text
+nums1 = [1, 2, 2, 3]
+nums2 = [2, 2, 2, 4]
+```
+
+Nếu chỉ kiểm tra:
+
+```cpp
+if (set1.count(x)) {
+    result.push_back(x);
+}
+```
+
+thì kết quả sẽ là:
+
+```text
+[2, 2, 2]
+```
+
+Trong khi đề bài yêu cầu:
+
+```text
+[2]
+```
+
+Do đó cần một cơ chế để biết `x` đã được thêm vào kết quả hay chưa.
+
+Ta có thể sử dụng thêm một `unordered_set<int>`:
+
+```cpp
+unordered_set<int> resultSet;
+```
+
+Khi gặp `x`:
+
+```cpp
+if (set1.count(x) && !resultSet.count(x)) {
+    result.push_back(x);
+    resultSet.insert(x);
+}
+```
+
+Như vậy mỗi giá trị chỉ được đưa vào `result` một lần.
+
+---
+
+# 8. Có thể tối ưu hơn nữa về mặt bộ nhớ
+
+Ta không nhất thiết phải tạo `resultSet` riêng.
+
+Một cách đơn giản là:
+
+1. Chuyển `nums1` thành `unordered_set`.
+2. Duyệt `nums2`.
+3. Nếu tìm thấy `x` trong set:
+   - thêm `x` vào kết quả;
+   - xóa `x` khỏi set.
+
+Ví dụ:
+
+```text
+nums1 = [1, 2, 2, 3]
+```
+
+Ban đầu:
+
+```text
+set = {1, 2, 3}
+```
+
+Duyệt:
+
+```text
+nums2 = [2, 2, 2, 4]
+```
+
+Lần đầu gặp `2`:
+
+```text
+2 có trong set
+→ thêm 2 vào result
+→ xóa 2 khỏi set
+```
+
+Set trở thành:
+
+```text
+{1, 3}
+```
+
+Lần tiếp theo gặp `2`:
+
+```text
+2 không còn trong set
+→ bỏ qua
+```
+
+Như vậy ta vừa:
+
+- kiểm tra phần tử có thuộc `nums1` hay không;
+- vừa đảm bảo phần tử chỉ được thêm một lần.
+
+Đây là cách triển khai rất gọn.
+
+---
+
+# 9. Vì sao việc `erase` giúp loại bỏ duplicate?
+
+Đây là một invariant quan trọng.
+
+Ta duy trì:
+
+> Những phần tử còn tồn tại trong `set1` là những giá trị thuộc `nums1` nhưng **chưa được đưa vào kết quả**.
+
+Ban đầu:
+
+```text
+set1 = tất cả giá trị duy nhất của nums1
+```
+
+Khi gặp một giá trị `x` trong `nums2`:
+
+```cpp
+if (set1.count(x)) {
+    result.push_back(x);
+    set1.erase(x);
+}
+```
+
+Sau khi `erase(x)`:
+
+```text
+x không còn trong set1
+```
+
+Vì vậy nếu `x` xuất hiện lần nữa trong `nums2`, điều kiện:
+
+```cpp
+set1.count(x)
+```
+
+sẽ trả về `0`.
+
+Do đó `x` không thể được thêm lần thứ hai.
+
+---
+
+# 10. Thuật toán hoàn chỉnh
+
+Ta có thể mô tả thuật toán như sau:
+
+### Bước 1
+
+Tạo một `unordered_set<int>` từ `nums1`.
+
+```cpp
+unordered_set<int> seen(nums1.begin(), nums1.end());
+```
+
+### Bước 2
+
+Tạo vector kết quả:
+
+```cpp
+vector<int> result;
+```
+
+### Bước 3
+
+Duyệt từng phần tử `x` của `nums2`.
+
+### Bước 4
+
+Nếu `x` tồn tại trong `seen`:
+
+```cpp
+if (seen.count(x))
+```
+
+thì:
+
+- thêm `x` vào `result`;
+- xóa `x` khỏi `seen`.
+
+```cpp
+result.push_back(x);
+seen.erase(x);
+```
+
+### Bước 5
+
+Trả về `result`.
+
+---
+
+# 11. C++ Implementation
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+class Solution {
+public:
+    vector<int> intersection(vector<int>& nums1, vector<int>& nums2) {
+        unordered_set<int> seen(nums1.begin(), nums1.end());
+        vector<int> result;
+
+        for (int x : nums2) {
+            if (seen.count(x)) {
+                result.push_back(x);
+                seen.erase(x);
+            }
+        }
+
+        return result;
+    }
+};
+```
+
+---
+
+# 12. Giải thích từng dòng code
+
+## Khai báo `unordered_set`
+
+```cpp
+unordered_set<int> seen(nums1.begin(), nums1.end());
+```
+
+Dòng này đưa toàn bộ phần tử của `nums1` vào hash set.
+
+Nếu:
+
+```text
+nums1 = [4, 9, 5, 9]
+```
+
+thì:
+
+```text
+seen = {4, 5, 9}
+```
+
+Các giá trị trùng nhau tự động được loại bỏ.
+
+---
+
+## Tạo kết quả
+
+```cpp
+vector<int> result;
+```
+
+Dùng `vector` để lưu các phần tử thuộc giao của hai mảng.
+
+---
+
+## Duyệt `nums2`
+
+```cpp
+for (int x : nums2)
+```
+
+Ta lần lượt xét từng phần tử của `nums2`.
+
+---
+
+## Kiểm tra tồn tại
+
+```cpp
+if (seen.count(x))
+```
+
+`count(x)` với `unordered_set`:
+
+- trả `1` nếu `x` tồn tại;
+- trả `0` nếu `x` không tồn tại.
+
+Do đó:
+
+```cpp
+if (seen.count(x))
+```
+
+có nghĩa:
+
+> Nếu `x` xuất hiện trong `nums1` và chưa được xử lý.
+
+---
+
+## Thêm vào kết quả
+
+```cpp
+result.push_back(x);
+```
+
+Nếu `x` thuộc cả hai mảng, đưa nó vào kết quả.
+
+---
+
+## Xóa khỏi set
+
+```cpp
+seen.erase(x);
+```
+
+Đây là bước quan trọng để loại bỏ duplicate.
+
+Sau khi xóa:
+
+```text
+x không thể được thêm vào result lần nữa.
+```
+
+---
+
+# 13. Ví dụ chạy từng bước
+
+Xét:
+
+```text
+nums1 = [4, 9, 5, 9]
+nums2 = [9, 4, 9, 8, 4]
+```
+
+## Khởi tạo
+
+```text
+seen = {4, 5, 9}
+result = []
+```
+
+---
+
+### Lần 1
+
+```text
+x = 9
+```
+
+`9` tồn tại:
+
+```text
+seen = {4, 5, 9}
+```
+
+Thêm:
+
+```text
+result = [9]
+```
+
+Xóa `9`:
+
+```text
+seen = {4, 5}
+```
+
+---
+
+### Lần 2
+
+```text
+x = 4
+```
+
+`4` tồn tại.
+
+```text
+result = [9, 4]
+```
+
+Sau khi xóa:
+
+```text
+seen = {5}
+```
+
+---
+
+### Lần 3
+
+```text
+x = 9
+```
+
+`9` không còn trong `seen`.
+
+Bỏ qua.
+
+```text
+result = [9, 4]
+```
+
+---
+
+### Lần 4
+
+```text
+x = 8
+```
+
+`8` không tồn tại.
+
+Bỏ qua.
+
+---
+
+### Lần 5
+
+```text
+x = 4
+```
+
+`4` cũng đã bị xóa.
+
+Bỏ qua.
+
+---
+
+## Kết quả
+
+```text
+[9, 4]
+```
+
+Đây là đáp án hợp lệ.
+
+---
+
+# 14. Độ phức tạp
+
+Gọi:
+
+```text
+n = nums1.size()
+m = nums2.size()
+```
+
+## Time Complexity
+
+Xây dựng `unordered_set`:
+
+```text
+O(n)
+```
+
+Duyệt `nums2`:
+
+```text
+O(m)
+```
+
+Mỗi lần `count` và `erase` có độ phức tạp kỳ vọng:
+
+```text
+O(1)
+```
+
+Do đó tổng độ phức tạp kỳ vọng:
+
+```text
+O(n + m)
+```
+
+Đây là độ phức tạp rất tốt cho bài toán.
+
+---
+
+## Space Complexity
+
+Hash set chứa tối đa `n` giá trị:
+
+```text
+O(n)
+```
+
+Vector kết quả có tối đa số lượng phần tử duy nhất của giao:
+
+```text
+O(min(n, m))
+```
+
+Nếu tính cả output, bộ nhớ là:
+
+```text
+O(n + min(n, m))
+```
+
+Thông thường khi phân tích auxiliary space và không tính output:
+
+```text
+O(n)
+```
+
+---
+
+# 15. Tại sao không dùng `set`?
+
+Ta cũng có thể sử dụng:
+
+```cpp
+set<int>
+```
+
+thay vì:
+
+```cpp
+unordered_set<int>
+```
+
+Nhưng `set` thường được cài đặt bằng cây đỏ-đen và có:
+
+```text
+insert  -> O(log n)
+find    -> O(log n)
+erase   -> O(log n)
+```
+
+Trong khi `unordered_set` có độ phức tạp kỳ vọng:
+
+```text
+insert  -> O(1)
+find    -> O(1)
+erase   -> O(1)
+```
+
+Vì bài toán chỉ yêu cầu kiểm tra tồn tại và không yêu cầu dữ liệu được sắp xếp, `unordered_set` là lựa chọn tự nhiên hơn.
+
+---
+
+# 16. Một cách triển khai khác: Hai `unordered_set`
+
+Ta cũng có thể viết:
+
+```cpp
+class Solution {
+public:
+    vector<int> intersection(vector<int>& nums1, vector<int>& nums2) {
+        unordered_set<int> set1(nums1.begin(), nums1.end());
+        unordered_set<int> resultSet;
+
+        for (int x : nums2) {
+            if (set1.count(x)) {
+                resultSet.insert(x);
+            }
+        }
+
+        return vector<int>(resultSet.begin(), resultSet.end());
+    }
+};
+```
+
+Cách này cũng có độ phức tạp kỳ vọng:
+
+```text
+Time:  O(n + m)
+Space: O(n + k)
+```
+
+Trong đó `k` là số lượng giá trị khác nhau trong giao.
+
+Tuy nhiên, cách này cần thêm một hash set `resultSet`.
+
+Cách `erase` trực tiếp trên `set1`:
+
+```cpp
+if (seen.count(x)) {
+    result.push_back(x);
+    seen.erase(x);
+}
+```
+
+gọn hơn vì tận dụng chính `seen` để đảm bảo không bị duplicate.
+
+---
+
+# 17. So sánh các phương pháp
+
+| Phương pháp | Time Complexity | Space Complexity | Ghi chú |
+|---|---:|---:|---|
+| Brute Force | `O(n * m)` | `O(1)` hoặc thêm set | Chậm |
+| Sort + Two Pointers | `O(n log n + m log m)` | phụ thuộc cách sort | Không cần hash |
+| `set` | `O((n+m) log n)` | `O(n)` | Có thứ tự |
+| `unordered_set` | **O(n + m)** kỳ vọng | `O(n)` | Phù hợp nhất |
+
+Trong bối cảnh bài toán này, `unordered_set` cho phép ta giải quyết vấn đề bằng cách:
+
+```text
+Build set
+    ↓
+Duyệt mảng còn lại
+    ↓
+Kiểm tra tồn tại O(1) kỳ vọng
+    ↓
+Nếu tồn tại → thêm vào answer
+    ↓
+Erase để chống duplicate
+```
+
+---
+
+# 18. Những lỗi thường gặp
+
+## Lỗi 1: Không xử lý duplicate
+
+Code:
+
+```cpp
+for (int x : nums2) {
+    if (seen.count(x)) {
+        result.push_back(x);
+    }
+}
+```
+
+Ví dụ:
+
+```text
+nums1 = [1, 2]
+nums2 = [2, 2, 2]
+```
+
+Kết quả:
+
+```text
+[2, 2, 2]
+```
+
+Sai vì đề bài yêu cầu mỗi phần tử chỉ xuất hiện một lần.
+
+### Cách sửa
+
+Sau khi thêm:
+
+```cpp
+seen.erase(x);
+```
+
+---
+
+## Lỗi 2: Nhầm với Intersection of Two Arrays II
+
+Có hai bài toán rất dễ nhầm:
+
+### Intersection of Two Arrays
+
+Yêu cầu:
+
+```text
+unique intersection
+```
+
+Ví dụ:
+
+```text
+[1, 2, 2, 1]
+[2, 2]
+
+→ [2]
+```
+
+### Intersection of Two Arrays II
+
+Yêu cầu giữ số lần xuất hiện nhỏ nhất.
+
+Ví dụ:
+
+```text
+[1, 2, 2, 1]
+[2, 2]
+
+→ [2, 2]
+```
+
+Hai bài có logic khác nhau.
+
+Bài hiện tại là bài **unique intersection**.
+
+---
+
+# 19. Có cần giữ thứ tự không?
+
+Không.
+
+Nếu:
+
+```text
+nums1 = [4, 9, 5]
+nums2 = [9, 4, 9, 8, 4]
+```
+
+thì:
+
+```text
+[9, 4]
+```
+
+và:
+
+```text
+[4, 9]
+```
+
+đều hợp lệ.
+
+Đây là một chi tiết quan trọng vì nó cho phép ta sử dụng `unordered_set` mà không cần quan tâm thứ tự.
+
+---
+
+# 20. Pattern cần ghi nhớ
+
+Bài này là một ví dụ điển hình của pattern:
+
+> **Membership Test + Deduplication**
+
+Khi gặp các bài toán có dạng:
+
+```text
+"Phần tử x có xuất hiện trong tập A không?"
+```
+
+hãy nghĩ tới:
+
+```cpp
+unordered_set
+```
+
+Đặc biệt nếu:
+
+- Không cần thứ tự.
+- Chỉ cần kiểm tra tồn tại.
+- Không quan tâm số lần xuất hiện.
+- Muốn thao tác tìm kiếm trung bình `O(1)`.
+
+---
+
+# 21. Template tư duy cho các bài tương tự
+
+Có thể ghi nhớ template:
+
+```cpp
+unordered_set<int> seen;
+
+for (int x : array) {
+    seen.insert(x);
+}
+
+for (int x : anotherArray) {
+    if (seen.count(x)) {
+        // x xuất hiện ở cả hai nơi
+    }
+}
+```
+
+Nếu cần đảm bảo mỗi phần tử chỉ xử lý một lần:
+
+```cpp
+if (seen.count(x)) {
+    // xử lý x
+    seen.erase(x);
+}
+```
+
+Đây là một kỹ thuật rất hữu ích trong nhiều bài LeetCode.
+
+---
+
+# 22. Kết luận
+
+Cách tiếp cận phù hợp cho **Intersection of Two Arrays** là sử dụng `unordered_set`.
+
+Thuật toán:
+
+```text
+1. Đưa toàn bộ nums1 vào unordered_set.
+2. Duyệt nums2.
+3. Nếu x tồn tại trong set:
+      - thêm x vào answer;
+      - xóa x khỏi set.
+4. Trả về answer.
+```
+
+Độ phức tạp kỳ vọng:
+
+```text
+Time Complexity:  O(n + m)
+Space Complexity: O(n)
+```
+
+Điểm mấu chốt cần nhớ:
+
+> Vì bài toán chỉ quan tâm một giá trị có xuất hiện ở cả hai mảng hay không, `unordered_set` là cấu trúc dữ liệu phù hợp để thực hiện phép kiểm tra membership nhanh. Việc `erase` phần tử sau khi thêm vào kết quả giúp xử lý yêu cầu **không trùng lặp** một cách tự nhiên.
