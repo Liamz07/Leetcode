@@ -1,0 +1,333 @@
+# LeetCode 500 - Keyboard Row
+
+## 1. Đề bài
+
+Cho một mảng chuỗi `words`. Hãy trả về các từ có thể được gõ bằng cách sử dụng **chỉ một hàng phím** trên bàn phím QWERTY của Mỹ.
+
+Ví dụ:
+
+```text
+Input: ["Hello","Alaska","Dad","Peace"]
+Output: ["Alaska","Dad"]
+```
+
+Vì:
+- `Alaska` chỉ dùng các ký tự thuộc hàng giữa: `asdfghjkl`
+- `Dad` chỉ dùng các ký tự thuộc hàng giữa
+- `Hello` sử dụng nhiều hàng khác nhau
+- `Peace` sử dụng nhiều hàng khác nhau
+
+---
+
+# 2. Quan sát quan trọng
+
+Bàn phím QWERTY được chia thành 3 hàng:
+
+```text
+Row 1: qwertyuiop
+Row 2: asdfghjkl
+Row 3: zxcvbnm
+```
+
+Một từ hợp lệ khi:
+
+> Tất cả các ký tự của từ đều thuộc cùng một hàng.
+
+Ví dụ:
+
+```text
+"dad"
+```
+
+- d → row 2
+- a → row 2
+- d → row 2
+
+=> Hợp lệ.
+
+---
+
+# 3. Ý tưởng tối ưu
+
+## Cách suy nghĩ
+
+Thay vì:
+
+- Với mỗi ký tự lại đi tìm xem nó nằm trong hàng nào bằng cách duyệt 3 chuỗi.
+- Hoặc sử dụng nhiều phép tìm kiếm lặp đi lặp lại.
+
+Ta có thể:
+
+### Bước 1
+
+Tạo bảng ánh xạ:
+
+```text
+q -> 1
+w -> 1
+...
+p -> 1
+
+a -> 2
+...
+l -> 2
+
+z -> 3
+...
+m -> 3
+```
+
+Khi đó:
+
+```cpp
+row['q'] = 1;
+row['a'] = 2;
+row['z'] = 3;
+```
+
+Mỗi ký tự sẽ được xác định hàng trong:
+
+```text
+O(1)
+```
+
+---
+
+### Bước 2
+
+Lấy ký tự đầu tiên của từ.
+
+Ví dụ:
+
+```text
+Alaska
+```
+
+Ký tự đầu:
+
+```text
+A -> a
+```
+
+thuộc:
+
+```text
+row = 2
+```
+
+Gọi đây là hàng chuẩn.
+
+---
+
+### Bước 3
+
+Duyệt các ký tự còn lại.
+
+Nếu gặp ký tự thuộc hàng khác:
+
+```cpp
+row[c] != targetRow
+```
+
+=> từ không hợp lệ.
+
+Ngược lại tiếp tục kiểm tra.
+
+---
+
+### Bước 4
+
+Nếu duyệt hết từ mà không vi phạm:
+
+=> thêm từ vào kết quả.
+
+---
+
+# 4. Ví dụ mô phỏng chi tiết
+
+## Ví dụ 1
+
+```text
+word = "Dad"
+```
+
+Ký tự đầu:
+
+```text
+'D' -> 'd'
+```
+
+```text
+row(d) = 2
+```
+
+targetRow = 2
+
+Duyệt:
+
+### d
+
+```text
+row(d) = 2
+```
+
+OK
+
+### a
+
+```text
+row(a) = 2
+```
+
+OK
+
+### d
+
+```text
+row(d) = 2
+```
+
+OK
+
+Tất cả đều thuộc hàng 2.
+
+=> Thêm vào đáp án.
+
+---
+
+## Ví dụ 2
+
+```text
+word = "Hello"
+```
+
+Ký tự đầu:
+
+```text
+h
+```
+
+```text
+row(h)=2
+```
+
+targetRow = 2
+
+Duyệt:
+
+### e
+
+```text
+row(e)=1
+```
+
+Khác targetRow.
+
+=> Dừng ngay.
+
+=> Không hợp lệ.
+
+---
+
+# 5. Tại sao đây là cách tối ưu?
+
+Giả sử:
+
+```text
+n = số lượng từ
+m = tổng số ký tự của tất cả từ
+```
+
+Mỗi ký tự được kiểm tra đúng một lần.
+
+Tra cứu hàng của ký tự:
+
+```text
+O(1)
+```
+
+Do đó:
+
+## Độ phức tạp thời gian
+
+```text
+O(m)
+```
+
+Đây là tối ưu vì:
+
+- Muốn biết một từ hợp lệ hay không thì ít nhất phải đọc các ký tự của nó.
+- Không thể tốt hơn O(m).
+
+---
+
+## Độ phức tạp bộ nhớ
+
+Bảng ánh xạ chứa tối đa:
+
+```text
+26 ký tự
+```
+
+=>
+
+```text
+O(1)
+```
+
+---
+
+# 6. Lời giải C++
+
+```cpp
+class Solution {
+public:
+    vector<string> findWords(vector<string>& words) {
+        vector<int> row(26);
+
+        string r1 = "qwertyuiop";
+        string r2 = "asdfghjkl";
+        string r3 = "zxcvbnm";
+
+        for (char c : r1) row[c - 'a'] = 1;
+        for (char c : r2) row[c - 'a'] = 2;
+        for (char c : r3) row[c - 'a'] = 3;
+
+        vector<string> ans;
+
+        for (string& word : words) {
+            int target =
+                row[tolower(word[0]) - 'a'];
+
+            bool ok = true;
+
+            for (char c : word) {
+                if (row[tolower(c) - 'a'] != target) {
+                    ok = false;
+                    break;
+                }
+            }
+
+            if (ok)
+                ans.push_back(word);
+        }
+
+        return ans;
+    }
+};
+```
+
+---
+
+# 7. Tóm tắt tư duy phỏng vấn
+
+Khi trình bày với interviewer:
+
+1. Nhận ra bàn phím chỉ có 3 hàng.
+2. Ánh xạ mỗi chữ cái -> số hàng.
+3. Dùng ký tự đầu tiên làm chuẩn.
+4. Kiểm tra toàn bộ ký tự còn lại.
+5. Nếu tất cả cùng hàng thì giữ lại từ.
+6. Time Complexity = O(m), Space Complexity = O(1).
+
+Đây là lời giải đơn giản, dễ chứng minh tính đúng đắn và đạt độ tối ưu cho bài toán.
