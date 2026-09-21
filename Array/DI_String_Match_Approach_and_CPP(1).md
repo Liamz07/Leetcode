@@ -1,0 +1,1767 @@
+# DI String Match — Phương hướng tiếp cận tối ưu và lời giải C++
+
+## 1. Tổng quan bài toán
+
+Bài toán **DI String Match** trên LeetCode cho một chuỗi `s` chỉ gồm hai ký tự:
+
+- `I` — **Increasing**
+- `D` — **Decreasing**
+
+Độ dài chuỗi là `n`.
+
+Cần xây dựng một permutation `perm` của các số:
+
+```text
+0, 1, 2, ..., n
+```
+
+sao cho:
+
+- Nếu `s[i] == 'I'` thì:
+
+```text
+perm[i] < perm[i + 1]
+```
+
+- Nếu `s[i] == 'D'` thì:
+
+```text
+perm[i] > perm[i + 1]
+```
+
+Nói cách khác, mỗi ký tự trong `s` mô tả quan hệ giữa **hai phần tử liên tiếp** trong kết quả.
+
+---
+
+# 2. Ví dụ
+
+## Ví dụ 1
+
+```text
+Input:
+s = "IDID"
+```
+
+Ta cần tạo permutation của:
+
+```text
+[0, 1, 2, 3, 4]
+```
+
+sao cho:
+
+```text
+I → tăng
+D → giảm
+I → tăng
+D → giảm
+```
+
+Một đáp án hợp lệ:
+
+```text
+[0, 4, 1, 3, 2]
+```
+
+Kiểm tra:
+
+```text
+0 < 4   → I
+4 > 1   → D
+1 < 3   → I
+3 > 2   → D
+```
+
+Do đó đáp án hợp lệ.
+
+---
+
+## Ví dụ 2
+
+```text
+s = "III"
+```
+
+Ta cần:
+
+```text
+perm[0] < perm[1] < perm[2] < perm[3]
+```
+
+Permutation đơn giản nhất:
+
+```text
+[0, 1, 2, 3]
+```
+
+---
+
+## Ví dụ 3
+
+```text
+s = "DDD"
+```
+
+Ta cần:
+
+```text
+perm[0] > perm[1] > perm[2] > perm[3]
+```
+
+Permutation:
+
+```text
+[3, 2, 1, 0]
+```
+
+---
+
+# 3. Điều quan trọng nhất cần nhận ra
+
+Ta không cần tìm một permutation bằng cách thử tất cả các hoán vị.
+
+Điều cần thỏa mãn chỉ là:
+
+```text
+I → phần tử sau lớn hơn phần tử hiện tại
+D → phần tử sau nhỏ hơn phần tử hiện tại
+```
+
+Đồng thời ta phải sử dụng mỗi số từ:
+
+```text
+0 → n
+```
+
+đúng một lần.
+
+Điều này gợi ý một ý tưởng rất mạnh:
+
+> Sử dụng hai đầu của khoảng giá trị còn lại: `low` và `high`.
+
+Ban đầu:
+
+```text
+low = 0
+high = n
+```
+
+Tại mỗi vị trí:
+
+- Nếu cần `I`, lấy số nhỏ nhất còn lại: `low`.
+- Nếu cần `D`, lấy số lớn nhất còn lại: `high`.
+
+Cuối cùng còn lại đúng một số, đưa nó vào kết quả.
+
+---
+
+# 4. Tại sao chọn số nhỏ nhất cho `I`?
+
+Giả sử:
+
+```text
+s[i] = 'I'
+```
+
+Ta cần:
+
+```text
+perm[i] < perm[i + 1]
+```
+
+Nếu đang ở vị trí hiện tại và cần tạo một bước tăng, việc chọn giá trị nhỏ nhất còn lại là rất tự nhiên:
+
+```text
+low
+```
+
+Sau đó:
+
+```text
+low++
+```
+
+Tại thời điểm này, ta chưa cần dùng giá trị lớn.
+
+Ví dụ:
+
+```text
+low = 0
+high = 4
+
+s[i] = I
+```
+
+Ta chọn:
+
+```text
+0
+```
+
+và:
+
+```text
+low = 1
+```
+
+Điều này để lại các giá trị lớn hơn cho các bước sau.
+
+---
+
+# 5. Tại sao chọn số lớn nhất cho `D`?
+
+Tương tự, nếu:
+
+```text
+s[i] = 'D'
+```
+
+ta cần:
+
+```text
+perm[i] > perm[i + 1]
+```
+
+Chọn:
+
+```text
+high
+```
+
+là chiến lược tự nhiên.
+
+Ví dụ:
+
+```text
+low = 0
+high = 4
+
+s[i] = D
+```
+
+chọn:
+
+```text
+4
+```
+
+sau đó:
+
+```text
+high = 3
+```
+
+Ta vừa đảm bảo giá trị hiện tại đủ lớn để tạo ra quan hệ giảm với phần tử tiếp theo.
+
+---
+
+# 6. Thuật toán Greedy
+
+Ta duy trì hai biến:
+
+```cpp
+int low = 0;
+int high = n;
+```
+
+Duyệt từng ký tự của `s`.
+
+### Nếu:
+
+```cpp
+s[i] == 'I'
+```
+
+thì:
+
+```cpp
+ans.push_back(low);
+low++;
+```
+
+### Nếu:
+
+```cpp
+s[i] == 'D'
+```
+
+thì:
+
+```cpp
+ans.push_back(high);
+high--;
+```
+
+Sau khi duyệt hết `s`, ta còn đúng một số:
+
+```cpp
+low == high
+```
+
+Thêm nó vào kết quả:
+
+```cpp
+ans.push_back(low);
+```
+
+---
+
+# 7. Tại sao sau khi duyệt `n` ký tự lại còn đúng một số?
+
+Chuỗi có độ dài:
+
+```text
+n
+```
+
+nên kết quả cần:
+
+```text
+n + 1
+```
+
+phần tử.
+
+Mỗi ký tự quyết định cách chọn **một** phần tử.
+
+Sau khi xử lý `n` ký tự:
+
+```text
+đã chọn n phần tử
+```
+
+Trong tập:
+
+```text
+{0, 1, ..., n}
+```
+
+có tổng cộng:
+
+```text
+n + 1
+```
+
+phần tử.
+
+Vì vậy chỉ còn:
+
+```text
+1
+```
+
+phần tử chưa chọn.
+
+Đó chính là lý do cuối cùng ta có thể:
+
+```cpp
+ans.push_back(low);
+```
+
+hoặc:
+
+```cpp
+ans.push_back(high);
+```
+
+vì:
+
+```text
+low == high
+```
+
+---
+
+# 8. Chạy thuật toán với `"IDID"`
+
+Ta có:
+
+```text
+s = "IDID"
+n = 4
+```
+
+Ban đầu:
+
+```text
+low = 0
+high = 4
+ans = []
+```
+
+---
+
+## Bước 1
+
+```text
+s[0] = I
+```
+
+Chọn:
+
+```text
+low = 0
+```
+
+Kết quả:
+
+```text
+ans = [0]
+```
+
+Cập nhật:
+
+```text
+low = 1
+high = 4
+```
+
+---
+
+## Bước 2
+
+```text
+s[1] = D
+```
+
+Chọn:
+
+```text
+high = 4
+```
+
+Kết quả:
+
+```text
+ans = [0, 4]
+```
+
+Cập nhật:
+
+```text
+low = 1
+high = 3
+```
+
+---
+
+## Bước 3
+
+```text
+s[2] = I
+```
+
+Chọn:
+
+```text
+low = 1
+```
+
+Kết quả:
+
+```text
+ans = [0, 4, 1]
+```
+
+Cập nhật:
+
+```text
+low = 2
+high = 3
+```
+
+---
+
+## Bước 4
+
+```text
+s[3] = D
+```
+
+Chọn:
+
+```text
+high = 3
+```
+
+Kết quả:
+
+```text
+ans = [0, 4, 1, 3]
+```
+
+Cập nhật:
+
+```text
+low = 2
+high = 2
+```
+
+---
+
+## Sau vòng lặp
+
+Còn lại:
+
+```text
+2
+```
+
+Thêm vào:
+
+```text
+ans = [0, 4, 1, 3, 2]
+```
+
+Kiểm tra:
+
+```text
+0 < 4 → I
+4 > 1 → D
+1 < 3 → I
+3 > 2 → D
+```
+
+Hoàn toàn hợp lệ.
+
+---
+
+# 9. Chạy với `"III"`
+
+```text
+s = "III"
+n = 3
+```
+
+Ban đầu:
+
+```text
+low = 0
+high = 3
+```
+
+### `I`
+
+Chọn `0`:
+
+```text
+ans = [0]
+low = 1
+```
+
+### `I`
+
+Chọn `1`:
+
+```text
+ans = [0, 1]
+low = 2
+```
+
+### `I`
+
+Chọn `2`:
+
+```text
+ans = [0, 1, 2]
+low = 3
+```
+
+Cuối cùng:
+
+```text
+ans = [0, 1, 2, 3]
+```
+
+Rõ ràng:
+
+```text
+0 < 1 < 2 < 3
+```
+
+---
+
+# 10. Chạy với `"DDD"`
+
+```text
+s = "DDD"
+n = 3
+```
+
+Ban đầu:
+
+```text
+low = 0
+high = 3
+```
+
+### `D`
+
+Chọn `3`:
+
+```text
+ans = [3]
+high = 2
+```
+
+### `D`
+
+Chọn `2`:
+
+```text
+ans = [3, 2]
+high = 1
+```
+
+### `D`
+
+Chọn `1`:
+
+```text
+ans = [3, 2, 1]
+high = 0
+```
+
+Cuối cùng:
+
+```text
+ans = [3, 2, 1, 0]
+```
+
+Ta có:
+
+```text
+3 > 2 > 1 > 0
+```
+
+---
+
+# 11. Trường hợp `"DIDDI"`
+
+Xét một ví dụ phức tạp hơn:
+
+```text
+s = "DIDDI"
+n = 5
+```
+
+Ta sử dụng:
+
+```text
+[0, 1, 2, 3, 4, 5]
+```
+
+Ban đầu:
+
+```text
+low = 0
+high = 5
+```
+
+### Ký tự 1: `D`
+
+Chọn `5`:
+
+```text
+ans = [5]
+high = 4
+```
+
+### Ký tự 2: `I`
+
+Chọn `0`:
+
+```text
+ans = [5, 0]
+low = 1
+```
+
+### Ký tự 3: `D`
+
+Chọn `4`:
+
+```text
+ans = [5, 0, 4]
+high = 3
+```
+
+### Ký tự 4: `D`
+
+Chọn `3`:
+
+```text
+ans = [5, 0, 4, 3]
+high = 2
+```
+
+### Ký tự 5: `I`
+
+Chọn `1`:
+
+```text
+ans = [5, 0, 4, 3, 1]
+low = 2
+```
+
+Còn lại:
+
+```text
+2
+```
+
+Kết quả:
+
+```text
+[5, 0, 4, 3, 1, 2]
+```
+
+Kiểm tra:
+
+```text
+5 > 0 → D
+0 < 4 → I
+4 > 3 → D
+3 > 1 → D
+1 < 2 → I
+```
+
+Đúng hoàn toàn.
+
+---
+
+# 12. Tại sao Greedy này luôn đúng?
+
+Đây là phần quan trọng nhất về mặt tư duy thuật toán.
+
+Ta cần chứng minh chiến lược:
+
+```text
+I → lấy low
+D → lấy high
+```
+
+luôn tạo ra một đáp án hợp lệ.
+
+Có thể chứng minh bằng invariant.
+
+## Invariant
+
+Sau khi xử lý một số ký tự đầu tiên:
+
+```text
+low ... high
+```
+
+biểu diễn khoảng các giá trị **chưa được sử dụng**.
+
+Cụ thể:
+
+```text
+Tất cả các giá trị từ low đến high
+```
+
+vẫn chưa được sử dụng.
+
+Các giá trị:
+
+```text
+0 ... low-1
+```
+
+đã được sử dụng.
+
+Các giá trị:
+
+```text
+high+1 ... n
+```
+
+đã được sử dụng.
+
+---
+
+# 13. Tại sao chọn `low` khi gặp `I` là an toàn?
+
+Giả sử:
+
+```text
+s[i] = I
+```
+
+Ta chọn:
+
+```text
+x = low
+```
+
+Sau đó sẽ còn các giá trị:
+
+```text
+low + 1, ..., high
+```
+
+Nếu đây không phải phần tử cuối cùng, giá trị kế tiếp vẫn lớn hơn `low`.
+
+Do đó ta có thể tạo:
+
+```text
+x < next
+```
+
+tức:
+
+```text
+I
+```
+
+Quan trọng hơn, việc chọn giá trị nhỏ nhất không làm mất đi khả năng tạo các quan hệ `I` hoặc `D` phía sau.
+
+Ta dành các giá trị lớn cho những thời điểm cần một số lớn.
+
+---
+
+# 14. Tại sao chọn `high` khi gặp `D` là an toàn?
+
+Tương tự, nếu:
+
+```text
+s[i] = D
+```
+
+ta chọn:
+
+```text
+x = high
+```
+
+Sau đó các giá trị còn lại đều nhỏ hơn hoặc bằng:
+
+```text
+high - 1
+```
+
+nên phần tử kế tiếp có thể được chọn nhỏ hơn `x`.
+
+Ta đảm bảo:
+
+```text
+x > next
+```
+
+tức:
+
+```text
+D
+```
+
+Một lần nữa, việc lấy giá trị lớn nhất là an toàn vì ta dành các giá trị nhỏ hơn cho các bước tiếp theo.
+
+---
+
+# 15. Một cách nhìn trực quan hơn
+
+Hãy tưởng tượng ta có một hộp chứa:
+
+```text
+0 1 2 3 4 5
+```
+
+Mỗi ký tự nói cho ta biết:
+
+```text
+I → "Tôi cần một số nhỏ ở đây."
+D → "Tôi cần một số lớn ở đây."
+```
+
+Vì vậy:
+
+```text
+I → lấy bên trái
+D → lấy bên phải
+```
+
+Ta có:
+
+```text
+0 ← low                high → 5
+1                         4
+2                         3
+```
+
+Mỗi bước lấy một đầu:
+
+```text
+I → lấy low  → low++
+D → lấy high → high--
+```
+
+Đây chính là lý do thuật toán chỉ cần hai biến.
+
+---
+
+# 16. Một insight rất quan trọng: không cần biết ký tự tiếp theo
+
+Ta có thể tự hỏi:
+
+> Khi gặp `I`, tại sao không cần nhìn `s[i+1]` để quyết định?
+
+Bởi vì ta không cần xác định chính xác giá trị kế tiếp ngay lúc này.
+
+Ta chỉ cần đảm bảo:
+
+```text
+I → current đủ nhỏ
+D → current đủ lớn
+```
+
+Việc còn lại sẽ được xử lý ở các bước sau.
+
+Đây là đặc trưng của một greedy algorithm:
+
+> Mỗi bước đưa ra lựa chọn cục bộ đơn giản nhưng vẫn giữ invariant cần thiết cho phần còn lại.
+
+---
+
+# 17. Một cách tiếp cận khác: xử lý các đoạn `D`
+
+Có một cách giải rất nổi tiếng khác.
+
+Ví dụ:
+
+```text
+s = "IDDI"
+```
+
+Ta có:
+
+```text
+I D D I
+```
+
+Có một đoạn `DD` liên tiếp.
+
+Nếu bắt đầu với:
+
+```text
+0 1 2 3 4
+```
+
+ta có thể đảo ngược đoạn tương ứng để tạo quan hệ giảm.
+
+Ví dụ:
+
+```text
+I DD I
+```
+
+có thể tạo:
+
+```text
+0 3 2 1 4
+```
+
+Kiểm tra:
+
+```text
+0 < 3 → I
+3 > 2 → D
+2 > 1 → D
+1 < 4 → I
+```
+
+Cách này cũng đúng, nhưng phức tạp hơn trong việc xác định các đoạn `D`.
+
+Hai pointers `low/high` trực tiếp hơn.
+
+---
+
+# 18. Vì sao không brute force tất cả permutation?
+
+Có:
+
+```text
+(n + 1)!
+```
+
+permutation của:
+
+```text
+0, 1, ..., n
+```
+
+Nếu thử từng permutation rồi kiểm tra, độ phức tạp tăng cực kỳ nhanh.
+
+Ví dụ:
+
+```text
+n = 10
+```
+
+thì có:
+
+```text
+11! = 39,916,800
+```
+
+permutation.
+
+Trong khi greedy chỉ cần:
+
+```text
+O(n)
+```
+
+Do đó brute force hoàn toàn không phù hợp.
+
+---
+
+# 19. Complexity
+
+Giả sử:
+
+```text
+n = s.length()
+```
+
+## Time Complexity
+
+Ta duyệt chuỗi đúng một lần:
+
+```text
+O(n)
+```
+
+Mỗi bước chỉ thực hiện:
+
+- so sánh ký tự;
+- `push_back`;
+- tăng/giảm `low` hoặc `high`.
+
+Tất cả đều là `O(1)`.
+
+Vì vậy:
+
+```text
+Time = O(n)
+```
+
+---
+
+## Space Complexity
+
+Kết quả có:
+
+```text
+n + 1
+```
+
+phần tử.
+
+Do đó:
+
+```text
+Output space = O(n)
+```
+
+Nếu không tính output:
+
+```text
+Auxiliary space = O(1)
+```
+
+Đây là một điểm rất đẹp của lời giải:
+
+> Không cần `set`, `map`, `visited`, hay cấu trúc dữ liệu phụ nào.
+
+---
+
+# 20. Vì sao đây là lời giải tối ưu?
+
+Ta phải trả về:
+
+```text
+n + 1
+```
+
+phần tử.
+
+Chỉ riêng việc ghi `n + 1` phần tử ra kết quả đã cần:
+
+```text
+Ω(n)
+```
+
+thời gian.
+
+Trong khi thuật toán của ta chạy:
+
+```text
+O(n)
+```
+
+Do đó về asymptotic time, thuật toán đạt mức tối ưu:
+
+```text
+Θ(n)
+```
+
+Không thể làm tốt hơn `O(n)` theo nghĩa Big-O khi output có kích thước `O(n)`.
+
+---
+
+# 21. C++ Implementation
+
+## Phiên bản khuyến nghị
+
+```cpp
+class Solution {
+public:
+    vector<int> diStringMatch(string s) {
+        int n = s.size();
+
+        int low = 0;
+        int high = n;
+
+        vector<int> ans;
+        ans.reserve(n + 1);
+
+        for (char c : s) {
+            if (c == 'I') {
+                ans.push_back(low);
+                ++low;
+            } else {
+                ans.push_back(high);
+                --high;
+            }
+        }
+
+        ans.push_back(low);
+
+        return ans;
+    }
+};
+```
+
+---
+
+# 22. Giải thích từng dòng
+
+## Lấy `n`
+
+```cpp
+int n = s.size();
+```
+
+Nếu chuỗi có `n` ký tự thì permutation cần:
+
+```text
+n + 1
+```
+
+số.
+
+---
+
+## Khởi tạo hai đầu
+
+```cpp
+int low = 0;
+int high = n;
+```
+
+Các giá trị có thể sử dụng ban đầu là:
+
+```text
+0, 1, 2, ..., n
+```
+
+---
+
+## Khởi tạo answer
+
+```cpp
+vector<int> ans;
+```
+
+Ta sẽ lần lượt thêm từng số.
+
+---
+
+## Reserve trước bộ nhớ
+
+```cpp
+ans.reserve(n + 1);
+```
+
+Không bắt buộc.
+
+Nhưng vì ta biết chính xác kết quả sẽ có:
+
+```text
+n + 1
+```
+
+phần tử, `reserve` giúp vector cấp phát trước đủ dung lượng.
+
+Độ phức tạp Big-O không thay đổi.
+
+---
+
+## Duyệt chuỗi
+
+```cpp
+for (char c : s)
+```
+
+Mỗi ký tự mô tả quan hệ giữa phần tử hiện tại và phần tử tiếp theo.
+
+---
+
+## Trường hợp `I`
+
+```cpp
+if (c == 'I') {
+    ans.push_back(low);
+    ++low;
+}
+```
+
+Ta lấy giá trị nhỏ nhất còn lại.
+
+Sau đó tăng `low` để đánh dấu rằng giá trị đó đã được sử dụng.
+
+---
+
+## Trường hợp `D`
+
+```cpp
+else {
+    ans.push_back(high);
+    --high;
+}
+```
+
+Ta lấy giá trị lớn nhất còn lại.
+
+Sau đó giảm `high`.
+
+---
+
+## Thêm phần tử cuối cùng
+
+```cpp
+ans.push_back(low);
+```
+
+Sau khi xử lý toàn bộ `s`, chỉ còn một số.
+
+Ta có:
+
+```text
+low == high
+```
+
+nên dùng `low` hoặc `high` đều được.
+
+---
+
+# 23. Một phiên bản cực ngắn
+
+Sau khi hiểu ý tưởng, có thể viết:
+
+```cpp
+class Solution {
+public:
+    vector<int> diStringMatch(string s) {
+        int l = 0, r = s.size();
+        vector<int> ans;
+
+        for (char c : s) {
+            if (c == 'I')
+                ans.push_back(l++);
+            else
+                ans.push_back(r--);
+        }
+
+        ans.push_back(l);
+
+        return ans;
+    }
+};
+```
+
+Đây là phiên bản rất phù hợp khi làm LeetCode.
+
+---
+
+# 24. Tại sao `ans.push_back(l++)` đúng?
+
+Biểu thức:
+
+```cpp
+ans.push_back(l++);
+```
+
+tương đương về logic với:
+
+```cpp
+ans.push_back(l);
+l++;
+```
+
+Tức là:
+
+1. Đưa giá trị hiện tại của `l` vào `ans`.
+2. Sau đó tăng `l`.
+
+Tương tự:
+
+```cpp
+ans.push_back(r--);
+```
+
+tương đương:
+
+```cpp
+ans.push_back(r);
+r--;
+```
+
+Nếu code dùng trong phỏng vấn, phiên bản tách dòng đôi khi dễ đọc hơn:
+
+```cpp
+ans.push_back(low);
+++low;
+```
+
+---
+
+# 25. Các edge case
+
+## Chuỗi rỗng
+
+```text
+s = ""
+```
+
+Khi đó:
+
+```text
+n = 0
+```
+
+Ta có:
+
+```text
+low = 0
+high = 0
+```
+
+Không có ký tự để xử lý.
+
+Cuối cùng:
+
+```cpp
+ans.push_back(low);
+```
+
+Kết quả:
+
+```text
+[0]
+```
+
+Hợp lệ vì permutation của:
+
+```text
+{0}
+```
+
+---
+
+## Tất cả là `I`
+
+```text
+s = "IIII"
+```
+
+Kết quả:
+
+```text
+[0, 1, 2, 3, 4]
+```
+
+---
+
+## Tất cả là `D`
+
+```text
+s = "DDDD"
+```
+
+Kết quả:
+
+```text
+[4, 3, 2, 1, 0]
+```
+
+---
+
+## Xen kẽ
+
+```text
+s = "IDIDID"
+```
+
+Thuật toán xử lý tự nhiên:
+
+```text
+I → low
+D → high
+I → low
+D → high
+...
+```
+
+Không cần trường hợp đặc biệt.
+
+---
+
+# 26. Những lỗi thường gặp
+
+## Lỗi 1: Dùng sai range
+
+Nếu:
+
+```text
+s.length() = n
+```
+
+thì phải dùng:
+
+```text
+0 ... n
+```
+
+chứ không phải:
+
+```text
+0 ... n-1
+```
+
+Vì kết quả có:
+
+```text
+n + 1
+```
+
+phần tử.
+
+---
+
+## Lỗi 2: Quên phần tử cuối
+
+Sau vòng lặp:
+
+```cpp
+for (char c : s)
+```
+
+ta mới thêm `n` phần tử.
+
+Cần thêm một phần tử cuối:
+
+```cpp
+ans.push_back(low);
+```
+
+Nếu quên dòng này, kết quả chỉ có `n` phần tử thay vì `n + 1`.
+
+---
+
+## Lỗi 3: Với `I` lại lấy `high`
+
+Ví dụ:
+
+```text
+I
+```
+
+mà lấy số lớn nhất:
+
+```text
+high
+```
+
+thì rất dễ phá vỡ khả năng tạo quan hệ tăng với phần tử tiếp theo.
+
+Chiến lược cần nhớ:
+
+```text
+I → low
+D → high
+```
+
+---
+
+## Lỗi 4: Nghĩ rằng phải sort
+
+Không cần sort.
+
+Ta đã có tập giá trị đặc biệt:
+
+```text
+0, 1, ..., n
+```
+
+và chỉ cần lấy hai đầu.
+
+Không cần:
+
+```cpp
+sort(...)
+```
+
+---
+
+## Lỗi 5: Dùng `set`
+
+`set` không sai, nhưng hoàn toàn không cần thiết.
+
+Bài toán có cấu trúc đặc biệt:
+
+```text
+0 ... n
+```
+
+nên chỉ cần hai biến:
+
+```cpp
+low
+high
+```
+
+là đủ.
+
+---
+
+# 27. Pattern thuật toán cần ghi nhớ
+
+DI String Match là một ví dụ rất đẹp của pattern:
+
+> **Two-ended Greedy**
+
+Khi ta có một tập giá trị liên tục:
+
+```text
+[low, high]
+```
+
+và mỗi bước yêu cầu một giá trị:
+
+```text
+nhỏ
+```
+
+hoặc:
+
+```text
+lớn
+```
+
+ta có thể cân nhắc:
+
+```text
+small requirement → lấy low
+large requirement → lấy high
+```
+
+Pattern này xuất hiện trong nhiều bài toán permutation/greedy.
+
+---
+
+# 28. Cách nhận diện bài tương tự
+
+Khi đọc đề, hãy chú ý các dấu hiệu:
+
+- Cần tạo permutation.
+- Giá trị được dùng là một range liên tục.
+- Mỗi ký tự hoặc constraint chỉ yêu cầu `<` hoặc `>`.
+- Không yêu cầu tối ưu tổng, chi phí hay khoảng cách.
+- Chỉ cần tìm **một** đáp án hợp lệ.
+
+Nếu thấy những dấu hiệu này, hãy thử nghĩ đến:
+
+```text
+Two pointers:
+left = smallest available
+right = largest available
+```
+
+và greedy.
+
+---
+
+# 29. Tại sao không cần tối ưu một đại lượng nào?
+
+Một điểm thú vị là đề không yêu cầu:
+
+```text
+minimize sum
+maximize sum
+lexicographically smallest
+lexicographically largest
+```
+
+Ta chỉ cần:
+
+```text
+một permutation hợp lệ
+```
+
+Điều này cho phép greedy rất mạnh.
+
+Ta không cần tìm "đáp án tốt nhất".
+
+Ta chỉ cần đảm bảo mỗi lựa chọn hiện tại không phá vỡ khả năng hoàn thành phần còn lại.
+
+---
+
+# 30. Công thức tư duy ngắn gọn
+
+Khi gặp bài này, có thể ghi nhớ:
+
+```text
+Need permutation of [0..n]
+        +
+I means next must be larger
+D means next must be smaller
+        ↓
+Keep smallest and largest unused values
+        ↓
+I → take smallest
+D → take largest
+        ↓
+One value remains
+        ↓
+Append it
+```
+
+Code:
+
+```cpp
+int low = 0;
+int high = s.size();
+
+for (char c : s) {
+    if (c == 'I')
+        ans.push_back(low++);
+    else
+        ans.push_back(high--);
+}
+
+ans.push_back(low);
+```
+
+---
+
+# 31. Complexity cuối cùng
+
+Với:
+
+```text
+n = s.length()
+```
+
+ta có:
+
+### Time
+
+```text
+O(n)
+```
+
+### Auxiliary Space
+
+```text
+O(1)
+```
+
+### Output Space
+
+```text
+O(n)
+```
+
+Đây là lời giải asymptotically optimal về thời gian vì output đã có `n + 1` phần tử.
+
+---
+
+# 32. Kết luận
+
+Điểm mấu chốt của **DI String Match** không nằm ở việc thử permutation mà nằm ở việc nhận ra cấu trúc:
+
+```text
+I → cần một giá trị nhỏ
+D → cần một giá trị lớn
+```
+
+Do các giá trị cần sử dụng chính xác là:
+
+```text
+0, 1, ..., n
+```
+
+ta có thể duy trì:
+
+```text
+low = giá trị nhỏ nhất chưa dùng
+high = giá trị lớn nhất chưa dùng
+```
+
+và greedy:
+
+```text
+I → lấy low
+D → lấy high
+```
+
+Sau khi xử lý toàn bộ chuỗi, còn đúng một giá trị và thêm nó vào cuối.
+
+Lời giải:
+
+```cpp
+class Solution {
+public:
+    vector<int> diStringMatch(string s) {
+        int low = 0;
+        int high = s.size();
+
+        vector<int> ans;
+        ans.reserve(s.size() + 1);
+
+        for (char c : s) {
+            if (c == 'I') {
+                ans.push_back(low);
+                ++low;
+            } else {
+                ans.push_back(high);
+                --high;
+            }
+        }
+
+        ans.push_back(low);
+
+        return ans;
+    }
+};
+```
+
+Độ phức tạp:
+
+```text
+Time  = O(n)
+Space = O(1) auxiliary
+```
+
+Đây là một ví dụ điển hình cho việc **nhận diện invariant + greedy + two pointers** để biến một bài toán permutation tưởng như phức tạp thành một thuật toán tuyến tính rất ngắn.
