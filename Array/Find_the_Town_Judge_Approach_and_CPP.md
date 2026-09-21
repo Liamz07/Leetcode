@@ -1,0 +1,1093 @@
+# Find the Town Judge — Phương hướng tiếp cận tối ưu và lời giải C++
+
+## 1. Tổng quan bài toán
+
+Cho `n` người được đánh số từ `1` đến `n` và danh sách `trust`.
+
+Mỗi quan hệ:
+
+```text
+[a, b]
+```
+
+có nghĩa là người `a` tin người `b`.
+
+Một **Town Judge** phải thỏa mãn đồng thời:
+
+1. Không tin bất kỳ ai.
+2. Tất cả `n - 1` người còn lại đều tin người đó.
+
+Nếu tồn tại, trả về ID của người đó; nếu không, trả về `-1`.
+
+---
+
+## 2. Nhìn bài toán dưới góc độ Graph
+
+Mỗi người là một node.
+
+Mỗi quan hệ:
+
+```text
+[a, b]
+```
+
+là một directed edge:
+
+```text
+a → b
+```
+
+Khi đó:
+
+- `indegree(x)` = số người tin `x`.
+- `outdegree(x)` = số người `x` tin.
+
+Town Judge phải có:
+
+```text
+indegree(x) = n - 1
+outdegree(x) = 0
+```
+
+Đây là insight quan trọng nhất của bài.
+
+Ta **không cần DFS/BFS**, vì không cần tìm đường đi hay duyệt thành phần liên thông. Chỉ cần đếm số cạnh đi vào/đi ra.
+
+---
+
+# 3. Cách trực tiếp: `indegree + outdegree`
+
+Có thể dùng hai mảng:
+
+```cpp
+vector<int> indegree(n + 1, 0);
+vector<int> outdegree(n + 1, 0);
+```
+
+Với mỗi:
+
+```text
+a → b
+```
+
+ta làm:
+
+```cpp
+outdegree[a]++;
+indegree[b]++;
+```
+
+Sau đó tìm:
+
+```cpp
+indegree[i] == n - 1 &&
+outdegree[i] == 0
+```
+
+Đây là cách dễ hiểu nhất nếu mới học graph.
+
+Độ phức tạp:
+
+```text
+Time  = O(n + m)
+Space = O(n)
+```
+
+với `m = trust.size()`.
+
+---
+
+# 4. Tối ưu ý tưởng: chỉ cần một mảng `score`
+
+Ta có thể gộp hai mảng thành một:
+
+```text
+score = indegree - outdegree
+```
+
+Với mỗi quan hệ:
+
+```text
+a → b
+```
+
+ta thực hiện:
+
+```cpp
+score[a]--;
+score[b]++;
+```
+
+Ý nghĩa:
+
+- `a` tin người khác → `a` bị trừ `1`.
+- `b` được người khác tin → `b` được cộng `1`.
+
+Sau khi xử lý toàn bộ `trust`:
+
+```text
+score[x] = indegree(x) - outdegree(x)
+```
+
+---
+
+# 5. Vì sao Judge có `score = n - 1`?
+
+Nếu `x` là Judge:
+
+```text
+indegree(x) = n - 1
+outdegree(x) = 0
+```
+
+Do đó:
+
+```text
+score[x]
+= indegree(x) - outdegree(x)
+= (n - 1) - 0
+= n - 1
+```
+
+Vì vậy ta chỉ cần tìm:
+
+```cpp
+score[i] == n - 1
+```
+
+---
+
+# 6. Tại sao chỉ kiểm tra `score == n - 1` là đủ?
+
+Đây là điểm cần hiểu kỹ.
+
+Một người có tối đa `n - 1` người khác có thể tin mình:
+
+```text
+indegree(i) <= n - 1
+```
+
+Đồng thời:
+
+```text
+outdegree(i) >= 0
+```
+
+Vì:
+
+```text
+score(i) = indegree(i) - outdegree(i)
+```
+
+nên:
+
+```text
+score(i) <= n - 1
+```
+
+Để đạt đúng:
+
+```text
+score(i) = n - 1
+```
+
+bắt buộc phải có:
+
+```text
+indegree(i) = n - 1
+```
+
+và:
+
+```text
+outdegree(i) = 0
+```
+
+Chính xác là hai điều kiện của Town Judge.
+
+Do đó không cần duy trì hai mảng.
+
+---
+
+# 7. Ví dụ
+
+Cho:
+
+```text
+n = 3
+trust = [[1, 3], [2, 3]]
+```
+
+Ban đầu:
+
+```text
+score[1] = 0
+score[2] = 0
+score[3] = 0
+```
+
+Xử lý `[1, 3]`:
+
+```text
+score[1]--
+score[3]++
+```
+
+Ta có:
+
+```text
+score[1] = -1
+score[3] = 1
+```
+
+Xử lý `[2, 3]`:
+
+```text
+score[2]--
+score[3]++
+```
+
+Cuối cùng:
+
+```text
+score[1] = -1
+score[2] = -1
+score[3] = 2
+```
+
+Mà:
+
+```text
+n - 1 = 2
+```
+
+nên:
+
+```text
+score[3] == n - 1
+```
+
+Kết quả:
+
+```text
+3
+```
+
+---
+
+# 8. Ví dụ có quan hệ phá hỏng Judge
+
+```text
+n = 4
+
+trust = [
+    [1, 4],
+    [2, 4],
+    [3, 4],
+    [4, 1]
+]
+```
+
+Người `4` được:
+
+```text
+1, 2, 3
+```
+
+tin, nhưng chính `4` lại tin `1`.
+
+Vì vậy:
+
+```text
+indegree(4) = 3
+outdegree(4) = 1
+```
+
+và:
+
+```text
+score(4) = 3 - 1 = 2
+```
+
+Trong khi:
+
+```text
+n - 1 = 3
+```
+
+Do đó `4` không phải Judge.
+
+Điểm hay của `score` là điều kiện "không được tin ai" được tự động tính vào kết quả.
+
+---
+
+# 9. Thuật toán
+
+Ta thực hiện:
+
+### Bước 1
+
+Khởi tạo:
+
+```cpp
+vector<int> score(n + 1, 0);
+```
+
+### Bước 2
+
+Với mỗi quan hệ `[a, b]`:
+
+```cpp
+--score[a];
+++score[b];
+```
+
+### Bước 3
+
+Duyệt:
+
+```cpp
+1 ... n
+```
+
+Nếu:
+
+```cpp
+score[i] == n - 1
+```
+
+thì trả về `i`.
+
+### Bước 4
+
+Nếu không có ai phù hợp:
+
+```cpp
+return -1;
+```
+
+---
+
+# 10. Lời giải C++ tối ưu
+
+```cpp
+class Solution {
+public:
+    int findJudge(int n, vector<vector<int>>& trust) {
+        vector<int> score(n + 1, 0);
+
+        for (const auto& t : trust) {
+            --score[t[0]];
+            ++score[t[1]];
+        }
+
+        for (int person = 1; person <= n; ++person) {
+            if (score[person] == n - 1) {
+                return person;
+            }
+        }
+
+        return -1;
+    }
+};
+```
+
+---
+
+# 11. Giải thích từng phần code
+
+## Khởi tạo
+
+```cpp
+vector<int> score(n + 1, 0);
+```
+
+Người được đánh số từ `1` đến `n`, nên dùng `n + 1`.
+
+`score[0]` không được sử dụng.
+
+---
+
+## Xử lý quan hệ
+
+```cpp
+for (const auto& t : trust)
+```
+
+Mỗi `t` có dạng:
+
+```text
+[a, b]
+```
+
+với ý nghĩa:
+
+```text
+a tin b
+```
+
+---
+
+## Người đi tin bị trừ điểm
+
+```cpp
+--score[t[0]];
+```
+
+`a` có một outgoing edge.
+
+Điều này đi ngược điều kiện Judge nên trừ `1`.
+
+---
+
+## Người được tin được cộng điểm
+
+```cpp
+++score[t[1]];
+```
+
+`b` có một incoming edge.
+
+Điều này phù hợp với điều kiện Judge nên cộng `1`.
+
+---
+
+## Tìm người đạt điểm tối đa
+
+```cpp
+if (score[person] == n - 1)
+```
+
+`n - 1` là score tối đa có thể đạt được.
+
+Nếu đạt mức này, người đó có:
+
+```text
+n - 1 incoming edges
+0 outgoing edges
+```
+
+và chính là Judge.
+
+---
+
+# 12. Chứng minh tính đúng đắn
+
+Ta chứng minh theo hai chiều.
+
+## Chiều 1: Nếu thuật toán trả về `x`
+
+Thuật toán chỉ trả về khi:
+
+```text
+score[x] = n - 1
+```
+
+Mà:
+
+```text
+score[x] = indegree(x) - outdegree(x)
+```
+
+Ta có:
+
+```text
+indegree(x) <= n - 1
+outdegree(x) >= 0
+```
+
+Để hiệu bằng `n - 1`, bắt buộc:
+
+```text
+indegree(x) = n - 1
+outdegree(x) = 0
+```
+
+Vì vậy:
+
+- tất cả người khác tin `x`;
+- `x` không tin ai.
+
+Do đó `x` là Town Judge.
+
+---
+
+## Chiều 2: Nếu tồn tại Town Judge `x`
+
+Theo định nghĩa:
+
+```text
+indegree(x) = n - 1
+outdegree(x) = 0
+```
+
+Suy ra:
+
+```text
+score[x]
+= indegree(x) - outdegree(x)
+= n - 1
+```
+
+Vì vậy thuật toán chắc chắn tìm thấy `x`.
+
+Kết luận: thuật toán đúng.
+
+---
+
+# 13. Độ phức tạp
+
+Gọi:
+
+```text
+n = số người
+m = trust.size()
+```
+
+## Time Complexity
+
+Duyệt `m` quan hệ:
+
+```text
+O(m)
+```
+
+Duyệt `n` người:
+
+```text
+O(n)
+```
+
+Tổng:
+
+```text
+O(n + m)
+```
+
+## Space Complexity
+
+Mảng `score` có `n + 1` phần tử:
+
+```text
+O(n)
+```
+
+Đây là auxiliary space.
+
+---
+
+# 14. Vì sao đây là lời giải tối ưu?
+
+Ta phải ít nhất đọc các quan hệ trong `trust`, nên cần:
+
+```text
+Ω(m)
+```
+
+thời gian.
+
+Ta cũng cần xác định người trong `1 ... n`, nên cần cỡ:
+
+```text
+Ω(n)
+```
+
+trong cách xử lý này.
+
+Thuật toán đạt:
+
+```text
+O(n + m)
+```
+
+nên đạt mức tuyến tính theo kích thước input.
+
+Không cần:
+
+```text
+DFS
+BFS
+sort
+unordered_map
+adjacency list
+```
+
+---
+
+# 15. Tại sao không cần DFS/BFS?
+
+Mặc dù bài toán có thể mô hình hóa thành directed graph, ta không cần traversal.
+
+DFS/BFS dùng khi cần biết:
+
+- Có đường đi từ `A` đến `B`?
+- Những node nào reachable?
+- Có bao nhiêu component?
+- Có cycle hay không?
+
+Bài này chỉ hỏi:
+
+```text
+Ai có indegree = n - 1?
+Ai có outdegree = 0?
+```
+
+Đây là bài **degree counting**, không phải graph traversal.
+
+---
+
+# 16. Tại sao không cần adjacency list?
+
+Ta có thể lưu:
+
+```cpp
+vector<vector<int>> graph(n + 1);
+```
+
+nhưng không dùng đến danh sách hàng xóm.
+
+Chỉ cần biết số cạnh:
+
+```text
+đi vào
+đi ra
+```
+
+nên việc lưu toàn bộ graph là thừa.
+
+`score` cho phép xử lý mỗi cạnh ngay lập tức:
+
+```cpp
+score[a]--;
+score[b]++;
+```
+
+và bỏ qua thông tin chi tiết của cạnh sau đó.
+
+---
+
+# 17. Tại sao không dùng `unordered_map`?
+
+ID người là liên tiếp:
+
+```text
+1, 2, ..., n
+```
+
+nên `vector` phù hợp hơn:
+
+```cpp
+vector<int> score(n + 1);
+```
+
+Không cần hash map.
+
+Nếu ID không liên tục hoặc là chuỗi, khi đó `unordered_map` mới có thể hữu ích.
+
+---
+
+# 18. Edge Case: `n = 1`
+
+Nếu:
+
+```text
+n = 1
+trust = []
+```
+
+người `1` là Judge.
+
+Vì:
+
+```text
+n - 1 = 0
+```
+
+và:
+
+```text
+score[1] = 0
+```
+
+nên điều kiện:
+
+```cpp
+score[1] == n - 1
+```
+
+đúng.
+
+Kết quả:
+
+```text
+1
+```
+
+---
+
+# 19. Edge Case: không có quan hệ
+
+Ví dụ:
+
+```text
+n = 4
+trust = []
+```
+
+Mọi người có:
+
+```text
+score = 0
+```
+
+nhưng cần:
+
+```text
+n - 1 = 3
+```
+
+Không ai đạt.
+
+Kết quả:
+
+```text
+-1
+```
+
+---
+
+# 20. Edge Case: tất cả cùng tin một người nhưng người đó cũng tin người khác
+
+Ví dụ:
+
+```text
+n = 4
+
+trust = [
+    [1, 4],
+    [2, 4],
+    [3, 4],
+    [4, 1]
+]
+```
+
+Ta đã thấy:
+
+```text
+score[4] = 2
+```
+
+thay vì:
+
+```text
+3
+```
+
+nên bị loại.
+
+Đây là một ví dụ quan trọng vì nếu chỉ đếm `indegree`, ta có thể bỏ sót điều kiện Judge không được tin ai.
+
+---
+
+# 21. Edge Case: chain
+
+```text
+n = 4
+
+trust = [
+    [1, 2],
+    [2, 3],
+    [3, 4]
+]
+```
+
+Score:
+
+```text
+1 = -1
+2 = 0
+3 = 0
+4 = +1
+```
+
+Cần:
+
+```text
+3
+```
+
+Không ai đạt.
+
+Kết quả:
+
+```text
+-1
+```
+
+---
+
+# 22. Cách tiếp cận hai mảng có thể dùng khi nào?
+
+Nếu việc gộp thành `score` khiến code khó hiểu, hãy dùng:
+
+```cpp
+vector<int> indegree(n + 1);
+vector<int> outdegree(n + 1);
+```
+
+và:
+
+```cpp
+for (const auto& t : trust) {
+    ++outdegree[t[0]];
+    ++indegree[t[1]];
+}
+```
+
+Sau đó:
+
+```cpp
+for (int i = 1; i <= n; ++i) {
+    if (indegree[i] == n - 1 &&
+        outdegree[i] == 0) {
+        return i;
+    }
+}
+```
+
+Cách này vẫn tối ưu về thời gian.
+
+Điểm khác biệt chủ yếu là:
+
+```text
+2 arrays → dễ đọc hơn
+1 score  → gọn hơn
+```
+
+---
+
+# 23. Pattern quan trọng: Net Balance
+
+Bài này là một ví dụ đẹp của pattern:
+
+```text
++1 khi nhận
+-1 khi cho
+```
+
+Cụ thể:
+
+```text
+a → b
+
+a: -1
+b: +1
+```
+
+Sau cùng:
+
+```text
+score = incoming - outgoing
+```
+
+Đây là một dạng **net balance**.
+
+Khi gặp một bài có quan hệ kiểu:
+
+```text
+A tác động lên B
+```
+
+hãy thử hỏi:
+
+> Có thể biểu diễn tác động của một quan hệ bằng `+1/-1` trên hai đầu không?
+
+Nếu có, đôi khi toàn bộ graph không cần được lưu.
+
+---
+
+# 24. Pattern tổng quát hơn
+
+Bài toán có thể được nhìn như:
+
+```text
+Mỗi edge:
+    source      → -1
+    destination → +1
+
+Sau đó:
+    tìm node có score đặc biệt
+```
+
+Đây là kỹ thuật **aggregate trước, kiểm tra sau**:
+
+```text
+Input relationships
+        ↓
+Aggregate score
+        ↓
+Scan candidates
+        ↓
+Answer
+```
+
+Kỹ thuật này thường đơn giản hơn việc mô phỏng toàn bộ cấu trúc.
+
+---
+
+# 25. Checklist khi gặp bài tương tự
+
+Khi đề hỏi tìm một "người đặc biệt", hãy kiểm tra:
+
+### 1. Người đó nhận bao nhiêu quan hệ?
+
+Ở đây:
+
+```text
+n - 1
+```
+
+### 2. Người đó tạo ra bao nhiêu quan hệ?
+
+Ở đây:
+
+```text
+0
+```
+
+### 3. Có thể dùng degree không?
+
+Có.
+
+### 4. Có thể gộp thành một score không?
+
+Có:
+
+```text
+indegree - outdegree
+```
+
+### 5. Giá trị đặc biệt là gì?
+
+```text
+n - 1
+```
+
+### 6. Có cần traversal không?
+
+Không.
+
+---
+
+# 26. Cách nhớ lời giải trong 10 giây
+
+Chỉ cần nhớ:
+
+> **Người được tin: `+1`; người đi tin: `-1`; Judge phải đạt `n - 1`.**
+
+Code:
+
+```cpp
+vector<int> score(n + 1);
+
+for (auto& t : trust) {
+    score[t[0]]--;
+    score[t[1]]++;
+}
+
+for (int i = 1; i <= n; ++i) {
+    if (score[i] == n - 1)
+        return i;
+}
+
+return -1;
+```
+
+---
+
+# 27. Tổng kết
+
+Bài **Find the Town Judge** thực chất là một bài **degree counting trên directed graph**.
+
+Mỗi quan hệ:
+
+```text
+a → b
+```
+
+được chuyển thành:
+
+```text
+score[a]--
+score[b]++
+```
+
+Sau toàn bộ input:
+
+```text
+score[x] = indegree(x) - outdegree(x)
+```
+
+Một Town Judge phải:
+
+```text
+indegree(x) = n - 1
+outdegree(x) = 0
+```
+
+nên:
+
+```text
+score[x] = n - 1
+```
+
+Vì vậy lời giải tối ưu là:
+
+```cpp
+class Solution {
+public:
+    int findJudge(int n, vector<vector<int>>& trust) {
+        vector<int> score(n + 1, 0);
+
+        for (const auto& t : trust) {
+            --score[t[0]];
+            ++score[t[1]];
+        }
+
+        for (int person = 1; person <= n; ++person) {
+            if (score[person] == n - 1) {
+                return person;
+            }
+        }
+
+        return -1;
+    }
+};
+```
+
+Độ phức tạp:
+
+```text
+Time  = O(n + m)
+Space = O(n)
+```
+
+với:
+
+```text
+m = trust.size()
+```
+
+## Insight quan trọng cần mang sang các bài khác
+
+```text
+Directed relationship
+        ↓
+Incoming / outgoing count
+        ↓
+Có thể gộp thành net score
+        ↓
+Không cần lưu graph nếu chỉ cần degree
+```
+
+Đây là lý do bài này có lời giải rất ngắn nhưng lại là một bài luyện tư duy graph/counting rất tốt.
