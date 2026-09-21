@@ -1,0 +1,1180 @@
+# Move Zeroes — LeetCode
+
+## 1. Đề bài
+
+Cho một mảng số nguyên `nums`, hãy **di chuyển tất cả các số `0` về cuối mảng**, đồng thời phải giữ nguyên **thứ tự tương đối của các phần tử khác `0`**.
+
+Yêu cầu quan trọng:
+
+- Không được tạo một mảng mới để chứa kết quả.
+- Phải thực hiện việc thay đổi **ngay trên mảng `nums`** (in-place).
+- Thứ tự của các phần tử khác `0` phải được giữ nguyên.
+
+### Ví dụ 1
+
+```text
+Input:  nums = [0,1,0,3,12]
+Output: [1,3,12,0,0]
+```
+
+### Ví dụ 2
+
+```text
+Input:  nums = [0]
+Output: [0]
+```
+
+---
+
+# 2. Phân tích bài toán
+
+Ví dụ:
+
+```text
+[0, 1, 0, 3, 12]
+```
+
+Ta cần đưa các số `0` về cuối:
+
+```text
+[1, 3, 12, 0, 0]
+```
+
+Điểm cần chú ý là thứ tự của các số khác `0` vẫn phải được giữ nguyên:
+
+```text
+1 → 3 → 12
+```
+
+Không được biến thành:
+
+```text
+12 → 1 → 3
+```
+
+hoặc bất kỳ thứ tự nào khác.
+
+---
+
+# 3. Những hướng tiếp cận có thể nghĩ đến
+
+## Cách 1: Dùng mảng phụ
+
+Ta có thể tạo một mảng mới:
+
+```text
+result
+```
+
+Sau đó:
+
+1. Duyệt `nums`.
+2. Đưa tất cả phần tử khác `0` vào `result`.
+3. Cuối cùng thêm các số `0`.
+
+Ví dụ:
+
+```text
+nums = [0,1,0,3,12]
+
+result = [1,3,12]
+```
+
+Sau đó thêm hai số `0`:
+
+```text
+result = [1,3,12,0,0]
+```
+
+### Nhược điểm
+
+Cách này sử dụng thêm `O(n)` bộ nhớ.
+
+Trong khi đề bài yêu cầu thao tác trực tiếp trên mảng, nên ta có thể làm tốt hơn.
+
+---
+
+# 4. Cách tiếp cận tối ưu: Two Pointers
+
+Ta có thể giải bài toán bằng kỹ thuật **Two Pointers**.
+
+Ý tưởng là sử dụng một biến:
+
+```cpp
+idx
+```
+
+để biểu diễn **vị trí tiếp theo mà ta sẽ đặt một phần tử khác `0`**.
+
+Ta duyệt mảng bằng:
+
+```cpp
+i
+```
+
+Như vậy có hai chỉ số:
+
+```text
+i    → đang duyệt mảng
+idx  → vị trí đặt phần tử khác 0 tiếp theo
+```
+
+---
+
+# 5. Ý nghĩa của `idx`
+
+Đây là phần quan trọng nhất của thuật toán.
+
+Ban đầu:
+
+```cpp
+idx = 0;
+```
+
+Điều đó có nghĩa:
+
+> Nếu gặp một phần tử khác `0`, ta sẽ đặt nó tại vị trí `0`.
+
+Ví dụ:
+
+```text
+nums = [0, 1, 0, 3, 12]
+```
+
+### `i = 0`
+
+```text
+nums[0] = 0
+```
+
+Đây là số `0`, nên ta không đưa nó vào vùng đầu mảng.
+
+Ta tăng số lượng `0`:
+
+```text
+dem = 1
+```
+
+`idx` vẫn là:
+
+```text
+idx = 0
+```
+
+---
+
+### `i = 1`
+
+```text
+nums[1] = 1
+```
+
+Đây là số khác `0`.
+
+Ta đặt nó vào:
+
+```text
+nums[idx] = nums[i]
+nums[0] = nums[1]
+```
+
+Mảng trở thành:
+
+```text
+[1, 1, 0, 3, 12]
+```
+
+Sau đó:
+
+```cpp
+idx++;
+```
+
+nên:
+
+```text
+idx = 1
+```
+
+---
+
+### `i = 2`
+
+```text
+nums[2] = 0
+```
+
+Đây là số `0`.
+
+Ta chỉ tăng:
+
+```text
+dem = 2
+```
+
+`idx` vẫn:
+
+```text
+idx = 1
+```
+
+---
+
+### `i = 3`
+
+```text
+nums[3] = 3
+```
+
+Đây là số khác `0`.
+
+Ta đặt:
+
+```text
+nums[idx] = nums[i]
+nums[1] = nums[3]
+```
+
+Mảng:
+
+```text
+[1, 3, 0, 3, 12]
+```
+
+Sau đó:
+
+```text
+idx = 2
+```
+
+---
+
+### `i = 4`
+
+```text
+nums[4] = 12
+```
+
+Ta đặt:
+
+```text
+nums[2] = nums[4]
+```
+
+Mảng:
+
+```text
+[1, 3, 12, 3, 12]
+```
+
+Sau đó:
+
+```text
+idx = 3
+```
+
+Đến đây toàn bộ phần tử khác `0` đã được đưa lên đầu:
+
+```text
+[1, 3, 12, ?, ?]
+```
+
+Ta chỉ cần điền các số `0` vào phần còn lại.
+
+---
+
+# 6. Tại sao phải đếm số lượng `0`?
+
+Trong code của bạn có:
+
+```cpp
+int dem = 0;
+```
+
+Biến này lưu:
+
+> Số lượng số `0` đã gặp trong mảng.
+
+Với:
+
+```text
+[0, 1, 0, 3, 12]
+```
+
+có:
+
+```text
+dem = 2
+```
+
+Vì có hai số `0`.
+
+Sau khi đưa toàn bộ số khác `0` về đầu:
+
+```text
+[1, 3, 12, ?, ?]
+```
+
+ta biết phần còn lại phải có đúng:
+
+```text
+2 số 0
+```
+
+nên điền:
+
+```text
+[1, 3, 12, 0, 0]
+```
+
+---
+
+# 7. Phân tích lời giải của bạn
+
+Code bạn đưa ra là:
+
+```cpp
+class Solution {
+public:
+    void moveZeroes(vector<int>& nums) {
+        int dem = 0;
+        int idx = 0;
+
+        for (int i = 0; i < nums.size(); i++) {
+            if (nums[i] != 0) {
+                nums[idx++] = nums[i];
+            } else {
+                dem++;
+            }
+        }
+
+        while (dem > 0) {
+            nums[nums.size() - dem] = 0;
+            dem--;
+        }
+    }
+};
+```
+
+## Kết luận
+
+**Lời giải của bạn đã tối ưu về độ phức tạp:**
+
+```text
+Time Complexity:  O(n)
+Space Complexity: O(1)
+```
+
+Đây là lời giải rất tốt cho bài `Move Zeroes`.
+
+Không cần dùng:
+
+- mảng phụ;
+- `vector` phụ;
+- `sort`;
+- `erase`;
+- `remove`;
+- `stable_partition`;
+- hai vòng lặp lồng nhau.
+
+---
+
+# 8. Phân tích vòng lặp đầu tiên
+
+Code:
+
+```cpp
+for (int i = 0; i < nums.size(); i++) {
+    if (nums[i] != 0) {
+        nums[idx++] = nums[i];
+    } else {
+        dem++;
+    }
+}
+```
+
+Có hai trường hợp.
+
+## Trường hợp 1: `nums[i] != 0`
+
+Ta thực hiện:
+
+```cpp
+nums[idx++] = nums[i];
+```
+
+Có thể viết tương đương:
+
+```cpp
+nums[idx] = nums[i];
+idx++;
+```
+
+Ý nghĩa:
+
+> Đưa phần tử khác `0` hiện tại vào vị trí tiếp theo của vùng kết quả.
+
+---
+
+## Trường hợp 2: `nums[i] == 0`
+
+Ta thực hiện:
+
+```cpp
+dem++;
+```
+
+Không đưa `0` vào vùng đầu mảng.
+
+Đồng thời ghi nhớ rằng cần thêm một số `0` vào cuối mảng.
+
+---
+
+# 9. Tại sao `idx` luôn chỉ vào vị trí cần điền?
+
+Đây là invariant quan trọng của thuật toán.
+
+Sau khi đã xử lý một số phần tử đầu tiên của mảng:
+
+```text
+nums[0 ... idx-1]
+```
+
+chứa chính xác các phần tử khác `0` đã gặp, **theo đúng thứ tự xuất hiện ban đầu**.
+
+Do đó:
+
+```text
+idx
+```
+
+luôn là vị trí tiếp theo để đặt một phần tử khác `0`.
+
+Ví dụ:
+
+```text
+nums = [0, 1, 0, 3, 12]
+```
+
+Sau khi xử lý đến `12`:
+
+```text
+idx = 3
+```
+
+và:
+
+```text
+nums[0] = 1
+nums[1] = 3
+nums[2] = 12
+```
+
+Tức là:
+
+```text
+nums[0 ... idx-1] = [1, 3, 12]
+```
+
+---
+
+# 10. Vì sao thứ tự các phần tử khác `0` được giữ nguyên?
+
+Đây là một ưu điểm quan trọng trong code của bạn.
+
+Ta duyệt:
+
+```cpp
+i = 0 → 1 → 2 → ... → n-1
+```
+
+theo đúng thứ tự ban đầu.
+
+Mỗi khi gặp một số khác `0`, ta đưa nó vào:
+
+```text
+idx = 0 → 1 → 2 → ...
+```
+
+Do đó:
+
+```text
+phần tử khác 0 thứ nhất
+→ vị trí 0
+
+phần tử khác 0 thứ hai
+→ vị trí 1
+
+phần tử khác 0 thứ ba
+→ vị trí 2
+```
+
+Vì vậy thứ tự được bảo toàn.
+
+Ví dụ:
+
+```text
+[5, 0, 2, 0, 7]
+```
+
+Các số khác `0` xuất hiện theo thứ tự:
+
+```text
+5 → 2 → 7
+```
+
+Sau thuật toán:
+
+```text
+[5, 2, 7, 0, 0]
+```
+
+Thứ tự vẫn là:
+
+```text
+5 → 2 → 7
+```
+
+---
+
+# 11. Phân tích vòng lặp thứ hai
+
+Code của bạn:
+
+```cpp
+while (dem > 0) {
+    nums[nums.size() - dem] = 0;
+    dem--;
+}
+```
+
+Giả sử:
+
+```text
+nums.size() = 5
+dem = 2
+```
+
+### Lần 1
+
+```cpp
+nums[5 - 2] = 0;
+```
+
+tức:
+
+```cpp
+nums[3] = 0;
+```
+
+Sau đó:
+
+```text
+dem = 1
+```
+
+### Lần 2
+
+```cpp
+nums[5 - 1] = 0;
+```
+
+tức:
+
+```cpp
+nums[4] = 0;
+```
+
+Kết quả:
+
+```text
+[1, 3, 12, 0, 0]
+```
+
+---
+
+# 12. Vì sao vị trí bắt đầu điền `0` là `nums.size() - dem`?
+
+Sau vòng lặp đầu tiên, `idx` chính là số lượng phần tử khác `0`.
+
+Nếu mảng có `n` phần tử và có `dem` số `0`, thì:
+
+```text
+số phần tử khác 0 = n - dem
+```
+
+Vì vậy vị trí đầu tiên cần điền `0` chính là:
+
+```text
+n - dem
+```
+
+Trong code:
+
+```cpp
+nums[nums.size() - dem] = 0;
+```
+
+Điều này hoàn toàn chính xác.
+
+---
+
+# 13. Một điểm cần chú ý trong code của bạn
+
+Có một điểm nhỏ về **tính dễ đọc**, chứ không phải lỗi thuật toán.
+
+Bạn dùng:
+
+```cpp
+dem
+```
+
+để đếm số `0`.
+
+Sau đó lại dùng chính `dem` để tính vị trí:
+
+```cpp
+nums.size() - dem
+```
+
+Trong vòng:
+
+```cpp
+while (dem > 0)
+```
+
+Điều này vẫn đúng.
+
+Tuy nhiên, nếu muốn code dễ hiểu hơn, có thể giữ nguyên số lượng `0` và dùng một biến khác để chạy vòng lặp.
+
+Ví dụ:
+
+```cpp
+int soLuongZero = 0;
+
+for (int i = 0; i < nums.size(); i++) {
+    if (nums[i] != 0) {
+        nums[idx++] = nums[i];
+    } else {
+        soLuongZero++;
+    }
+}
+
+for (int i = idx; i < nums.size(); i++) {
+    nums[i] = 0;
+}
+```
+
+Cách này có cùng độ phức tạp:
+
+```text
+O(n) time
+O(1) space
+```
+
+và ý tưởng có thể dễ đọc hơn.
+
+---
+
+# 14. Có thể tối ưu code của bạn hơn nữa không?
+
+Về **độ phức tạp**, không.
+
+Bạn đã đạt:
+
+```text
+O(n) thời gian
+O(1) bộ nhớ phụ
+```
+
+Đây là mức tối ưu theo Big-O cho bài toán.
+
+Có thể thay đổi cách viết để code ngắn hoặc dễ hiểu hơn, nhưng **không làm tốt hơn về độ phức tạp**.
+
+---
+
+# 15. Một cách viết khác: Two Pointers + ghi `0`
+
+Một phiên bản dễ nhìn hơn:
+
+```cpp
+class Solution {
+public:
+    void moveZeroes(vector<int>& nums) {
+        int idx = 0;
+
+        for (int i = 0; i < nums.size(); i++) {
+            if (nums[i] != 0) {
+                nums[idx++] = nums[i];
+            }
+        }
+
+        while (idx < nums.size()) {
+            nums[idx++] = 0;
+        }
+    }
+};
+```
+
+Ở đây không cần `dem`.
+
+Sau vòng lặp đầu:
+
+```text
+idx = số lượng phần tử khác 0
+```
+
+Ví dụ:
+
+```text
+[0, 1, 0, 3, 12]
+```
+
+sau vòng đầu:
+
+```text
+[1, 3, 12, 3, 12]
+```
+
+và:
+
+```text
+idx = 3
+```
+
+Ta chỉ cần:
+
+```cpp
+while (idx < nums.size()) {
+    nums[idx++] = 0;
+}
+```
+
+để biến thành:
+
+```text
+[1, 3, 12, 0, 0]
+```
+
+---
+
+# 16. So sánh hai phiên bản
+
+### Phiên bản của bạn
+
+```cpp
+int dem = 0;
+int idx = 0;
+
+for (int i = 0; i < nums.size(); i++) {
+    if (nums[i] != 0) {
+        nums[idx++] = nums[i];
+    } else {
+        dem++;
+    }
+}
+
+while (dem > 0) {
+    nums[nums.size() - dem] = 0;
+    dem--;
+}
+```
+
+### Phiên bản đơn giản hóa
+
+```cpp
+int idx = 0;
+
+for (int i = 0; i < nums.size(); i++) {
+    if (nums[i] != 0) {
+        nums[idx++] = nums[i];
+    }
+}
+
+while (idx < nums.size()) {
+    nums[idx++] = 0;
+}
+```
+
+Cả hai đều:
+
+```text
+Time:  O(n)
+Space: O(1)
+```
+
+Phiên bản thứ hai không cần đếm số `0` riêng.
+
+---
+
+# 17. Một cách tiếp cận khác: Swap
+
+Một lời giải Two Pointers khác là dùng `swap`.
+
+Ý tưởng:
+
+- `idx` là vị trí tiếp theo cần đặt số khác `0`.
+- Khi `nums[i] != 0`, swap `nums[i]` với `nums[idx]`.
+- Sau đó tăng `idx`.
+
+Ví dụ:
+
+```text
+[0, 1, 0, 3, 12]
+```
+
+Khi gặp `1`:
+
+```text
+[1, 0, 0, 3, 12]
+```
+
+Khi gặp `3`:
+
+```text
+[1, 3, 0, 0, 12]
+```
+
+Khi gặp `12`:
+
+```text
+[1, 3, 12, 0, 0]
+```
+
+Cách này cũng đạt:
+
+```text
+O(n) time
+O(1) space
+```
+
+Tuy nhiên, nếu `idx == i`, việc `swap` một phần tử với chính nó là không cần thiết.
+
+---
+
+# 18. So sánh các phương pháp
+
+| Phương pháp | Thời gian | Bộ nhớ phụ | Giữ thứ tự non-zero |
+|---|---:|---:|:---:|
+| Mảng phụ | `O(n)` | `O(n)` | Có |
+| Dịch phần tử nhiều lần | Có thể `O(n²)` | `O(1)` | Có |
+| Two Pointers + ghi lại `0` | **`O(n)`** | **`O(1)`** | **Có** |
+| Two Pointers + `swap` | **`O(n)`** | **`O(1)`** | **Có** |
+
+---
+
+# 19. Độ phức tạp của lời giải bạn
+
+## Vòng lặp đầu tiên
+
+```cpp
+for (int i = 0; i < nums.size(); i++)
+```
+
+chạy `n` lần:
+
+```text
+O(n)
+```
+
+## Vòng lặp thứ hai
+
+```cpp
+while (dem > 0)
+```
+
+chạy đúng bằng số lượng `0`.
+
+Số lượng `0` tối đa là `n`, nên:
+
+```text
+O(n)
+```
+
+Tổng:
+
+```text
+O(n) + O(n) = O(n)
+```
+
+Vì vậy:
+
+```text
+Time Complexity = O(n)
+```
+
+---
+
+## Bộ nhớ
+
+Bạn chỉ sử dụng:
+
+```cpp
+int dem;
+int idx;
+int i;
+```
+
+Không tạo mảng phụ.
+
+Do đó:
+
+```text
+Space Complexity = O(1)
+```
+
+---
+
+# 20. Có một điểm tinh tế về việc ghi đè mảng
+
+Ở vòng lặp đầu, bạn có:
+
+```cpp
+nums[idx++] = nums[i];
+```
+
+Có thể xảy ra trường hợp:
+
+```text
+idx < i
+```
+
+nghĩa là ta ghi một phần tử vào vị trí đứng trước `i`.
+
+Điều này **không làm mất dữ liệu cần thiết**, bởi vì ta chỉ ghi vào vùng đã được xử lý.
+
+Ví dụ:
+
+```text
+[0, 1, 0, 3, 12]
+```
+
+Khi `i = 3`:
+
+```text
+idx = 1
+```
+
+ta thực hiện:
+
+```cpp
+nums[1] = nums[3];
+```
+
+Mảng trở thành:
+
+```text
+[1, 3, 0, 3, 12]
+```
+
+Ta đã thay đổi `nums[1]`, nhưng vị trí `1` đã được xử lý từ trước nên không cần giá trị cũ của nó nữa.
+
+Trong khi đó, `nums[3]` vẫn chưa được xử lý tại thời điểm bắt đầu bước này và ta đã lấy giá trị `3` trước khi ghi.
+
+Vì vậy cách làm này an toàn.
+
+---
+
+# 21. Edge Cases
+
+## Không có số 0
+
+```text
+[1, 2, 3]
+```
+
+Kết quả:
+
+```text
+[1, 2, 3]
+```
+
+`dem = 0`, vòng `while` không chạy.
+
+---
+
+## Toàn bộ là số 0
+
+```text
+[0, 0, 0]
+```
+
+Sau vòng đầu:
+
+```text
+dem = 3
+idx = 0
+```
+
+Vòng sau điền:
+
+```text
+nums[0] = 0
+nums[1] = 0
+nums[2] = 0
+```
+
+Kết quả vẫn:
+
+```text
+[0, 0, 0]
+```
+
+---
+
+## Chỉ có một phần tử
+
+```text
+[0]
+```
+
+Kết quả:
+
+```text
+[0]
+```
+
+hoặc:
+
+```text
+[5]
+```
+
+Kết quả:
+
+```text
+[5]
+```
+
+---
+
+## Số âm
+
+```text
+[0, -1, 0, -5, 2]
+```
+
+Kết quả:
+
+```text
+[-1, -5, 2, 0, 0]
+```
+
+Điều kiện:
+
+```cpp
+nums[i] != 0
+```
+
+vẫn xử lý bình thường.
+
+---
+
+# 22. Insight quan trọng cần ghi nhớ
+
+Bài `Move Zeroes` là một bài rất điển hình cho kỹ thuật **Two Pointers / Slow-Fast Pointer**.
+
+Có thể ghi nhớ pattern:
+
+```text
+i    → duyệt toàn bộ mảng
+idx  → vị trí tiếp theo cần đặt phần tử hợp lệ
+```
+
+Trong bài này:
+
+```text
+phần tử hợp lệ = phần tử khác 0
+```
+
+Pattern tổng quát:
+
+```cpp
+int idx = 0;
+
+for (int i = 0; i < nums.size(); i++) {
+    if (điều_kiện_hợp_lệ) {
+        nums[idx++] = nums[i];
+    }
+}
+```
+
+Sau đó xử lý phần còn lại nếu bài toán yêu cầu.
+
+Pattern này còn xuất hiện trong nhiều bài:
+
+- Remove Element
+- Remove Duplicates from Sorted Array
+- Move Zeroes
+- Partition một mảng theo điều kiện
+- Một số bài filtering in-place
+
+---
+
+# 23. Kết luận về lời giải của bạn
+
+Lời giải của bạn:
+
+```cpp
+class Solution {
+public:
+    void moveZeroes(vector<int>& nums) {
+        int dem = 0;
+        int idx = 0;
+        for (int i = 0; i < nums.size(); i++) {
+            if (nums[i] != 0) {
+                nums[idx++] = nums[i];
+            } else {
+                dem++;
+            }
+        }
+        while (dem > 0) {
+            nums[nums.size() - dem] = 0;
+            dem--;
+        }
+    }
+};
+```
+
+### Đánh giá
+
+**Đúng và tối ưu về độ phức tạp.**
+
+```text
+Time Complexity:  O(n)
+Space Complexity: O(1)
+```
+
+Bạn đã sử dụng đúng tư tưởng **Two Pointers / ghi đè in-place**.
+
+Nếu xét riêng về thuật toán thì **không cần tối ưu thêm về Big-O**.
+
+Có thể rút gọn phần cuối bằng cách dùng `idx` thay cho `dem`:
+
+```cpp
+class Solution {
+public:
+    void moveZeroes(vector<int>& nums) {
+        int idx = 0;
+
+        for (int i = 0; i < nums.size(); i++) {
+            if (nums[i] != 0) {
+                nums[idx++] = nums[i];
+            }
+        }
+
+        while (idx < nums.size()) {
+            nums[idx++] = 0;
+        }
+    }
+};
+```
+
+Hai phiên bản đều có độ phức tạp:
+
+```text
+O(n) time
+O(1) space
+```
+
+Phiên bản rút gọn chỉ thay đổi cách biểu diễn ý tưởng, **không phải vì lời giải ban đầu của bạn chưa tối ưu**.
