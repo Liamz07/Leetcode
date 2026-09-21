@@ -1,0 +1,1087 @@
+# Relative Sort Array — LeetCode
+
+## 1. Mô tả bài toán
+
+Cho hai mảng số nguyên:
+
+- `arr1`
+- `arr2`
+
+Trong đó:
+
+- Các phần tử của `arr2` đều xuất hiện trong `arr1`.
+- Các phần tử trong `arr2` là **không trùng nhau**.
+
+Yêu cầu sắp xếp `arr1` theo **thứ tự tương đối** được quy định bởi `arr2`:
+
+1. Nếu một số xuất hiện trong `arr2`, tất cả các lần xuất hiện của số đó trong `arr1` phải được đặt cạnh nhau.
+2. Thứ tự giữa các nhóm số này phải giống thứ tự xuất hiện của chúng trong `arr2`.
+3. Những số xuất hiện trong `arr1` nhưng **không xuất hiện trong `arr2`** phải được đưa về cuối và sắp xếp tăng dần.
+
+### Ví dụ
+
+```text
+arr1 = [2,3,1,3,2,4,6,7,9,2,19]
+arr2 = [2,1,4,3,9,6]
+```
+
+Kết quả:
+
+```text
+[2,2,2,1,4,3,3,9,6,7,19]
+```
+
+Giải thích:
+
+- `2` đứng đầu vì `2` đứng đầu `arr2`, và `2` xuất hiện 3 lần.
+- Tiếp theo là `1`.
+- Sau đó là `4`.
+- Sau đó là `3`, xuất hiện 2 lần.
+- Sau đó là `9`.
+- Sau đó là `6`.
+- Cuối cùng `7` và `19` không có trong `arr2`, nên được sắp xếp tăng dần.
+
+---
+
+# 2. Ý tưởng quan trọng nhất
+
+Điểm mấu chốt của bài toán là:
+
+> Không thể dùng cách `sort(arr1)` thông thường vì thứ tự cần sắp xếp không phải thứ tự tăng dần thông thường.
+
+Ta cần chia bài toán thành hai phần:
+
+### Phần 1: Xử lý những số có trong `arr2`
+
+Ta cần biết mỗi số xuất hiện trong `arr1` bao nhiêu lần.
+
+Ví dụ:
+
+```text
+arr1 = [2,3,1,3,2,4,6,7,9,2,19]
+```
+
+Số lần xuất hiện:
+
+```text
+2  -> 3 lần
+3  -> 2 lần
+1  -> 1 lần
+4  -> 1 lần
+6  -> 1 lần
+7  -> 1 lần
+9  -> 1 lần
+19 -> 1 lần
+```
+
+Sau đó duyệt `arr2` từ trái sang phải.
+
+Nếu gặp:
+
+```text
+2
+```
+
+thì đưa `2` vào kết quả 3 lần.
+
+Nếu gặp:
+
+```text
+1
+```
+
+thì đưa `1` vào kết quả 1 lần.
+
+Cứ tiếp tục như vậy.
+
+Nhờ đó, thứ tự của các số trong `arr2` được giữ nguyên.
+
+---
+
+### Phần 2: Xử lý những số không có trong `arr2`
+
+Sau khi xử lý toàn bộ `arr2`, vẫn còn một số phần tử của `arr1`.
+
+Đây chính là những số không xuất hiện trong `arr2`.
+
+Yêu cầu đề bài nói rằng:
+
+> Các số này phải được sắp xếp tăng dần.
+
+Vì vậy, ta chỉ cần lấy chúng ra rồi `sort()`.
+
+---
+
+# 3. Cấu trúc dữ liệu nên sử dụng
+
+Ta cần một cấu trúc để lưu:
+
+```text
+số -> số lần xuất hiện
+```
+
+Có thể dùng:
+
+```cpp
+unordered_map<int, int>
+```
+
+Ví dụ:
+
+```cpp
+unordered_map<int, int> dem;
+```
+
+Sau khi duyệt `arr1`:
+
+```cpp
+for (int x : arr1) {
+    dem[x]++;
+}
+```
+
+Ta có thể hiểu:
+
+```text
+dem[2]  = 3
+dem[3]  = 2
+dem[1]  = 1
+...
+```
+
+---
+
+# 4. Các bước giải chi tiết
+
+## Bước 1: Đếm tần suất xuất hiện
+
+Duyệt toàn bộ `arr1`.
+
+Với mỗi phần tử `x`:
+
+```cpp
+dem[x]++;
+```
+
+Ví dụ:
+
+```text
+arr1 = [2,3,1,3,2,4,6,7,9,2,19]
+```
+
+Sau khi đếm:
+
+```text
+dem[1]  = 1
+dem[2]  = 3
+dem[3]  = 2
+dem[4]  = 1
+dem[6]  = 1
+dem[7]  = 1
+dem[9]  = 1
+dem[19] = 1
+```
+
+---
+
+## Bước 2: Duyệt `arr2`
+
+Duyệt:
+
+```cpp
+for (int x : arr2)
+```
+
+Với mỗi `x`, ta biết chính xác số lần `x` xuất hiện trong `arr1` nhờ `dem[x]`.
+
+Ta thêm `x` vào kết quả đúng `dem[x]` lần.
+
+Ví dụ:
+
+```text
+arr2 = [2,1,4,3,9,6]
+```
+
+### Gặp `2`
+
+```text
+dem[2] = 3
+```
+
+Thêm:
+
+```text
+2 2 2
+```
+
+Kết quả hiện tại:
+
+```text
+[2,2,2]
+```
+
+Sau đó xóa `2` khỏi bảng đếm hoặc đặt:
+
+```cpp
+dem[2] = 0;
+```
+
+Việc này rất quan trọng để sau này không đưa `2` vào phần còn lại.
+
+---
+
+### Gặp `1`
+
+```text
+dem[1] = 1
+```
+
+Thêm:
+
+```text
+1
+```
+
+Kết quả:
+
+```text
+[2,2,2,1]
+```
+
+---
+
+### Gặp `4`
+
+Thêm:
+
+```text
+4
+```
+
+Kết quả:
+
+```text
+[2,2,2,1,4]
+```
+
+---
+
+### Gặp `3`
+
+`3` xuất hiện 2 lần nên thêm:
+
+```text
+3 3
+```
+
+Kết quả:
+
+```text
+[2,2,2,1,4,3,3]
+```
+
+---
+
+### Gặp `9`
+
+Thêm:
+
+```text
+9
+```
+
+---
+
+### Gặp `6`
+
+Thêm:
+
+```text
+6
+```
+
+Ta được:
+
+```text
+[2,2,2,1,4,3,3,9,6]
+```
+
+---
+
+# 5. Bước 3: Lấy các phần tử còn lại
+
+Sau khi xử lý `arr2`, các phần tử chưa được sử dụng chính là những số không xuất hiện trong `arr2`.
+
+Trong ví dụ:
+
+```text
+7
+19
+```
+
+Hai số này phải được sắp xếp tăng dần.
+
+Ta có:
+
+```text
+[7,19]
+```
+
+Nếu thứ tự ban đầu của chúng là:
+
+```text
+[19,7]
+```
+
+thì phải sắp xếp lại thành:
+
+```text
+[7,19]
+```
+
+---
+
+# 6. Có hai cách triển khai
+
+## Cách 1: Dùng `unordered_map` + vector phần còn lại
+
+Đây là cách tổng quát, dễ hiểu và không phụ thuộc vào giới hạn giá trị của phần tử.
+
+### Ý tưởng
+
+1. Đếm tần suất bằng `unordered_map`.
+2. Duyệt `arr2`, đưa các phần tử tương ứng vào kết quả.
+3. Với những phần tử còn tần suất > 0, đưa chúng vào một vector.
+4. `sort()` vector này.
+5. Nối vào kết quả.
+
+### Độ phức tạp
+
+Gọi:
+
+- `n = arr1.size()`
+- `m = arr2.size()`
+- `k` là số lượng phần tử còn lại sau khi xử lý `arr2`.
+
+Đếm tần suất:
+
+```text
+O(n)
+```
+
+Duyệt `arr2` và xây dựng kết quả:
+
+```text
+O(n + m)
+```
+
+Sắp xếp phần còn lại:
+
+```text
+O(k log k)
+```
+
+Tổng quát:
+
+```text
+O(n + m + k log k)
+```
+
+Vì `k <= n`, có thể viết:
+
+```text
+O(n log n)
+```
+
+Bộ nhớ:
+
+```text
+O(n)
+```
+
+---
+
+# 7. Cách tối ưu hơn theo giới hạn đề bài
+
+Trong bài LeetCode `Relative Sort Array`, giá trị của các phần tử thường nằm trong khoảng:
+
+```text
+0 <= arr1[i], arr2[i] <= 1000
+```
+
+Đây là một giới hạn rất nhỏ.
+
+Vì vậy, thay vì dùng `unordered_map`, ta có thể dùng một mảng đếm:
+
+```cpp
+int dem[1001] = {};
+```
+
+Trong đó:
+
+```text
+dem[x]
+```
+
+là số lần `x` xuất hiện trong `arr1`.
+
+Đây là cách rất phù hợp với bài toán này.
+
+---
+
+# 8. Vì sao mảng đếm tối ưu?
+
+Nếu giá trị chỉ nằm từ `0` đến `1000`, ta không cần một cấu trúc dữ liệu phức tạp.
+
+Chỉ cần:
+
+```cpp
+int dem[1001] = {};
+```
+
+Sau đó:
+
+```cpp
+for (int x : arr1) {
+    dem[x]++;
+}
+```
+
+Thời gian đếm là:
+
+```text
+O(n)
+```
+
+Không cần hashing.
+
+---
+
+# 9. Cách xây dựng kết quả bằng mảng đếm
+
+Sau khi đếm, duyệt `arr2`:
+
+```cpp
+for (int x : arr2) {
+    while (dem[x] > 0) {
+        ketqua.push_back(x);
+        dem[x]--;
+    }
+}
+```
+
+Ví dụ:
+
+```text
+dem[2] = 3
+```
+
+Khi gặp `2`:
+
+```cpp
+while (dem[2] > 0)
+```
+
+sẽ thực hiện 3 lần:
+
+```text
+push 2
+push 2
+push 2
+```
+
+Sau đó:
+
+```text
+dem[2] = 0
+```
+
+Điều này đồng thời đánh dấu rằng toàn bộ `2` đã được xử lý.
+
+---
+
+# 10. Xử lý phần còn lại
+
+Sau khi duyệt `arr2`, ta duyệt toàn bộ miền giá trị:
+
+```cpp
+for (int x = 0; x <= 1000; x++) {
+    while (dem[x] > 0) {
+        ketqua.push_back(x);
+        dem[x]--;
+    }
+}
+```
+
+Điều đặc biệt ở đây là:
+
+> Ta không cần gọi `sort()`.
+
+Vì ta duyệt `x` từ nhỏ đến lớn:
+
+```text
+0 -> 1 -> 2 -> 3 -> ... -> 1000
+```
+
+nên các phần tử còn lại tự động được đưa vào kết quả theo thứ tự tăng dần.
+
+---
+
+# 11. Ví dụ chạy toàn bộ thuật toán
+
+Cho:
+
+```text
+arr1 = [2,3,1,3,2,4,6,7,9,2,19]
+arr2 = [2,1,4,3,9,6]
+```
+
+## Sau khi đếm
+
+Ta có:
+
+```text
+1  -> 1
+2  -> 3
+3  -> 2
+4  -> 1
+6  -> 1
+7  -> 1
+9  -> 1
+19 -> 1
+```
+
+## Duyệt `arr2`
+
+### `x = 2`
+
+Thêm:
+
+```text
+2 2 2
+```
+
+### `x = 1`
+
+Thêm:
+
+```text
+1
+```
+
+### `x = 4`
+
+Thêm:
+
+```text
+4
+```
+
+### `x = 3`
+
+Thêm:
+
+```text
+3 3
+```
+
+### `x = 9`
+
+Thêm:
+
+```text
+9
+```
+
+### `x = 6`
+
+Thêm:
+
+```text
+6
+```
+
+Kết quả:
+
+```text
+[2,2,2,1,4,3,3,9,6]
+```
+
+Các tần suất đã được đưa về 0 đối với những số có trong `arr2`.
+
+Còn lại:
+
+```text
+7 -> 1
+19 -> 1
+```
+
+Duyệt từ `0` đến `1000`:
+
+```text
+7
+19
+```
+
+Thêm vào kết quả:
+
+```text
+[2,2,2,1,4,3,3,9,6,7,19]
+```
+
+Đây chính là đáp án.
+
+---
+
+# 12. Tại sao thuật toán đúng?
+
+Ta chứng minh theo hai phần.
+
+## Phần 1: Các phần tử xuất hiện trong `arr2`
+
+Với mỗi `x` trong `arr2`, thuật toán đưa `x` vào `ketqua` đúng bằng số lần `x` xuất hiện trong `arr1`.
+
+Do ta duyệt `arr2` từ trái sang phải nên:
+
+```text
+thứ tự các nhóm trong ketqua
+```
+
+giống hoàn toàn:
+
+```text
+thứ tự của arr2
+```
+
+Ví dụ:
+
+```text
+arr2 = [2,1,4,3]
+```
+
+thì các nhóm bắt buộc có dạng:
+
+```text
+[2...][1...][4...][3...]
+```
+
+Thuật toán tạo đúng dạng này.
+
+---
+
+## Phần 2: Các phần tử không xuất hiện trong `arr2`
+
+Sau khi xử lý `arr2`, những giá trị có:
+
+```cpp
+dem[x] > 0
+```
+
+chính là những phần tử chưa được đưa vào kết quả.
+
+Do các giá trị này không nằm trong `arr2`, chúng phải đứng sau toàn bộ các phần tử thuộc `arr2`.
+
+Ta duyệt `x` từ:
+
+```text
+0 -> 1000
+```
+
+nên chúng được đưa vào kết quả theo thứ tự tăng dần.
+
+Vì vậy, phần còn lại cũng thỏa mãn yêu cầu đề bài.
+
+---
+
+# 13. Độ phức tạp tối ưu
+
+Với giới hạn giá trị:
+
+```text
+0 <= arr1[i], arr2[i] <= 1000
+```
+
+ta dùng mảng đếm kích thước cố định `1001`.
+
+### Thời gian
+
+Đếm:
+
+```text
+O(n)
+```
+
+Duyệt `arr2` và đưa phần tử vào kết quả:
+
+```text
+O(n + m)
+```
+
+Duyệt miền giá trị `0..1000`:
+
+```text
+O(1001)
+```
+
+Do `1001` là hằng số:
+
+```text
+O(n + m)
+```
+
+Đây là độ phức tạp tuyến tính theo kích thước input.
+
+### Bộ nhớ
+
+Mảng:
+
+```cpp
+int dem[1001]
+```
+
+có kích thước cố định.
+
+Ngoài kết quả:
+
+```text
+O(n)
+```
+
+Nếu tính cả mảng kết quả, tổng bộ nhớ phụ thuộc vào cách LeetCode tính output. Phần dữ liệu phụ trợ chính chỉ là:
+
+```text
+O(1001) = O(1)
+```
+
+---
+
+# 14. So sánh các hướng tiếp cận
+
+| Phương pháp | Thời gian | Bộ nhớ phụ | Nhận xét |
+|---|---:|---:|---|
+| `sort()` thông thường | `O(n log n)` | `O(log n)` tùy cách triển khai | Không giữ được thứ tự `arr2` |
+| `unordered_map` + sort phần còn lại | `O(n + m + k log k)` kỳ vọng | `O(n)` | Tổng quát, dễ áp dụng |
+| **Mảng đếm** | **O(n + m)** | **O(1)** | **Phù hợp nhất với giới hạn đề bài** |
+
+Trong bài này, mảng đếm là lựa chọn rất tự nhiên vì miền giá trị chỉ từ `0` đến `1000`.
+
+---
+
+# 15. Lời giải C++
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+class Solution {
+public:
+    vector<int> relativeSortArray(vector<int>& arr1, vector<int>& arr2) {
+        int dem[1001] = {};
+
+        for (int x : arr1) {
+            dem[x]++;
+        }
+
+        vector<int> ketqua;
+
+        for (int x : arr2) {
+            while (dem[x] > 0) {
+                ketqua.push_back(x);
+                dem[x]--;
+            }
+        }
+
+        for (int x = 0; x <= 1000; x++) {
+            while (dem[x] > 0) {
+                ketqua.push_back(x);
+                dem[x]--;
+            }
+        }
+
+        return ketqua;
+    }
+};
+```
+
+---
+
+# 16. Giải thích code
+
+## Khởi tạo mảng đếm
+
+```cpp
+int dem[1001] = {};
+```
+
+Tạo mảng từ:
+
+```text
+dem[0] -> dem[1000]
+```
+
+Tất cả phần tử ban đầu bằng `0`.
+
+---
+
+## Đếm `arr1`
+
+```cpp
+for (int x : arr1) {
+    dem[x]++;
+}
+```
+
+Nếu `x` xuất hiện một lần thì:
+
+```text
+dem[x] = 1
+```
+
+Nếu xuất hiện ba lần:
+
+```text
+dem[x] = 3
+```
+
+---
+
+## Tạo vector kết quả
+
+```cpp
+vector<int> ketqua;
+```
+
+Dùng để lưu đáp án.
+
+---
+
+## Ưu tiên thứ tự trong `arr2`
+
+```cpp
+for (int x : arr2) {
+    while (dem[x] > 0) {
+        ketqua.push_back(x);
+        dem[x]--;
+    }
+}
+```
+
+Đây là phần quan trọng nhất.
+
+Với mỗi `x` trong `arr2`, ta lấy **toàn bộ** số `x` trong `arr1` rồi đưa vào kết quả.
+
+Sau khi xử lý xong:
+
+```cpp
+dem[x] = 0;
+```
+
+Do đó, `x` sẽ không bị thêm lại ở bước sau.
+
+---
+
+## Đưa phần còn lại vào kết quả
+
+```cpp
+for (int x = 0; x <= 1000; x++) {
+    while (dem[x] > 0) {
+        ketqua.push_back(x);
+        dem[x]--;
+    }
+}
+```
+
+Duyệt giá trị từ nhỏ đến lớn nên các phần tử chưa xử lý được tự động sắp xếp tăng dần.
+
+---
+
+# 17. Có cần `sort()` không?
+
+**Không cần.**
+
+Đây là một điểm rất đáng chú ý.
+
+Thông thường nếu muốn sắp xếp tăng dần, ta nghĩ đến:
+
+```cpp
+sort(...)
+```
+
+Nhưng trong bài này, ta đã biết miền giá trị:
+
+```text
+0 -> 1000
+```
+
+nên chỉ cần duyệt:
+
+```cpp
+for (int x = 0; x <= 1000; x++)
+```
+
+và lấy số lượng tương ứng.
+
+Ví dụ:
+
+```text
+dem[1] = 2
+dem[4] = 3
+dem[7] = 1
+```
+
+Khi duyệt:
+
+```text
+1 -> 4 -> 7
+```
+
+ta tự động thu được:
+
+```text
+1 1 4 4 4 7
+```
+
+Đây chính là tư tưởng của **Counting Sort / Frequency Counting**.
+
+---
+
+# 18. Những lỗi dễ mắc
+
+### Lỗi 1: Chỉ sort `arr1`
+
+```cpp
+sort(arr1.begin(), arr1.end());
+```
+
+Cách này tạo thứ tự tăng dần thông thường, không tuân theo `arr2`.
+
+---
+
+### Lỗi 2: Chỉ đưa mỗi số trong `arr2` vào một lần
+
+Ví dụ:
+
+```text
+arr1 có 2 xuất hiện 3 lần
+```
+
+thì phải đưa:
+
+```text
+2 2 2
+```
+
+chứ không phải:
+
+```text
+2
+```
+
+Vì vậy cần:
+
+```cpp
+while (dem[x] > 0)
+```
+
+---
+
+### Lỗi 3: Không xóa tần suất sau khi xử lý `arr2`
+
+Nếu không giảm:
+
+```cpp
+dem[x]--;
+```
+
+thì các phần tử đã xử lý sẽ tiếp tục xuất hiện ở phần cuối.
+
+---
+
+### Lỗi 4: Sắp xếp phần còn lại nhưng quên rằng các số trong `arr2` đã được xử lý
+
+Nếu sử dụng `unordered_map`, cần đánh dấu những số đã lấy ra.
+
+Nếu sử dụng mảng đếm như lời giải trên thì việc:
+
+```cpp
+dem[x]--;
+```
+
+đã tự động giải quyết vấn đề này.
+
+---
+
+# 19. Tư duy tổng quát rút ra từ bài toán
+
+Bài này là một ví dụ rất điển hình của kỹ thuật:
+
+> **Đếm tần suất + xử lý theo thứ tự ưu tiên.**
+
+Khi gặp bài toán có dạng:
+
+```text
+Có một mảng dữ liệu.
+Có một thứ tự ưu tiên được cho trước.
+Các phần tử giống nhau phải gom lại.
+Các phần tử còn lại xử lý theo thứ tự thông thường.
+```
+
+hãy nghĩ đến:
+
+1. Đếm số lần xuất hiện.
+2. Duyệt thứ tự ưu tiên.
+3. Lấy toàn bộ phần tử tương ứng.
+4. Xử lý phần còn lại.
+
+Đặc biệt, nếu miền giá trị nhỏ, hãy cân nhắc:
+
+```cpp
+int dem[MAX];
+```
+
+thay vì:
+
+```cpp
+map
+```
+
+hoặc:
+
+```cpp
+unordered_map
+```
+
+Điều này thường giúp lời giải đơn giản hơn và đạt thời gian tuyến tính.
+
+---
+
+# 20. Kết luận
+
+Lời giải tối ưu theo giới hạn của bài `Relative Sort Array` là sử dụng **mảng đếm tần suất**.
+
+Quy trình ngắn gọn:
+
+```text
+arr1
+  ↓
+Đếm tần suất
+  ↓
+Duyệt arr2
+  ↓
+Đưa từng nhóm theo thứ tự arr2
+  ↓
+Duyệt từ 0 → 1000
+  ↓
+Đưa các phần tử còn lại tăng dần
+  ↓
+Kết quả
+```
+
+Độ phức tạp:
+
+```text
+Thời gian: O(n + m)
+Bộ nhớ phụ: O(1)
+```
+
+với giới hạn giá trị của bài toán.
