@@ -1,0 +1,93 @@
+# LeetCode 3046 - Split the Array
+
+## 1. Đề bài
+
+Cho một mảng số nguyên `nums` có độ dài chẵn. Hãy xác định xem có thể chia mảng thành hai mảng con có cùng kích thước sao cho trong mỗi mảng con không có phần tử trùng lặp hay không.
+
+## 2. Ý tưởng cốt lõi
+
+Thay vì thực sự xây dựng hai mảng, ta chỉ cần kiểm tra điều kiện tồn tại.
+
+Quan sát:
+
+- Nếu một số xuất hiện 1 lần → luôn đặt được.
+- Nếu một số xuất hiện 2 lần → mỗi mảng nhận một bản sao.
+- Nếu một số xuất hiện 3 lần trở lên → chắc chắn một mảng phải chứa hai phần tử giống nhau.
+
+Suy ra:
+
+Có thể chia mảng khi và chỉ khi mọi phần tử đều xuất hiện không quá 2 lần.
+
+## 3. Chứng minh
+
+### Điều kiện cần
+
+Nếu tồn tại số x xuất hiện 3 lần:
+
+x, x, x
+
+Chỉ có 2 mảng để chứa chúng.
+
+Theo nguyên lý chim bồ câu, ít nhất một mảng phải chứa hai số x.
+
+Mâu thuẫn với yêu cầu không được trùng lặp.
+
+### Điều kiện đủ
+
+Nếu mọi phần tử xuất hiện không quá 2 lần:
+
+- Xuất hiện 1 lần → đặt vào bất kỳ mảng nào.
+- Xuất hiện 2 lần → chia đều cho hai mảng.
+
+Luôn xây dựng được hai mảng hợp lệ.
+
+## 4. Thuật toán tối ưu
+
+1. Tạo mảng đếm tần suất.
+2. Duyệt từng phần tử.
+3. Tăng tần suất.
+4. Nếu tần suất vượt quá 2 → trả về false ngay.
+5. Duyệt xong → trả về true.
+
+## 5. Độ phức tạp
+
+### Time Complexity
+
+O(n)
+
+Mỗi phần tử chỉ được duyệt một lần.
+
+### Space Complexity
+
+O(1)
+
+Do đề bài cho:
+
+1 <= nums[i] <= 100
+
+Nên chỉ cần mảng kích thước 101.
+
+## 6. Lời giải C++
+
+```cpp
+class Solution {
+public:
+    bool isPossibleToSplit(vector<int>& nums) {
+        int freq[101] = {};
+
+        for (int x : nums) {
+            if (++freq[x] > 2)
+                return false;
+        }
+
+        return true;
+    }
+};
+```
+
+## 7. Tóm tắt phỏng vấn
+
+- Không cần mô phỏng việc chia mảng.
+- Chỉ cần kiểm tra tần suất xuất hiện.
+- Điều kiện thất bại duy nhất là một số xuất hiện quá 2 lần.
+- Dùng mảng đếm tần suất để đạt O(n) thời gian và O(1) bộ nhớ.
