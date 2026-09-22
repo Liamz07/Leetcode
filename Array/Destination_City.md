@@ -1,0 +1,1031 @@
+# Destination City — LeetCode
+
+## 1. Thông tin bài toán
+
+**LeetCode:** Destination City  
+**Độ khó:** Easy
+
+### Mô tả
+
+Cho một danh sách các tuyến đường:
+
+```text
+paths[i] = [fromCity, toCity]
+```
+
+Trong đó:
+
+- `fromCity` là thành phố xuất phát.
+- `toCity` là thành phố đến.
+
+Ta cần tìm **Destination City** — thành phố **không có tuyến đường nào xuất phát từ nó**.
+
+Ví dụ:
+
+```text
+paths = [
+    ["London", "New York"],
+    ["New York", "Lima"],
+    ["Lima", "Sao Paulo"]
+]
+```
+
+Ta có:
+
+```text
+London → New York
+New York → Lima
+Lima → Sao Paulo
+```
+
+`Sao Paulo` không xuất hiện ở vị trí thành phố xuất phát.
+
+Vì vậy:
+
+```text
+Destination City = "Sao Paulo"
+```
+
+---
+
+# 2. Nhận xét quan trọng về bài toán
+
+Mỗi tuyến đường có dạng:
+
+```text
+A → B
+```
+
+Ta có thể xem:
+
+- `A` là một thành phố **có đường đi ra**.
+- `B` là một thành phố **được đi tới**.
+
+Destination City chính là thành phố:
+
+```text
+Có xuất hiện ở đích
+NHƯNG
+Không xuất hiện ở nguồn
+```
+
+Đây là nhận xét quan trọng nhất của bài toán.
+
+---
+
+# 3. Phương pháp 1 — Dùng hai tập hợp
+
+Một cách trực tiếp là lưu:
+
+```text
+sources = các thành phố xuất phát
+destinations = các thành phố được đi tới
+```
+
+Sau đó tìm thành phố:
+
+```text
+city ∈ destinations
+và
+city ∉ sources
+```
+
+Ví dụ:
+
+```text
+paths = [
+    ["London", "New York"],
+    ["New York", "Lima"],
+    ["Lima", "Sao Paulo"]
+]
+```
+
+Ta có:
+
+```text
+sources:
+London
+New York
+Lima
+
+destinations:
+New York
+Lima
+Sao Paulo
+```
+
+So sánh hai tập:
+
+```text
+New York    → có trong sources
+Lima        → có trong sources
+Sao Paulo   → không có trong sources
+```
+
+Vậy:
+
+```text
+Sao Paulo
+```
+
+là Destination City.
+
+### Độ phức tạp
+
+Có `n` tuyến đường.
+
+Ta cần duyệt toàn bộ `paths`:
+
+```text
+Time = O(n)
+```
+
+Hai `unordered_set` có tổng số phần tử tối đa `O(n)`:
+
+```text
+Space = O(n)
+```
+
+Đây là một cách rất rõ ràng và dễ hiểu.
+
+---
+
+# 4. Phương pháp 2 — Chỉ lưu các thành phố xuất phát
+
+Ta có thể nhận ra rằng không cần lưu cả hai tập.
+
+Chỉ cần lưu:
+
+```text
+sources = các thành phố xuất phát
+```
+
+Sau đó duyệt qua các thành phố đích.
+
+Nếu một thành phố đích không nằm trong `sources`, đó chính là Destination City.
+
+Ví dụ:
+
+```text
+sources = {
+    London,
+    New York,
+    Lima
+}
+```
+
+Duyệt các destination:
+
+```text
+New York  → có trong sources
+Lima      → có trong sources
+Sao Paulo → không có trong sources
+```
+
+Trả về:
+
+```text
+Sao Paulo
+```
+
+### Độ phức tạp
+
+```text
+Time  = O(n)
+Space = O(n)
+```
+
+Đây là một lời giải tốt và đơn giản.
+
+---
+
+# 5. Phương pháp 3 — Dùng một `unordered_map` như lời giải của bạn
+
+Bạn sử dụng:
+
+```cpp
+unordered_map<string, int> dem;
+```
+
+Sau đó:
+
+```cpp
+dem[paths[i][0]]--;
+dem[paths[i][1]]++;
+```
+
+Ý tưởng của bạn là rất thú vị.
+
+Bạn đang gán:
+
+```text
+Thành phố nguồn → -1
+Thành phố đích  → +1
+```
+
+Sau khi xử lý toàn bộ tuyến đường:
+
+```text
+destination city
+```
+
+sẽ có giá trị:
+
+```text
++1
+```
+
+và bạn trả về thành phố đó.
+
+---
+
+# 6. Kiểm tra lời giải của bạn
+
+Code của bạn:
+
+```cpp
+class Solution {
+public:
+    string destCity(vector<vector<string>>& paths) {
+        unordered_map<string, int> dem;
+
+        for (int i = 0; i < paths.size(); i++) {
+            dem[paths[i][0]]--;
+            dem[paths[i][1]]++;
+        }
+
+        for (auto it = dem.begin(); it != dem.end(); ++it) {
+            if (it->second == 1)
+                return it->first;
+        }
+
+        return "-1";
+    }
+};
+```
+
+## Kết luận ngắn
+
+**Lời giải của bạn đúng với ràng buộc của bài LeetCode và đạt `O(n)` thời gian, `O(n)` bộ nhớ.**
+
+Tuy nhiên, có một điểm quan trọng cần hiểu:
+
+> Giá trị `dem[city]` không thực sự là "số lần xuất hiện ở destination", mà là **số lần xuất hiện ở destination trừ số lần xuất hiện ở source**.
+
+Cụ thể:
+
+```text
+dem[city] =
+    số lần city xuất hiện ở vị trí destination
+    -
+    số lần city xuất hiện ở vị trí source
+```
+
+Vì vậy:
+
+```cpp
+dem[paths[i][0]]--;
+```
+
+và:
+
+```cpp
+dem[paths[i][1]]++;
+```
+
+là hoàn toàn hợp lý.
+
+---
+
+# 7. Tại sao `dem[city] == 1` xác định được Destination City?
+
+Theo cấu trúc của bài toán, Destination City là thành phố cuối cùng của chuỗi đường đi.
+
+Ví dụ:
+
+```text
+A → B
+B → C
+C → D
+```
+
+Ta cập nhật:
+
+```text
+A: -1
+B: -1 + 1 = 0
+C: -1 + 1 = 0
+D: +1
+```
+
+Kết quả:
+
+```text
+A → -1
+B →  0
+C →  0
+D → +1
+```
+
+Do đó:
+
+```text
+D
+```
+
+là thành phố duy nhất có giá trị `1`.
+
+---
+
+# 8. Phân tích bằng công thức
+
+Với một thành phố `X`, đặt:
+
+```text
+out(X) = số tuyến đường xuất phát từ X
+in(X)  = số tuyến đường đi tới X
+```
+
+Code của bạn tạo:
+
+```text
+dem[X] = in(X) - out(X)
+```
+
+Destination City có:
+
+```text
+out(X) = 0
+```
+
+Và theo cấu trúc hợp lệ của bài toán:
+
+```text
+in(X) = 1
+```
+
+Do đó:
+
+```text
+dem[X] = 1 - 0
+        = 1
+```
+
+Vì vậy điều kiện:
+
+```cpp
+if (it->second == 1)
+```
+
+là đúng.
+
+---
+
+# 9. Ví dụ chi tiết
+
+Xét:
+
+```text
+paths = [
+    ["A", "B"],
+    ["B", "C"],
+    ["C", "D"]
+]
+```
+
+## Bước 1
+
+Xử lý:
+
+```text
+A → B
+```
+
+Ta có:
+
+```text
+A = -1
+B = +1
+```
+
+---
+
+## Bước 2
+
+Xử lý:
+
+```text
+B → C
+```
+
+Cập nhật:
+
+```text
+B = +1 - 1 = 0
+C = +1
+```
+
+Toàn bộ map:
+
+```text
+A = -1
+B =  0
+C =  1
+```
+
+---
+
+## Bước 3
+
+Xử lý:
+
+```text
+C → D
+```
+
+Cập nhật:
+
+```text
+C = 1 - 1 = 0
+D = 1
+```
+
+Cuối cùng:
+
+```text
+A = -1
+B =  0
+C =  0
+D =  1
+```
+
+Ta tìm được:
+
+```text
+D
+```
+
+---
+
+# 10. Điểm cần chú ý về `unordered_map`
+
+Bạn dùng:
+
+```cpp
+unordered_map<string, int>
+```
+
+Điều này hoàn toàn hợp lý.
+
+### Thời gian trung bình
+
+Các thao tác:
+
+```cpp
+dem[key]++
+dem[key]--
+```
+
+có độ phức tạp trung bình:
+
+```text
+O(1)
+```
+
+Do đó tổng thời gian trung bình:
+
+```text
+O(n)
+```
+
+### Bộ nhớ
+
+Có tối đa `O(n)` thành phố khác nhau:
+
+```text
+Space = O(n)
+```
+
+---
+
+# 11. Lời giải của bạn có thực sự "tối ưu" không?
+
+Về Big-O:
+
+```text
+Time  = O(n)
+Space = O(n)
+```
+
+Đây là mức rất tốt.
+
+Không thể tránh việc phải đọc các tuyến đường ít nhất một lần, nên:
+
+```text
+O(n)
+```
+
+là độ phức tạp thời gian tự nhiên và tối ưu về mặt Big-O.
+
+Tuy nhiên, **cách dùng `unordered_map<string, int>` của bạn chưa phải là cách đơn giản nhất về mặt ý tưởng**.
+
+Ta chỉ thực sự cần biết:
+
+```text
+Thành phố nào có đường đi ra?
+```
+
+Do đó có thể dùng:
+
+```cpp
+unordered_set<string> source;
+```
+
+và chỉ lưu các thành phố xuất phát.
+
+---
+
+# 12. So sánh với cách dùng `unordered_set`
+
+Cách này có ý tưởng trực tiếp hơn:
+
+```cpp
+class Solution {
+public:
+    string destCity(vector<vector<string>>& paths) {
+        unordered_set<string> source;
+
+        for (auto& path : paths) {
+            source.insert(path[0]);
+        }
+
+        for (auto& path : paths) {
+            if (source.find(path[1]) == source.end()) {
+                return path[1];
+            }
+        }
+
+        return "";
+    }
+};
+```
+
+### Ý tưởng
+
+Bước 1:
+
+```cpp
+source.insert(path[0]);
+```
+
+Lưu tất cả thành phố có đường đi ra.
+
+Bước 2:
+
+```cpp
+if (source.find(path[1]) == source.end())
+```
+
+Nếu thành phố đích không xuất hiện trong danh sách source, đó chính là Destination City.
+
+### Độ phức tạp
+
+```text
+Time  = O(n) trung bình
+Space = O(n)
+```
+
+Về Big-O, nó **không tốt hơn** lời giải của bạn.
+
+Nhưng về mặt biểu đạt ý tưởng, nó gần với định nghĩa của bài toán hơn.
+
+---
+
+# 13. Một cách khác cực kỳ trực tiếp
+
+Có thể dùng `unordered_set` để lưu source rồi duyệt destination:
+
+```cpp
+class Solution {
+public:
+    string destCity(vector<vector<string>>& paths) {
+        unordered_set<string> source;
+
+        for (auto& path : paths) {
+            source.insert(path[0]);
+        }
+
+        for (auto& path : paths) {
+            if (!source.count(path[1])) {
+                return path[1];
+            }
+        }
+
+        return "";
+    }
+};
+```
+
+Ở đây:
+
+```cpp
+source.count(path[1])
+```
+
+trả về:
+
+```text
+1 → có trong source
+0 → không có trong source
+```
+
+Do đó:
+
+```cpp
+if (!source.count(path[1]))
+```
+
+có nghĩa:
+
+> Nếu thành phố đích không phải là thành phố xuất phát của bất kỳ tuyến đường nào, trả về nó.
+
+---
+
+# 14. Tại sao không cần kiểm tra tất cả thành phố bằng map?
+
+Một cách suy nghĩ ban đầu có thể là:
+
+```text
+Đếm số lần xuất hiện của mỗi thành phố
+```
+
+Nhưng điều quan trọng không phải chỉ là **số lần xuất hiện**, mà là **vị trí xuất hiện**:
+
+```text
+source
+destination
+```
+
+Ví dụ:
+
+```text
+A → B
+B → C
+```
+
+Số lần xuất hiện:
+
+```text
+A: 1
+B: 2
+C: 1
+```
+
+Nếu chỉ đếm tổng số lần xuất hiện thì không thể biết ngay `C` là destination.
+
+Ta cần phân biệt:
+
+```text
+A xuất hiện ở source
+B xuất hiện ở source và destination
+C chỉ xuất hiện ở destination
+```
+
+Đó là lý do `unordered_set` source là một cách biểu diễn rất tự nhiên.
+
+---
+
+# 15. Có thể tối ưu xuống `O(1)` bộ nhớ không?
+
+Không thể theo cách thông thường nếu ta chỉ được phép truy cập dữ liệu đầu vào và không thay đổi cấu trúc dữ liệu.
+
+Lý do là ta cần nhớ những thành phố nào đã xuất hiện ở vị trí source.
+
+Ví dụ:
+
+```text
+A → B
+C → D
+E → F
+...
+```
+
+Khi kiểm tra một destination, cần biết nó có nằm trong tập source hay không.
+
+Nếu không lưu thông tin này, ta có thể phải tìm lại trong toàn bộ `paths`, dẫn tới:
+
+```text
+O(n²)
+```
+
+Vì vậy với cấu trúc dữ liệu thông thường:
+
+```text
+O(n) time + O(n) space
+```
+
+là lựa chọn hợp lý.
+
+---
+
+# 16. Một lưu ý quan trọng về cách duyệt `unordered_map`
+
+Bạn viết:
+
+```cpp
+for (auto it = dem.begin(); it != dem.end(); ++it)
+```
+
+Điều này hoàn toàn đúng.
+
+Nhưng cần nhớ:
+
+> `unordered_map` không đảm bảo thứ tự các phần tử.
+
+Tức là nếu bài toán yêu cầu:
+
+```text
+trả về thành phố theo thứ tự xuất hiện
+```
+
+thì không nên dựa vào thứ tự duyệt của `unordered_map`.
+
+May mắn là bài `Destination City` chỉ yêu cầu tìm destination city, và theo ràng buộc bài toán nó tồn tại duy nhất, nên điều này không gây vấn đề.
+
+---
+
+# 17. Vì sao `return "-1"` không cần thiết?
+
+Trong code của bạn:
+
+```cpp
+return "-1";
+```
+
+Trong bài LeetCode này, theo ràng buộc đề bài, Destination City luôn tồn tại.
+
+Do đó trường hợp:
+
+```cpp
+return "-1";
+```
+
+sẽ không xảy ra với input hợp lệ.
+
+Bạn có thể viết:
+
+```cpp
+return "";
+```
+
+hoặc vẫn giữ:
+
+```cpp
+return "-1";
+```
+
+để đảm bảo hàm luôn có giá trị trả về.
+
+Không ảnh hưởng đến độ phức tạp.
+
+---
+
+# 18. Một điểm có thể cải thiện trong code của bạn
+
+Bạn viết:
+
+```cpp
+for (int i = 0; i < paths.size(); i++)
+```
+
+Có thể viết:
+
+```cpp
+for (auto& path : paths)
+```
+
+để code ngắn và thể hiện rõ hơn rằng ta đang duyệt từng tuyến đường:
+
+```cpp
+for (auto& path : paths) {
+    dem[path[0]]--;
+    dem[path[1]]++;
+}
+```
+
+Tuy nhiên đây là **cải thiện về khả năng đọc code**, không phải cải thiện về độ phức tạp.
+
+---
+
+# 19. Phiên bản giữ nguyên ý tưởng của bạn
+
+Nếu bạn thích ý tưởng `in - out`, có thể viết gọn hơn:
+
+```cpp
+class Solution {
+public:
+    string destCity(vector<vector<string>>& paths) {
+        unordered_map<string, int> dem;
+
+        for (auto& path : paths) {
+            dem[path[0]]--;
+            dem[path[1]]++;
+        }
+
+        for (auto& [city, count] : dem) {
+            if (count == 1) {
+                return city;
+            }
+        }
+
+        return "";
+    }
+};
+```
+
+Đây vẫn là:
+
+```text
+Time  = O(n) trung bình
+Space = O(n)
+```
+
+và giữ nguyên hoàn toàn tư duy của bạn.
+
+---
+
+# 20. Phiên bản mình khuyến nghị để học bài này
+
+Nếu mục tiêu là hiểu đúng bản chất bài toán, mình khuyến nghị:
+
+```cpp
+class Solution {
+public:
+    string destCity(vector<vector<string>>& paths) {
+        unordered_set<string> source;
+
+        for (auto& path : paths) {
+            source.insert(path[0]);
+        }
+
+        for (auto& path : paths) {
+            if (!source.count(path[1])) {
+                return path[1];
+            }
+        }
+
+        return "";
+    }
+};
+```
+
+Lý do:
+
+```text
+Destination City
+        ↓
+Thành phố là destination
+        ↓
+nhưng không phải source
+```
+
+Code gần như biểu diễn trực tiếp định nghĩa này.
+
+---
+
+# 21. So sánh các cách tiếp cận
+
+| Cách | Time | Space | Nhận xét |
+|---|---:|---:|---|
+| Duyệt tìm thủ công | `O(n²)` | `O(1)` | Không nên dùng |
+| Hai `unordered_set` | `O(n)` | `O(n)` | Dễ hiểu |
+| `unordered_set` source | `O(n)` | `O(n)` | Trực tiếp, rõ ràng |
+| `unordered_map` `in - out` của bạn | `O(n)` | `O(n)` | Đúng, khá thông minh |
+
+Lưu ý rằng `O(n)` với `unordered_map`/`unordered_set` là **độ phức tạp trung bình**. Trong trường hợp hash table có nhiều collision, lý thuyết xấu nhất có thể lớn hơn.
+
+---
+
+# 22. Những kiến thức có thể rút ra từ bài này
+
+Bài này tuy Easy nhưng có một số pattern rất đáng nhớ.
+
+## Pattern 1 — Source và Destination
+
+Khi gặp dữ liệu dạng:
+
+```text
+A → B
+```
+
+hãy nghĩ ngay đến:
+
+```text
+source
+destination
+```
+
+và đặt câu hỏi:
+
+> Đối tượng nào chỉ xuất hiện ở destination mà không xuất hiện ở source?
+
+---
+
+## Pattern 2 — Set cho bài toán tồn tại/không tồn tại
+
+Nếu câu hỏi là:
+
+```text
+X có xuất hiện trong một tập nào đó không?
+```
+
+thì `unordered_set` thường là lựa chọn phù hợp:
+
+```cpp
+unordered_set<string> s;
+```
+
+Kiểm tra:
+
+```cpp
+s.count(x)
+```
+
+---
+
+## Pattern 3 — Map khi cần thông tin số lượng/trạng thái
+
+Nếu cần tính:
+
+```text
+in(X) - out(X)
+```
+
+thì `unordered_map` rất phù hợp:
+
+```cpp
+unordered_map<string, int> mp;
+```
+
+Đây chính là ý tưởng bạn đã sử dụng.
+
+---
+
+# 23. Kết luận
+
+Lời giải của bạn:
+
+```cpp
+unordered_map<string, int> dem;
+```
+
+với:
+
+```cpp
+dem[path[0]]--;
+dem[path[1]]++;
+```
+
+là **đúng và đã đạt `O(n)` thời gian trung bình, `O(n)` bộ nhớ**.
+
+Bạn không cần thay đổi thuật toán để cải thiện Big-O.
+
+Điểm đáng cải thiện chủ yếu là **cách biểu diễn ý tưởng**:
+
+```text
+Cách của bạn:
+in - out = 1
+```
+
+so với:
+
+```text
+Cách trực tiếp:
+destination không nằm trong source
+```
+
+Cả hai đều có:
+
+```text
+Time  = O(n) trung bình
+Space = O(n)
+```
+
+Nếu đang học thuật toán, cách `unordered_set` giúp bạn nhận ra bản chất bài toán nhanh hơn; còn cách `unordered_map` của bạn cho thấy bạn đã nhìn bài toán dưới góc độ **đếm số lần đi vào/đi ra**, đây cũng là một cách tư duy rất tốt.
+
+### Tóm tắt cuối cùng
+
+```text
+Lời giải của bạn:
+✓ Đúng
+✓ O(n) time trung bình
+✓ O(n) space
+✓ Không có vấn đề logic với ràng buộc của bài
+✓ Có thể viết gọn hơn
+
+Không cần tối ưu Big-O thêm.
+
+Cách tiếp cận dễ hiểu nhất:
+1. Lưu tất cả source city vào unordered_set.
+2. Duyệt destination city.
+3. Destination nào không nằm trong source → đáp án.
