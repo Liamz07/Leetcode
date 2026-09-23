@@ -1,0 +1,1250 @@
+# Majority Element — LeetCode
+
+## 1. Tóm tắt bài toán
+
+Cho một mảng số nguyên `nums` có `n` phần tử.
+
+Cần tìm **majority element** — phần tử xuất hiện **nhiều hơn `n / 2` lần**.
+
+Theo đề bài LeetCode, ta được đảm bảo rằng majority element **luôn tồn tại**.
+
+Ví dụ:
+
+```text
+Input:
+nums = [3, 2, 3]
+
+Output:
+3
+```
+
+Vì `3` xuất hiện 2 lần và:
+
+```text
+2 > 3 / 2
+```
+
+---
+
+# 2. Điều quan trọng nhất cần nhận ra
+
+Một cách tiếp cận trực tiếp là đếm tần suất xuất hiện của từng phần tử bằng `unordered_map`:
+
+```cpp
+unordered_map<int, int> freq;
+```
+
+Cách này hoàn toàn đúng và có độ phức tạp thời gian trung bình `O(n)`.
+
+Tuy nhiên, bài toán có một tính chất đặc biệt:
+
+```text
+majority element xuất hiện > n / 2 lần
+```
+
+Điều này có nghĩa là:
+
+> Số lần xuất hiện của majority element lớn hơn tổng số lần xuất hiện của tất cả các phần tử khác cộng lại.
+
+Đây chính là chìa khóa để giải bài toán với:
+
+```text
+Time:  O(n)
+Space: O(1)
+```
+
+bằng **Boyer-Moore Voting Algorithm**.
+
+---
+
+# 3. Tại sao `> n / 2` lại quan trọng?
+
+Giả sử:
+
+```text
+n = 7
+```
+
+Majority element phải xuất hiện ít nhất:
+
+```text
+4 lần
+```
+
+Ví dụ:
+
+```text
+[2, 2, 1, 1, 1, 2, 2]
+```
+
+Ta có:
+
+```text
+2 xuất hiện 4 lần
+1 xuất hiện 3 lần
+```
+
+Do đó:
+
+```text
+count(2) > count(all other elements)
+```
+
+Cụ thể:
+
+```text
+4 > 3
+```
+
+Nếu ta ghép mỗi `2` với một phần tử khác `2`:
+
+```text
+2 vs 1
+2 vs 1
+2 vs 1
+```
+
+thì vẫn còn lại một `2`:
+
+```text
+2
+```
+
+Đây chính là ý tưởng của Boyer-Moore:
+
+> Triệt tiêu từng cặp phần tử khác nhau. Majority element có số lượng lớn hơn tất cả phần tử còn lại nên không thể bị triệt tiêu hoàn toàn.
+
+---
+
+# 4. Boyer-Moore Voting Algorithm
+
+Ta duy trì hai biến:
+
+```cpp
+int candidate;
+int count;
+```
+
+Trong đó:
+
+- `candidate`: ứng viên hiện tại có thể là majority element.
+- `count`: số phiếu hiện tại dành cho `candidate`.
+
+Quy tắc:
+
+```text
+Nếu count == 0:
+    candidate = x
+
+Nếu x == candidate:
+    count++
+
+Nếu x != candidate:
+    count--
+```
+
+Có thể viết thành code:
+
+```cpp
+for (int x : nums) {
+    if (count == 0) {
+        candidate = x;
+    }
+
+    if (x == candidate) {
+        count++;
+    } else {
+        count--;
+    }
+}
+```
+
+Cuối cùng:
+
+```cpp
+candidate
+```
+
+chính là majority element.
+
+Điều này đúng vì đề bài đảm bảo majority element tồn tại.
+
+---
+
+# 5. Tại sao `count` có thể coi là "phiếu bầu"?
+
+Ta có thể hình dung:
+
+```text
+candidate = ứng viên
+count     = số phiếu ủng hộ ứng viên
+```
+
+Khi gặp đúng candidate:
+
+```cpp
+x == candidate
+```
+
+ta tăng phiếu:
+
+```cpp
+count++;
+```
+
+Khi gặp phần tử khác candidate:
+
+```cpp
+x != candidate
+```
+
+ta cho hai phần tử "đối đầu" nhau:
+
+```text
+candidate +1 phiếu
+x         -1 phiếu
+```
+
+nên:
+
+```cpp
+count--;
+```
+
+Nếu `count` giảm về `0`, có thể xem như:
+
+> Số phần tử ủng hộ candidate đã bị cân bằng bởi số phần tử khác candidate.
+
+Khi đó candidate hiện tại không còn lợi thế nào nữa, nên ta có thể chọn phần tử tiếp theo làm candidate mới.
+
+---
+
+# 6. Ví dụ đơn giản nhất
+
+Xét:
+
+```text
+nums = [2, 1, 2]
+```
+
+Ban đầu:
+
+```text
+candidate = ?
+count = 0
+```
+
+### Phần tử đầu tiên: `2`
+
+Vì:
+
+```text
+count == 0
+```
+
+nên:
+
+```text
+candidate = 2
+```
+
+Sau đó:
+
+```text
+2 == candidate
+```
+
+nên:
+
+```text
+count = 1
+```
+
+Trạng thái:
+
+```text
+candidate = 2
+count = 1
+```
+
+---
+
+### Phần tử tiếp theo: `1`
+
+Ta có:
+
+```text
+1 != 2
+```
+
+nên:
+
+```text
+count--
+```
+
+Kết quả:
+
+```text
+candidate = 2
+count = 0
+```
+
+Có thể hiểu rằng:
+
+```text
+2
+1
+```
+
+đã triệt tiêu nhau.
+
+---
+
+### Phần tử cuối: `2`
+
+Vì:
+
+```text
+count == 0
+```
+
+nên:
+
+```text
+candidate = 2
+```
+
+Sau đó:
+
+```text
+2 == candidate
+```
+
+nên:
+
+```text
+count = 1
+```
+
+Cuối cùng:
+
+```text
+candidate = 2
+```
+
+Đúng.
+
+---
+
+# 7. Trace đầy đủ một ví dụ
+
+Xét:
+
+```text
+nums = [2, 2, 1, 1, 1, 2, 2]
+```
+
+Ta chạy thuật toán:
+
+| i | x | candidate trước | count trước | candidate sau | count sau |
+|---:|---:|---:|---:|---:|---:|
+| 0 | 2 | - | 0 | 2 | 1 |
+| 1 | 2 | 2 | 1 | 2 | 2 |
+| 2 | 1 | 2 | 2 | 2 | 1 |
+| 3 | 1 | 2 | 1 | 2 | 0 |
+| 4 | 1 | 2 | 0 | 1 | 1 |
+| 5 | 2 | 1 | 1 | 1 | 0 |
+| 6 | 2 | 1 | 0 | 2 | 1 |
+
+Kết quả:
+
+```text
+candidate = 2
+```
+
+---
+
+# 8. Trực giác sâu hơn: triệt tiêu cặp phần tử khác nhau
+
+Đây là cách tốt nhất để hiểu Boyer-Moore.
+
+Giả sử:
+
+```text
+nums = [2, 2, 1, 1, 1, 2, 2]
+```
+
+Ta có:
+
+```text
+2 xuất hiện 4 lần
+1 xuất hiện 3 lần
+```
+
+Hãy coi việc gặp hai phần tử khác nhau là một thao tác:
+
+```text
+xóa 1 phần tử majority
++
+xóa 1 phần tử non-majority
+```
+
+Ví dụ:
+
+```text
+2 2 1 1 1 2 2
+```
+
+Có thể xóa:
+
+```text
+2 và 1
+2 và 1
+2 và 1
+```
+
+Sau khi xóa:
+
+```text
+2
+```
+
+Còn lại `2`.
+
+Điều quan trọng:
+
+> Mỗi lần ta loại bỏ một phần tử majority thì đồng thời cũng loại bỏ một phần tử không phải majority.
+
+Vì majority ban đầu nhiều hơn tất cả các phần tử còn lại cộng lại, sau mọi lần triệt tiêu như vậy, majority vẫn còn ít nhất một phần tử.
+
+---
+
+# 9. Chứng minh tính đúng đắn
+
+Ta sẽ chứng minh thuật toán luôn trả về majority element.
+
+Gọi:
+
+```text
+M = majority element
+```
+
+Theo định nghĩa:
+
+```text
+count(M) > n / 2
+```
+
+Do đó:
+
+```text
+count(M) > n - count(M)
+```
+
+Vế phải chính là số lượng tất cả các phần tử không phải `M`.
+
+Hay:
+
+```text
+số M > số phần tử khác M
+```
+
+---
+
+## 9.1. Xem mỗi lần `count--` là một lần triệt tiêu
+
+Khi:
+
+```cpp
+x != candidate
+```
+
+ta thực hiện:
+
+```cpp
+count--;
+```
+
+Điều này tương đương với việc ghép:
+
+```text
+một candidate
+```
+
+với:
+
+```text
+một phần tử khác candidate
+```
+
+và loại bỏ cả hai khỏi quá trình xét.
+
+---
+
+## 9.2. Majority không thể bị loại bỏ hoàn toàn
+
+Giả sử majority là `M`.
+
+Để loại bỏ một `M`, cần một phần tử khác `M` để ghép với nó.
+
+Nhưng tổng số phần tử khác `M` ít hơn số lượng `M`.
+
+Do đó không thể ghép hết tất cả `M` với các phần tử khác.
+
+Ít nhất một `M` sẽ còn lại.
+
+Vì vậy candidate cuối cùng phải là:
+
+```text
+M
+```
+
+---
+
+# 10. Một cách chứng minh khác: invariant
+
+Ta có thể nhìn thuật toán theo invariant:
+
+> Sau khi xử lý một prefix của mảng, `candidate` là một phần tử có thể là majority của phần còn lại sau khi đã loại bỏ các cặp phần tử khác nhau.
+
+Mỗi khi:
+
+```cpp
+x == candidate
+```
+
+ta tăng số phiếu.
+
+Mỗi khi:
+
+```cpp
+x != candidate
+```
+
+ta giảm một phiếu, tương đương với việc triệt tiêu một cặp khác nhau.
+
+Khi:
+
+```cpp
+count == 0
+```
+
+toàn bộ nhóm đang ủng hộ candidate hiện tại đã được cân bằng bởi các phần tử khác.
+
+Vì vậy ta có thể bắt đầu một candidate mới.
+
+Do majority có số lượng lớn hơn tổng tất cả phần tử khác, candidate cuối cùng vẫn phải là majority.
+
+---
+
+# 11. Tại sao không cần `unordered_map`?
+
+Cách dùng `unordered_map` lưu thông tin:
+
+```text
+value -> frequency
+```
+
+Ví dụ:
+
+```text
+2 -> 4
+1 -> 3
+```
+
+Nhưng Boyer-Moore nhận ra rằng ta không thực sự cần biết chính xác:
+
+```text
+2 xuất hiện 4 lần
+1 xuất hiện 3 lần
+```
+
+Ta chỉ cần biết:
+
+> Sau khi triệt tiêu các cặp khác nhau, phần tử nào còn lại?
+
+Đó là lý do ta có thể giảm từ:
+
+```text
+O(n) memory
+```
+
+xuống:
+
+```text
+O(1) memory
+```
+
+---
+
+# 12. So sánh với lời giải dùng `unordered_map`
+
+Một lời giải phổ biến là:
+
+```cpp
+class Solution {
+public:
+    int majorityElement(vector<int>& nums) {
+        int n = nums.size();
+
+        unordered_map<int, int> mp;
+
+        for (int x : nums) {
+            mp[x]++;
+        }
+
+        for (auto it = mp.begin(); it != mp.end(); ++it) {
+            if (it->second > n / 2) {
+                return it->first;
+            }
+        }
+
+        return -1;
+    }
+};
+```
+
+Độ phức tạp trung bình:
+
+```text
+Time:  O(n)
+Space: O(n)
+```
+
+Đây là lời giải tốt về thời gian nhưng chưa tối ưu về bộ nhớ.
+
+Boyer-Moore:
+
+```text
+Time:  O(n)
+Space: O(1)
+```
+
+nên tốt hơn về mặt asymptotic space complexity.
+
+---
+
+# 13. Lời giải C++ tối ưu
+
+```cpp
+class Solution {
+public:
+    int majorityElement(vector<int>& nums) {
+        int candidate = 0;
+        int count = 0;
+
+        for (int x : nums) {
+            if (count == 0) {
+                candidate = x;
+            }
+
+            if (x == candidate) {
+                count++;
+            } else {
+                count--;
+            }
+        }
+
+        return candidate;
+    }
+};
+```
+
+---
+
+# 14. Giải thích từng dòng code
+
+## Khởi tạo candidate
+
+```cpp
+int candidate = 0;
+```
+
+Ta chưa có ứng viên nào.
+
+Giá trị `0` ban đầu không có ý nghĩa đặc biệt vì ngay khi `count == 0`, candidate sẽ được cập nhật.
+
+---
+
+## Khởi tạo count
+
+```cpp
+int count = 0;
+```
+
+Ban đầu chưa có phần tử nào được xét.
+
+---
+
+## Duyệt mảng
+
+```cpp
+for (int x : nums)
+```
+
+Mỗi lần xét một phần tử `x`.
+
+---
+
+## Khi không còn phiếu
+
+```cpp
+if (count == 0) {
+    candidate = x;
+}
+```
+
+Nếu candidate hiện tại đã bị triệt tiêu hoàn toàn, `x` trở thành candidate mới.
+
+---
+
+## Nếu gặp candidate
+
+```cpp
+if (x == candidate) {
+    count++;
+}
+```
+
+Candidate nhận thêm một phiếu.
+
+---
+
+## Nếu gặp phần tử khác
+
+```cpp
+else {
+    count--;
+}
+```
+
+Một phiếu của candidate bị triệt tiêu.
+
+---
+
+## Trả về candidate
+
+```cpp
+return candidate;
+```
+
+Vì đề bài đảm bảo majority element tồn tại, candidate cuối cùng chắc chắn là majority element.
+
+---
+
+# 15. Tại sao không cần kiểm tra `count > n / 2`?
+
+Một lỗi suy nghĩ phổ biến là:
+
+```cpp
+return candidate;
+```
+
+trông có vẻ thiếu bước kiểm tra.
+
+Nhưng đề bài đã đảm bảo:
+
+> Majority element always exists.
+
+Do đó không cần xác minh.
+
+Ví dụ, nếu đề **không đảm bảo** majority tồn tại:
+
+```text
+[1, 2, 3]
+```
+
+Boyer-Moore vẫn trả về một candidate, nhưng candidate đó không phải majority.
+
+Trong trường hợp đó cần chạy thêm một vòng để đếm số lần candidate xuất hiện.
+
+---
+
+# 16. Nếu majority element không được đảm bảo tồn tại
+
+Ta có thể viết:
+
+```cpp
+class Solution {
+public:
+    int majorityElement(vector<int>& nums) {
+        int candidate = 0;
+        int count = 0;
+
+        // Phase 1: tìm candidate
+        for (int x : nums) {
+            if (count == 0) {
+                candidate = x;
+            }
+
+            if (x == candidate) {
+                count++;
+            } else {
+                count--;
+            }
+        }
+
+        // Phase 2: xác minh candidate
+        int frequency = 0;
+
+        for (int x : nums) {
+            if (x == candidate) {
+                frequency++;
+            }
+        }
+
+        if (frequency > nums.size() / 2) {
+            return candidate;
+        }
+
+        return -1;
+    }
+};
+```
+
+Độ phức tạp vẫn là:
+
+```text
+Time:  O(n)
+Space: O(1)
+```
+
+Chỉ khác là phải duyệt mảng hai lần.
+
+---
+
+# 17. Tại sao thuật toán là `O(n)`?
+
+Ta chỉ duyệt qua mảng một lần:
+
+```cpp
+for (int x : nums)
+```
+
+Mỗi phần tử chỉ thực hiện một số thao tác:
+
+```text
+comparison
++
+increment/decrement
+```
+
+Mỗi thao tác là:
+
+```text
+O(1)
+```
+
+Do đó:
+
+```text
+Time = O(n)
+```
+
+---
+
+# 18. Tại sao Space là `O(1)`?
+
+Ta chỉ sử dụng:
+
+```cpp
+int candidate;
+int count;
+```
+
+Hai biến có kích thước cố định.
+
+Không phụ thuộc vào số lượng phần tử trong mảng.
+
+Do đó:
+
+```text
+Space = O(1)
+```
+
+Đây là điểm nổi bật nhất của Boyer-Moore.
+
+---
+
+# 19. Có thể sort không?
+
+Có.
+
+Một cách khác là:
+
+```cpp
+sort(nums.begin(), nums.end());
+return nums[nums.size() / 2];
+```
+
+Tại sao?
+
+Nếu một phần tử xuất hiện hơn `n / 2` lần, sau khi sort, nó chắc chắn chiếm vị trí chính giữa.
+
+Ví dụ:
+
+```text
+[2, 2, 1, 1, 1, 2, 2]
+```
+
+Sau sort:
+
+```text
+[1, 1, 1, 2, 2, 2, 2]
+```
+
+Phần tử giữa:
+
+```text
+index = n / 2
+      = 7 / 2
+      = 3
+```
+
+là:
+
+```text
+2
+```
+
+Code:
+
+```cpp
+class Solution {
+public:
+    int majorityElement(vector<int>& nums) {
+        sort(nums.begin(), nums.end());
+        return nums[nums.size() / 2];
+    }
+};
+```
+
+Độ phức tạp:
+
+```text
+Time:  O(n log n)
+Space: tùy implementation của sort
+```
+
+Vì vậy không tối ưu bằng Boyer-Moore về thời gian.
+
+Ngoài ra, `sort` còn thay đổi thứ tự mảng.
+
+---
+
+# 20. Có thể dùng `unordered_map` không?
+
+Có.
+
+Đây thường là cách dễ nghĩ nhất:
+
+```text
+Duyệt mảng
+    ↓
+Đếm frequency
+    ↓
+Tìm phần tử có frequency > n/2
+```
+
+Ưu điểm:
+
+- Rất trực quan.
+- Dễ chứng minh.
+- Dễ implement.
+
+Nhược điểm:
+
+```text
+Space = O(n)
+```
+
+Nếu mục tiêu là lời giải tối ưu nhất về complexity, Boyer-Moore tốt hơn.
+
+---
+
+# 21. Có cần `unordered_set` không?
+
+Không.
+
+`unordered_set` chỉ giúp biết phần tử có tồn tại hay không.
+
+Nhưng bài toán cần biết:
+
+```text
+phần tử nào xuất hiện > n/2 lần
+```
+
+Do đó set không đủ thông tin để giải trực tiếp.
+
+`unordered_map` có thể giải bằng cách lưu frequency, còn Boyer-Moore không cần lưu frequency của từng phần tử.
+
+---
+
+# 22. Những điều cần nhớ khi gặp Majority Element
+
+Khi nhìn thấy điều kiện:
+
+```text
+appears more than n / 2 times
+```
+
+hãy lập tức nghĩ đến:
+
+```text
+Boyer-Moore Voting Algorithm
+```
+
+Pattern:
+
+```text
+majority > n/2
+        ↓
+majority nhiều hơn tất cả phần còn lại
+        ↓
+có thể triệt tiêu từng cặp khác nhau
+        ↓
+majority không thể bị triệt tiêu hết
+        ↓
+Boyer-Moore
+        ↓
+O(n) time, O(1) space
+```
+
+---
+
+# 23. Template Boyer-Moore cần nhớ
+
+Có thể ghi nhớ template:
+
+```cpp
+int candidate = 0;
+int count = 0;
+
+for (int x : nums) {
+    if (count == 0) {
+        candidate = x;
+    }
+
+    if (x == candidate) {
+        count++;
+    } else {
+        count--;
+    }
+}
+
+return candidate;
+```
+
+Nhưng quan trọng hơn việc thuộc code là hiểu:
+
+```text
+count++
+```
+
+có nghĩa:
+
+> candidate được củng cố.
+
+Còn:
+
+```text
+count--
+```
+
+có nghĩa:
+
+> candidate và một phần tử khác nhau triệt tiêu nhau.
+
+---
+
+# 24. Một ví dụ lớn hơn
+
+Xét:
+
+```text
+nums = [7, 7, 5, 7, 5, 5, 7, 7]
+```
+
+Ta có:
+
+```text
+7 xuất hiện 5 lần
+5 xuất hiện 3 lần
+```
+
+Vì:
+
+```text
+5 > 8 / 2
+```
+
+`7` là majority.
+
+Chạy Boyer-Moore:
+
+```text
+x = 7
+candidate = 7
+count = 1
+
+x = 7
+candidate = 7
+count = 2
+
+x = 5
+candidate = 7
+count = 1
+
+x = 7
+candidate = 7
+count = 2
+
+x = 5
+candidate = 7
+count = 1
+
+x = 5
+candidate = 7
+count = 0
+
+x = 7
+candidate = 7
+count = 1
+
+x = 7
+candidate = 7
+count = 2
+```
+
+Kết quả:
+
+```text
+7
+```
+
+---
+
+# 25. Một insight tổng quát hơn
+
+Boyer-Moore không thực sự "đếm" frequency theo nghĩa truyền thống.
+
+Nó đang tìm một phần tử có **lợi thế tuyệt đối** so với toàn bộ phần còn lại.
+
+Nếu:
+
+```text
+frequency(M) > frequency(all others)
+```
+
+thì khi ghép:
+
+```text
+M + non-M
+```
+
+thành từng cặp, `M` sẽ còn dư.
+
+Đây là lý do thuật toán hoạt động.
+
+Có thể nhớ bằng câu:
+
+> **Majority không cần được đếm chính xác; chỉ cần biết nó không thể bị triệt tiêu bởi tất cả các phần tử khác.**
+
+---
+
+# 26. So sánh các cách tiếp cận
+
+| Approach | Time | Space | Ghi chú |
+|---|---:|---:|---|
+| Brute force | `O(n²)` | `O(1)` | Không nên dùng |
+| `unordered_map` | `O(n)` trung bình | `O(n)` | Dễ hiểu |
+| `sort` | `O(n log n)` | tùy implementation | Đơn giản |
+| Boyer-Moore | `O(n)` | `O(1)` | Tối ưu |
+
+Trong đó Boyer-Moore đạt:
+
+```text
+O(n) time
+O(1) extra space
+```
+
+---
+
+# 27. Kết luận
+
+Bài `Majority Element` có một insight rất quan trọng:
+
+```text
+majority element xuất hiện > n/2
+```
+
+suy ra:
+
+```text
+majority element xuất hiện nhiều hơn
+tổng tất cả các phần tử khác
+```
+
+Vì vậy ta có thể triệt tiêu từng cặp:
+
+```text
+[majority] + [non-majority]
+```
+
+Sau khi triệt tiêu, majority vẫn còn.
+
+Đó chính là nền tảng của:
+
+```text
+Boyer-Moore Voting Algorithm
+```
+
+Lời giải tối ưu:
+
+```cpp
+class Solution {
+public:
+    int majorityElement(vector<int>& nums) {
+        int candidate = 0;
+        int count = 0;
+
+        for (int x : nums) {
+            if (count == 0) {
+                candidate = x;
+            }
+
+            if (x == candidate) {
+                count++;
+            } else {
+                count--;
+            }
+        }
+
+        return candidate;
+    }
+};
+```
+
+Complexity:
+
+```text
+Time:  O(n)
+Space: O(1)
+```
+
+## Core insight cần ghi nhớ
+
+```text
+frequency(majority) > n/2
+            ↓
+majority > tất cả phần còn lại
+            ↓
+triệt tiêu từng cặp khác nhau
+            ↓
+majority không thể bị triệt tiêu hết
+            ↓
+candidate cuối cùng = majority
+```
+
+Đây là một trong những pattern quan trọng nên ghi nhớ khi luyện LeetCode, đặc biệt khi bài toán yêu cầu tìm một phần tử xuất hiện **hơn một nửa số phần tử**.
