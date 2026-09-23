@@ -1,0 +1,936 @@
+# Intersection of Two Arrays II — LeetCode
+
+## 1. Mô tả bài toán
+
+Cho hai mảng số nguyên `nums1` và `nums2`.
+
+Hãy tìm **giao của hai mảng**, trong đó:
+
+- Mỗi phần tử xuất hiện trong kết quả **đúng bằng số lần nhỏ hơn** mà nó xuất hiện trong hai mảng.
+- Thứ tự các phần tử trong kết quả **không quan trọng**.
+
+### Ví dụ
+
+```text
+nums1 = [1, 2, 2, 1]
+nums2 = [2, 2]
+
+Kết quả: [2, 2]
+```
+
+Vì:
+
+- `1` xuất hiện 2 lần trong `nums1`, nhưng 0 lần trong `nums2` → không lấy.
+- `2` xuất hiện 2 lần trong `nums1` và 2 lần trong `nums2` → lấy 2 lần.
+
+Một ví dụ khác:
+
+```text
+nums1 = [4, 9, 5]
+nums2 = [9, 4, 9, 8, 4]
+
+Kết quả có thể là: [4, 9]
+```
+
+Vì:
+
+- `4`: xuất hiện 1 lần trong `nums1`, 2 lần trong `nums2` → lấy 1 lần.
+- `9`: xuất hiện 1 lần trong `nums1`, 2 lần trong `nums2` → lấy 1 lần.
+- `5`: không xuất hiện trong `nums2` → không lấy.
+
+---
+
+# 2. Điểm quan trọng cần nhận ra
+
+Bài này khác với **Intersection of Two Arrays** ở chỗ:
+
+> Ta phải quan tâm đến **số lần xuất hiện** của từng phần tử.
+
+Ví dụ:
+
+```text
+nums1 = [1, 2, 2, 2]
+nums2 = [2, 2, 3]
+```
+
+Kết quả phải là:
+
+```text
+[2, 2]
+```
+
+Không thể chỉ dùng `set`, bởi vì `set` chỉ lưu một lần xuất hiện của mỗi giá trị.
+
+Ta cần biết:
+
+```text
+Số lần xuất hiện của 2 trong nums1 = 3
+Số lần xuất hiện của 2 trong nums2 = 2
+
+=> lấy min(3, 2) = 2 lần
+```
+
+Do đó, bản chất của bài toán là:
+
+> **Đếm số lần xuất hiện của các phần tử và ghép các lần xuất hiện tương ứng.**
+
+---
+
+# 3. Phương án tối ưu: Hash Map + duyệt mảng
+
+Đây là cách tiếp cận tổng quát và dễ hiểu.
+
+## Ý tưởng
+
+Ta sử dụng một `unordered_map` để lưu số lần xuất hiện còn lại của từng giá trị trong `nums1`.
+
+Ví dụ:
+
+```text
+nums1 = [1, 2, 2, 1]
+```
+
+Ta có:
+
+```text
+count[1] = 2
+count[2] = 2
+```
+
+Sau đó duyệt `nums2`.
+
+Với mỗi `x` trong `nums2`:
+
+- Nếu `count[x] > 0`:
+  - `x` xuất hiện ở cả hai mảng.
+  - Đưa `x` vào kết quả.
+  - Giảm `count[x]` đi 1.
+- Nếu `count[x] == 0`:
+  - Không còn lần xuất hiện nào của `x` trong `nums1` để ghép.
+  - Bỏ qua.
+
+---
+
+# 4. Tại sao phải giảm `count[x]`?
+
+Đây là phần quan trọng nhất của thuật toán.
+
+Xét:
+
+```text
+nums1 = [1, 2, 2]
+nums2 = [2, 2, 2]
+```
+
+Ban đầu:
+
+```text
+count[2] = 2
+```
+
+Duyệt `nums2`:
+
+### Lần 1
+
+Gặp `2`:
+
+```text
+count[2] = 2 > 0
+```
+
+→ lấy `2`.
+
+Sau đó:
+
+```text
+count[2] = 1
+```
+
+### Lần 2
+
+Tiếp tục gặp `2`:
+
+```text
+count[2] = 1 > 0
+```
+
+→ lấy `2`.
+
+Sau đó:
+
+```text
+count[2] = 0
+```
+
+### Lần 3
+
+Tiếp tục gặp `2`:
+
+```text
+count[2] = 0
+```
+
+→ không lấy.
+
+Kết quả:
+
+```text
+[2, 2]
+```
+
+Điều này chính xác vì `2` chỉ xuất hiện 2 lần trong `nums1`.
+
+Nếu không giảm `count[x]`, ta có thể lấy một phần tử nhiều hơn số lần nó thực sự xuất hiện.
+
+---
+
+# 5. Luồng xử lý tổng quát
+
+Có thể hình dung thuật toán như sau:
+
+```text
+nums1
+  ↓
+Đếm số lần xuất hiện
+  ↓
+unordered_map
+  ↓
+Duyệt nums2
+  ↓
+Phần tử còn số lượng?
+  ├── Không → bỏ qua
+  │
+  └── Có
+       ↓
+    thêm vào kết quả
+       ↓
+    giảm số lượng đi 1
+```
+
+---
+
+# 6. Ví dụ chạy từng bước
+
+Xét:
+
+```text
+nums1 = [4, 9, 5, 4]
+nums2 = [9, 4, 9, 8, 4]
+```
+
+## Bước 1: Đếm `nums1`
+
+Ta có:
+
+```text
+count[4] = 2
+count[9] = 1
+count[5] = 1
+```
+
+---
+
+## Bước 2: Duyệt `nums2`
+
+### Gặp `9`
+
+```text
+count[9] = 1
+```
+
+Có thể lấy.
+
+Kết quả:
+
+```text
+[9]
+```
+
+Giảm:
+
+```text
+count[9] = 0
+```
+
+---
+
+### Gặp `4`
+
+```text
+count[4] = 2
+```
+
+Có thể lấy.
+
+Kết quả:
+
+```text
+[9, 4]
+```
+
+Giảm:
+
+```text
+count[4] = 1
+```
+
+---
+
+### Gặp `9`
+
+```text
+count[9] = 0
+```
+
+Không còn `9` trong `nums1` để ghép.
+
+Bỏ qua.
+
+Kết quả vẫn:
+
+```text
+[9, 4]
+```
+
+---
+
+### Gặp `8`
+
+`8` không xuất hiện trong `nums1`.
+
+```text
+count[8] = 0
+```
+
+Bỏ qua.
+
+---
+
+### Gặp `4`
+
+```text
+count[4] = 1
+```
+
+Có thể lấy.
+
+Kết quả:
+
+```text
+[9, 4, 4]
+```
+
+Giảm:
+
+```text
+count[4] = 0
+```
+
+---
+
+## Kết quả cuối cùng
+
+```text
+[9, 4, 4]
+```
+
+Đây là kết quả đúng.
+
+---
+
+# 7. Vì sao cách này đúng?
+
+Giả sử một giá trị `x` xuất hiện:
+
+```text
+a lần trong nums1
+b lần trong nums2
+```
+
+Giao của hai mảng phải chứa `x`:
+
+```text
+min(a, b) lần
+```
+
+Thuật toán lưu:
+
+```text
+count[x] = a
+```
+
+Sau đó mỗi lần gặp `x` trong `nums2`:
+
+```text
+count[x]--
+```
+
+và chỉ thêm `x` vào kết quả khi:
+
+```text
+count[x] > 0
+```
+
+Do đó:
+
+- Nếu `b <= a`: cả `b` lần xuất hiện của `x` trong `nums2` đều được lấy.
+- Nếu `b > a`: chỉ `a` lần đầu được lấy, sau đó `count[x] = 0` và những lần còn lại bị bỏ qua.
+
+Vì vậy số lần `x` xuất hiện trong kết quả chính xác là:
+
+```text
+min(a, b)
+```
+
+Đúng với yêu cầu của bài toán.
+
+---
+
+# 8. Độ phức tạp
+
+Gọi:
+
+```text
+n = nums1.size()
+m = nums2.size()
+```
+
+## Thời gian
+
+Đếm `nums1`:
+
+```text
+O(n)
+```
+
+Duyệt `nums2`:
+
+```text
+O(m)
+```
+
+Tổng:
+
+```text
+O(n + m)
+```
+
+Với `unordered_map`, thao tác truy cập trung bình là `O(1)`.
+
+## Bộ nhớ
+
+Ta lưu số lượng của các giá trị trong `nums1`.
+
+Trong trường hợp xấu nhất, tất cả phần tử khác nhau:
+
+```text
+O(n)
+```
+
+Vậy:
+
+```text
+Time:  O(n + m)
+Space: O(n)
+```
+
+Đây là cách tối ưu về thời gian theo hướng dùng bảng băm.
+
+---
+
+# 9. Cài đặt bằng C++
+
+```cpp
+class Solution {
+public:
+    vector<int> intersect(vector<int>& nums1, vector<int>& nums2) {
+        unordered_map<int, int> dem;
+        vector<int> ketqua;
+
+        for (int x : nums1) {
+            dem[x]++;
+        }
+
+        for (int x : nums2) {
+            if (dem[x] > 0) {
+                ketqua.push_back(x);
+                dem[x]--;
+            }
+        }
+
+        return ketqua;
+    }
+};
+```
+
+---
+
+# 10. Phân tích từng đoạn code
+
+## Khai báo bảng đếm
+
+```cpp
+unordered_map<int, int> dem;
+```
+
+`dem[x]` biểu thị:
+
+> Còn bao nhiêu lần xuất hiện của `x` trong `nums1` chưa được sử dụng.
+
+---
+
+## Đếm `nums1`
+
+```cpp
+for (int x : nums1) {
+    dem[x]++;
+}
+```
+
+Ví dụ:
+
+```text
+nums1 = [1, 2, 2, 1]
+```
+
+Sau vòng lặp:
+
+```text
+dem[1] = 2
+dem[2] = 2
+```
+
+---
+
+## Duyệt `nums2`
+
+```cpp
+for (int x : nums2)
+```
+
+Mỗi lần gặp một phần tử `x`, ta kiểm tra xem `nums1` còn `x` hay không.
+
+---
+
+## Kiểm tra số lượng còn lại
+
+```cpp
+if (dem[x] > 0)
+```
+
+Nếu lớn hơn 0 thì vẫn còn ít nhất một `x` trong `nums1` chưa được sử dụng.
+
+---
+
+## Thêm vào kết quả
+
+```cpp
+ketqua.push_back(x);
+```
+
+Hai mảng có thể ghép thêm một cặp `x`, nên đưa `x` vào kết quả.
+
+---
+
+## Giảm số lượng
+
+```cpp
+dem[x]--;
+```
+
+Đây là bước bắt buộc.
+
+Vì vừa sử dụng một `x` của `nums1`, nên số lượng `x` còn lại phải giảm đi 1.
+
+---
+
+# 11. Một điểm cần chú ý về `dem[x]`
+
+Với:
+
+```cpp
+unordered_map<int, int> dem;
+```
+
+khi viết:
+
+```cpp
+dem[x]
+```
+
+nếu `x` chưa tồn tại trong map thì nó sẽ được tạo với giá trị mặc định là `0`.
+
+Ví dụ:
+
+```text
+nums1 = [1, 2]
+nums2 = [3]
+```
+
+Khi kiểm tra:
+
+```cpp
+if (dem[3] > 0)
+```
+
+thì `dem[3]` được xem là `0`, nên điều kiện sai.
+
+Do đó đoạn code trên vẫn hoạt động đúng.
+
+---
+
+# 12. Có thể duyệt `nums1` hay `nums2` trước không?
+
+Có.
+
+Ta có thể đếm `nums2` rồi duyệt `nums1`:
+
+```cpp
+for (int x : nums2) {
+    dem[x]++;
+}
+
+for (int x : nums1) {
+    if (dem[x] > 0) {
+        ketqua.push_back(x);
+        dem[x]--;
+    }
+}
+```
+
+Cách này cũng đúng.
+
+Vì giao của hai mảng không phụ thuộc vào việc ta chọn mảng nào để xây dựng bảng đếm.
+
+---
+
+# 13. Một cách tối ưu bộ nhớ hơn khi giá trị bị giới hạn
+
+Nếu đề bài cho biết miền giá trị của các phần tử rất nhỏ, ta có thể dùng một mảng đếm thay cho `unordered_map`.
+
+Ví dụ nếu:
+
+```text
+0 <= nums[i] <= 1000
+```
+
+ta có thể dùng:
+
+```cpp
+int dem[1001] = {};
+```
+
+Sau đó:
+
+```cpp
+for (int x : nums1) {
+    dem[x]++;
+}
+
+for (int x : nums2) {
+    if (dem[x] > 0) {
+        ketqua.push_back(x);
+        dem[x]--;
+    }
+}
+```
+
+Cách này có ưu điểm:
+
+- Không có overhead của hash map.
+- Truy cập trực tiếp bằng chỉ số.
+- Dễ dự đoán hiệu năng.
+
+Tuy nhiên, `unordered_map` tổng quát hơn vì không cần biết trước miền giá trị.
+
+---
+
+# 14. Có thể dùng Sorting + Two Pointers không?
+
+Có.
+
+Một cách khác là:
+
+1. Sắp xếp `nums1`.
+2. Sắp xếp `nums2`.
+3. Dùng hai con trỏ để tìm các phần tử giống nhau.
+
+Ví dụ:
+
+```text
+nums1 = [4, 9, 5]
+nums2 = [9, 4, 9, 8, 4]
+```
+
+Sau khi sort:
+
+```text
+nums1 = [4, 5, 9]
+nums2 = [4, 4, 8, 9, 9]
+```
+
+Dùng hai con trỏ:
+
+```text
+i → nums1
+j → nums2
+```
+
+- Nếu `nums1[i] == nums2[j]`:
+  - thêm vào kết quả
+  - tăng cả `i` và `j`
+- Nếu `nums1[i] < nums2[j]`:
+  - tăng `i`
+- Nếu `nums1[i] > nums2[j]`:
+  - tăng `j`
+
+Cách này có độ phức tạp:
+
+```text
+O(n log n + m log m)
+```
+
+nên về thời gian không tốt bằng cách dùng hash map nếu không cần sắp xếp.
+
+---
+
+# 15. So sánh hai cách tiếp cận
+
+| Cách | Thời gian | Bộ nhớ phụ | Ý tưởng |
+|---|---:|---:|---|
+| Hash Map + duyệt | `O(n + m)` trung bình | `O(n)` | Đếm số lần xuất hiện |
+| Sort + Two Pointers | `O(n log n + m log m)` | tùy cách sort | Sắp xếp rồi ghép |
+| Brute Force | `O(n × m)` | `O(1)` phụ | Tìm từng cặp trực tiếp |
+
+Với yêu cầu tìm giao có tính đến số lần xuất hiện, **Hash Map + đếm tần suất** là lựa chọn rất tự nhiên và đạt `O(n + m)` trung bình.
+
+---
+
+# 16. Những lỗi thường gặp
+
+## Lỗi 1: Dùng `set`
+
+Không nên dùng:
+
+```cpp
+set<int> s;
+```
+
+để giải trực tiếp bài này vì `set` loại bỏ phần tử trùng.
+
+Ví dụ:
+
+```text
+nums1 = [1, 2, 2]
+nums2 = [2, 2]
+```
+
+Kết quả cần:
+
+```text
+[2, 2]
+```
+
+nhưng `set` chỉ lưu:
+
+```text
+{2}
+```
+
+---
+
+## Lỗi 2: Không giảm số lượng
+
+Sai:
+
+```cpp
+if (dem[x] > 0) {
+    ketqua.push_back(x);
+}
+```
+
+Nếu không có:
+
+```cpp
+dem[x]--;
+```
+
+thì một phần tử có thể được thêm quá số lần nó xuất hiện trong `nums1`.
+
+---
+
+## Lỗi 3: Nghĩ rằng chỉ cần kiểm tra phần tử có tồn tại
+
+Bài này không chỉ hỏi:
+
+> `x` có xuất hiện trong cả hai mảng không?
+
+mà hỏi:
+
+> `x` xuất hiện trong giao bao nhiêu lần?
+
+Đây chính là sự khác biệt quan trọng giữa:
+
+```text
+Intersection of Two Arrays
+```
+
+và:
+
+```text
+Intersection of Two Arrays II
+```
+
+---
+
+# 17. Edge Cases
+
+## Hai mảng không có phần tử chung
+
+```text
+nums1 = [1, 2, 3]
+nums2 = [4, 5, 6]
+```
+
+Kết quả:
+
+```text
+[]
+```
+
+---
+
+## Một mảng rỗng
+
+```text
+nums1 = []
+nums2 = [1, 2, 3]
+```
+
+Kết quả:
+
+```text
+[]
+```
+
+---
+
+## Một giá trị xuất hiện rất nhiều lần
+
+```text
+nums1 = [2, 2, 2]
+nums2 = [2, 2, 2, 2, 2]
+```
+
+Kết quả:
+
+```text
+[2, 2, 2]
+```
+
+Không được lấy quá số lần xuất hiện của `2` trong `nums1`.
+
+---
+
+## Hai mảng giống hệt nhau
+
+```text
+nums1 = [1, 2, 2, 3]
+nums2 = [1, 2, 2, 3]
+```
+
+Kết quả chứa đúng các phần tử của hai mảng.
+
+---
+
+# 18. Mẫu tư duy có thể áp dụng cho các bài khác
+
+Bài này là một ví dụ điển hình của kỹ thuật:
+
+> **Frequency Counting — đếm tần suất xuất hiện.**
+
+Khi gặp bài yêu cầu:
+
+- đếm số lần xuất hiện,
+- kiểm tra còn bao nhiêu phần tử,
+- ghép các phần tử giống nhau,
+- tìm giao có tính đến số lượng,
+
+hãy nghĩ đến:
+
+```cpp
+unordered_map<int, int> dem;
+```
+
+hoặc một mảng đếm nếu miền giá trị đủ nhỏ.
+
+Mẫu cơ bản:
+
+```cpp
+for (int x : mang) {
+    dem[x]++;
+}
+```
+
+Sau đó khi sử dụng một phần tử:
+
+```cpp
+if (dem[x] > 0) {
+    // sử dụng x
+    dem[x]--;
+}
+```
+
+Đây là một pattern rất quan trọng trong các bài mảng và hash table.
+
+---
+
+# 19. Kết luận
+
+Cốt lõi của bài **Intersection of Two Arrays II** là:
+
+```text
+Đếm số lần xuất hiện trong một mảng
+            ↓
+Duyệt mảng còn lại
+            ↓
+Nếu còn số lượng → thêm vào kết quả
+            ↓
+Giảm số lượng đi 1
+```
+
+Lời giải:
+
+```cpp
+class Solution {
+public:
+    vector<int> intersect(vector<int>& nums1, vector<int>& nums2) {
+        unordered_map<int, int> dem;
+        vector<int> ketqua;
+
+        for (int x : nums1) {
+            dem[x]++;
+        }
+
+        for (int x : nums2) {
+            if (dem[x] > 0) {
+                ketqua.push_back(x);
+                dem[x]--;
+            }
+        }
+
+        return ketqua;
+    }
+};
+```
+
+Độ phức tạp trung bình:
+
+```text
+Time:  O(n + m)
+Space: O(n)
+```
+
+Trong đó điểm quan trọng nhất cần nhớ là:
+
+> **Không chỉ kiểm tra phần tử có tồn tại, mà phải lưu số lần xuất hiện và giảm số lượng sau mỗi lần sử dụng.**
