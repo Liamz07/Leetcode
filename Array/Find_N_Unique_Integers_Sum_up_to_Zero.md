@@ -1,0 +1,824 @@
+# Find N Unique Integers Sum up to Zero — LeetCode
+
+Link bài toán: [Find N Unique Integers Sum up to Zero](https://leetcode.com/problems/find-n-unique-integers-sum-up-to-zero/)
+
+## 1. Phân tích đề bài
+
+Cho một số nguyên `n`.
+
+Hãy trả về một mảng gồm **đúng `n` số nguyên khác nhau**, sao cho tổng của tất cả các phần tử bằng `0`.
+
+### Yêu cầu
+
+Ta cần thỏa mãn đồng thời:
+
+1. Có đúng `n` phần tử.
+2. Mọi phần tử phải **khác nhau**.
+3. Tổng tất cả phần tử bằng `0`.
+
+Ví dụ:
+
+```text
+n = 5
+
+Một đáp án hợp lệ:
+[-2, -1, 0, 1, 2]
+
+Số phần tử = 5
+Các phần tử đều khác nhau
+Tổng = -2 + (-1) + 0 + 1 + 2 = 0
+```
+
+Điểm quan trọng là đề **không yêu cầu một đáp án duy nhất**. Chỉ cần tạo ra **bất kỳ** mảng nào thỏa mãn ba điều kiện trên.
+
+---
+
+# 2. Quan sát quan trọng
+
+Bài toán này có một cấu trúc rất đẹp:
+
+Nếu ta chọn một số dương `x`, thì chọn thêm `-x`:
+
+```text
+x + (-x) = 0
+```
+
+Đồng thời:
+
+```text
+x != -x
+```
+
+với mọi `x != 0`.
+
+Vì vậy, ta có thể tạo các cặp:
+
+```text
+-1, 1
+-2, 2
+-3, 3
+...
+```
+
+Mỗi cặp vừa:
+
+- có hai số khác nhau;
+- tổng bằng `0`.
+
+Đây chính là ý tưởng cốt lõi của bài.
+
+---
+
+# 3. Trường hợp `n` là số chẵn
+
+Giả sử:
+
+```text
+n = 6
+```
+
+Ta cần 6 số khác nhau.
+
+Ta tạo 3 cặp đối nhau:
+
+```text
+-1, 1
+-2, 2
+-3, 3
+```
+
+Khi đó:
+
+```text
+(-1 + 1) + (-2 + 2) + (-3 + 3) = 0
+```
+
+Kết quả:
+
+```text
+[-1, 1, -2, 2, -3, 3]
+```
+
+Có:
+
+```text
+6 phần tử
+```
+
+Các phần tử đều khác nhau và tổng bằng `0`.
+
+---
+
+## Cách tổng quát
+
+Với `n` chẵn:
+
+```text
+n / 2
+```
+
+cặp số đối nhau là đủ.
+
+Ta có thể tạo:
+
+```text
+-1, 1
+-2, 2
+...
+-k, k
+```
+
+với:
+
+```text
+k = n / 2
+```
+
+Ví dụ:
+
+```text
+n = 8
+
+k = 8 / 2 = 4
+
+Kết quả:
+[-1, 1, -2, 2, -3, 3, -4, 4]
+```
+
+Tổng chắc chắn bằng `0`.
+
+---
+
+# 4. Trường hợp `n` là số lẻ
+
+Đây là phần cần chú ý hơn.
+
+Nếu `n` lẻ, ta không thể chia toàn bộ `n` phần tử thành các cặp.
+
+Ví dụ:
+
+```text
+n = 5
+```
+
+Ta có thể lấy:
+
+```text
+-1, 1
+-2, 2
+```
+
+được 4 phần tử và tổng bằng `0`.
+
+Còn thiếu đúng 1 phần tử.
+
+Ta chọn:
+
+```text
+0
+```
+
+Vì:
+
+```text
+0
+```
+
+không làm thay đổi tổng.
+
+Kết quả:
+
+```text
+[-1, 1, -2, 2, 0]
+```
+
+Tổng:
+
+```text
+-1 + 1 - 2 + 2 + 0 = 0
+```
+
+Các phần tử:
+
+```text
+-2, -1, 0, 1, 2
+```
+
+đều khác nhau.
+
+---
+
+# 5. Ý tưởng tổng quát
+
+Ta có thể xử lý cả hai trường hợp bằng cùng một nguyên tắc.
+
+## Nếu `n` chẵn
+
+Tạo:
+
+```text
+-n/2, ..., -1, 1, ..., n/2
+```
+
+Ví dụ:
+
+```text
+n = 6
+
+[-3, -2, -1, 1, 2, 3]
+```
+
+Ta không cần số `0`.
+
+Tổng:
+
+```text
+(-3 + 3) + (-2 + 2) + (-1 + 1) = 0
+```
+
+---
+
+## Nếu `n` lẻ
+
+Ta tạo:
+
+```text
+-(n/2), ..., -1, 0, 1, ..., n/2
+```
+
+Trong C++, phép chia nguyên:
+
+```cpp
+n / 2
+```
+
+với `n` dương sẽ cho phần nguyên.
+
+Ví dụ:
+
+```text
+n = 5
+
+n / 2 = 2
+```
+
+Ta tạo:
+
+```text
+-2, -1, 0, 1, 2
+```
+
+Tổng bằng `0`.
+
+---
+
+# 6. Một cách triển khai rất đơn giản
+
+Ta duyệt:
+
+```cpp
+for (int i = 1; i <= n / 2; i++) {
+    ans.push_back(-i);
+    ans.push_back(i);
+}
+```
+
+Mỗi vòng lặp thêm một cặp:
+
+```text
+-i, i
+```
+
+nên tổng của cặp đó luôn bằng `0`.
+
+Sau đó, nếu `n` lẻ:
+
+```cpp
+ans.push_back(0);
+```
+
+Vì `0` không ảnh hưởng đến tổng.
+
+---
+
+# 7. Tại sao các phần tử luôn khác nhau?
+
+Đây là một tính chất quan trọng cần chứng minh.
+
+Trong vòng lặp, với mỗi `i`:
+
+```text
+-i
+i
+```
+
+là hai số khác nhau vì:
+
+```text
+i > 0
+```
+
+Ngoài ra, với hai giá trị khác nhau `i` và `j`:
+
+```text
+i != j
+```
+
+thì:
+
+```text
+-i != -j
+i != j
+-i != j
+i != -j
+```
+
+vì tất cả `i, j` đều dương.
+
+Nếu `n` lẻ, ta thêm `0`.
+
+`0` cũng không trùng với bất kỳ số nào đã tạo vì các số trước đó đều có trị tuyệt đối lớn hơn hoặc bằng `1`.
+
+Do đó toàn bộ mảng gồm các số **unique**.
+
+---
+
+# 8. Chứng minh tổng bằng 0
+
+Mỗi cặp được tạo là:
+
+```text
+(-i, i)
+```
+
+và:
+
+```text
+-i + i = 0
+```
+
+Có `n / 2` cặp, nên tổng của tất cả các cặp là:
+
+```text
+0 + 0 + ... + 0 = 0
+```
+
+Nếu `n` lẻ, ta thêm `0`:
+
+```text
+0 + 0 = 0
+```
+
+Vì vậy trong cả hai trường hợp:
+
+```text
+sum = 0
+```
+
+---
+
+# 9. Ví dụ mô phỏng
+
+## Ví dụ 1
+
+```text
+n = 4
+```
+
+Ta có:
+
+```text
+n / 2 = 2
+```
+
+Vòng lặp:
+
+### i = 1
+
+Thêm:
+
+```text
+-1, 1
+```
+
+Mảng:
+
+```text
+[-1, 1]
+```
+
+### i = 2
+
+Thêm:
+
+```text
+-2, 2
+```
+
+Mảng:
+
+```text
+[-1, 1, -2, 2]
+```
+
+Có đúng 4 phần tử.
+
+Tổng:
+
+```text
+-1 + 1 - 2 + 2 = 0
+```
+
+---
+
+## Ví dụ 2
+
+```text
+n = 5
+```
+
+Ta có:
+
+```text
+n / 2 = 2
+```
+
+Tạo:
+
+```text
+-1, 1
+-2, 2
+```
+
+Mảng hiện tại:
+
+```text
+[-1, 1, -2, 2]
+```
+
+Vì `n` lẻ, thêm:
+
+```text
+0
+```
+
+Kết quả:
+
+```text
+[-1, 1, -2, 2, 0]
+```
+
+Tổng:
+
+```text
+-1 + 1 - 2 + 2 + 0 = 0
+```
+
+---
+
+# 10. Vì sao không cần dùng các thuật toán phức tạp?
+
+Đây là một bài toán **construction** (xây dựng đáp án).
+
+Ta không cần:
+
+- sắp xếp;
+- tìm kiếm;
+- `set`;
+- `map`;
+- tính tổng rồi điều chỉnh;
+- brute force;
+- backtracking;
+- dynamic programming.
+
+Chỉ cần nhận ra tính chất:
+
+```text
+x + (-x) = 0
+```
+
+là có thể xây dựng đáp án trực tiếp.
+
+Đây là kiểu tư duy rất thường gặp trong các bài toán thuật toán:
+
+> Thay vì tìm một đáp án trong rất nhiều khả năng, hãy tìm một quy luật luôn tạo ra đáp án hợp lệ.
+
+---
+
+# 11. Độ phức tạp
+
+Giả sử có `n` phần tử.
+
+Ta cần tạo ra đúng `n` phần tử, nên ít nhất cũng phải mất `O(n)` thời gian để ghi chúng vào mảng.
+
+Thuật toán của ta duyệt khoảng `n / 2` lần và mỗi lần thêm 2 phần tử.
+
+Do đó:
+
+```text
+Time Complexity: O(n)
+```
+
+Về bộ nhớ:
+
+Ta cần trả về một mảng chứa `n` phần tử.
+
+Do đó:
+
+```text
+Space Complexity: O(n)
+```
+
+Nếu chỉ xét **extra space** ngoài mảng kết quả, thuật toán dùng:
+
+```text
+O(1)
+```
+
+bộ nhớ phụ.
+
+---
+
+# 12. Vì sao `O(n)` là tối ưu?
+
+Ta bắt buộc phải trả về `n` số nguyên.
+
+Do đó chỉ riêng việc tạo/ghi ra `n` phần tử đã cần ít nhất:
+
+```text
+Ω(n)
+```
+
+thời gian.
+
+Thuật toán của ta chạy:
+
+```text
+O(n)
+```
+
+nên đạt độ phức tạp thời gian tối ưu về mặt tiệm cận.
+
+---
+
+# 13. Lời giải C++
+
+```cpp
+class Solution {
+public:
+    vector<int> sumZero(int n) {
+        vector<int> ans;
+
+        for (int i = 1; i <= n / 2; i++) {
+            ans.push_back(-i);
+            ans.push_back(i);
+        }
+
+        if (n % 2 == 1) {
+            ans.push_back(0);
+        }
+
+        return ans;
+    }
+};
+```
+
+---
+
+# 14. Giải thích từng đoạn code
+
+## Khởi tạo mảng kết quả
+
+```cpp
+vector<int> ans;
+```
+
+`ans` dùng để lưu `n` số nguyên cần trả về.
+
+---
+
+## Tạo các cặp đối nhau
+
+```cpp
+for (int i = 1; i <= n / 2; i++) {
+    ans.push_back(-i);
+    ans.push_back(i);
+}
+```
+
+Mỗi lần lặp ta thêm:
+
+```text
+-i
++i
+```
+
+Ví dụ:
+
+```text
+i = 1  -> -1, 1
+i = 2  -> -2, 2
+i = 3  -> -3, 3
+```
+
+Mỗi cặp có tổng:
+
+```text
+-i + i = 0
+```
+
+---
+
+## Xử lý `n` lẻ
+
+```cpp
+if (n % 2 == 1) {
+    ans.push_back(0);
+}
+```
+
+Nếu `n` lẻ, sau khi tạo các cặp đối nhau sẽ còn thiếu đúng một phần tử.
+
+Số `0` là lựa chọn tự nhiên nhất vì:
+
+```text
+0 + 0 = 0
+```
+
+và `0` cũng không trùng với các số đã tạo.
+
+---
+
+## Trả về kết quả
+
+```cpp
+return ans;
+```
+
+Mảng `ans` lúc này có:
+
+- đúng `n` phần tử;
+- các phần tử khác nhau;
+- tổng bằng `0`.
+
+---
+
+# 15. Một cách viết khác
+
+Ta cũng có thể tạo trực tiếp từ:
+
+```text
+-n/2 -> n/2
+```
+
+Ví dụ:
+
+```text
+n = 5
+
+-2, -1, 0, 1, 2
+```
+
+Code:
+
+```cpp
+class Solution {
+public:
+    vector<int> sumZero(int n) {
+        vector<int> ans;
+
+        for (int i = -(n / 2); i <= n / 2; i++) {
+            if (n % 2 == 0 && i == 0) {
+                continue;
+            }
+
+            ans.push_back(i);
+        }
+
+        return ans;
+    }
+};
+```
+
+Cách này cũng đúng, nhưng cách tạo theo từng cặp:
+
+```cpp
+-i, i
+```
+
+thể hiện rõ hơn **ý tưởng toán học** của bài toán.
+
+---
+
+# 16. Những lỗi dễ mắc
+
+## Lỗi 1: Chỉ tạo các số dương
+
+Ví dụ:
+
+```text
+1, 2, 3, 4, 5
+```
+
+Các phần tử có thể unique nhưng:
+
+```text
+sum != 0
+```
+
+---
+
+## Lỗi 2: Tạo số trùng nhau
+
+Ví dụ:
+
+```text
+-1, -1, 1, 1
+```
+
+Tổng có thể bằng `0`, nhưng không thỏa mãn điều kiện unique.
+
+---
+
+## Lỗi 3: Với `n` lẻ quên thêm `0`
+
+Ví dụ:
+
+```text
+n = 5
+```
+
+Nếu chỉ tạo:
+
+```text
+-1, 1, -2, 2
+```
+
+thì tổng đúng bằng `0`, nhưng chỉ có:
+
+```text
+4 phần tử
+```
+
+trong khi đề yêu cầu đúng `5`.
+
+---
+
+# 17. Tư duy cần ghi nhớ
+
+Bài này nên ghi nhớ theo mẫu:
+
+```text
+Muốn tổng = 0
+        ↓
+Tạo các cặp đối nhau
+        ↓
+x + (-x) = 0
+        ↓
+Nếu n lẻ → thêm 0
+```
+
+Công thức xây dựng:
+
+### `n` chẵn
+
+```text
+[-1, 1, -2, 2, ..., -n/2, n/2]
+```
+
+### `n` lẻ
+
+```text
+[-1, 1, -2, 2, ..., -(n/2), n/2, 0]
+```
+
+Đây là một ví dụ điển hình của **constructive algorithm**: chỉ cần tìm ra một cấu trúc luôn thỏa mãn điều kiện là không cần phải tìm kiếm đáp án.
+
+---
+
+# 18. Kết luận
+
+Lời giải dựa hoàn toàn trên tính chất:
+
+```text
+x + (-x) = 0
+```
+
+Ta tạo `n / 2` cặp số đối nhau. Nếu `n` lẻ thì thêm `0`.
+
+Kết quả đảm bảo:
+
+```text
+Số phần tử = n
+Các phần tử đôi một khác nhau
+Tổng = 0
+```
+
+Độ phức tạp:
+
+```text
+Time  : O(n)
+Space : O(n)   // tính cả mảng kết quả
+```
+
+Và `O(n)` là tối ưu về thời gian vì bắt buộc phải tạo ra `n` phần tử.
