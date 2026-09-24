@@ -1,0 +1,392 @@
+# Search in Rotated Sorted Array (LeetCode)
+
+## Ý tưởng tối ưu: Binary Search trên mảng đã xoay
+
+### Mô tả bài toán
+
+Cho một mảng tăng dần `nums` đã bị xoay tại một vị trí nào đó và một giá trị `target`.
+
+Hãy trả về chỉ số của `target` trong mảng. Nếu không tồn tại thì trả về `-1`.
+
+Ví dụ:
+
+```text
+nums = [4,5,6,7,0,1,2]
+target = 0
+
+Kết quả: 4
+```
+
+---
+
+## Nhận xét quan trọng
+
+Nếu mảng ban đầu được sắp xếp:
+
+```text
+[0,1,2,4,5,6,7]
+```
+
+Sau khi xoay:
+
+```text
+[4,5,6,7,0,1,2]
+```
+
+Ta nhận thấy:
+
+> Trong mỗi lần thực hiện Binary Search, luôn tồn tại ít nhất một nửa của đoạn hiện tại được sắp xếp hoàn toàn.
+
+Ví dụ:
+
+```text
+[4,5,6,7,0,1,2]
+ L     M     R
+```
+
+Ta có:
+
+```cpp
+nums[left] <= nums[mid]
+```
+
+suy ra:
+
+```text
+[4,5,6,7]
+```
+
+là một đoạn tăng dần hoàn chỉnh.
+
+---
+
+## Tư tưởng cốt lõi
+
+Thay vì:
+
+1. Tìm vị trí xoay (pivot).
+2. Xác định nửa chứa target.
+3. Binary Search lần nữa.
+
+Ta làm tất cả trong một lần Binary Search.
+
+Ở mỗi bước:
+
+- Xác định nửa nào đang được sắp xếp.
+- Kiểm tra xem target có thể nằm trong nửa đó hay không.
+- Loại bỏ một nửa mảng.
+
+Do đó vẫn giữ được độ phức tạp:
+
+```text
+O(log n)
+```
+
+---
+
+## Cách xác định nửa được sắp xếp
+
+### Trường hợp 1: Nửa trái được sắp xếp
+
+```cpp
+nums[left] <= nums[mid]
+```
+
+Ví dụ:
+
+```text
+[4,5,6,7 | 0,1,2]
+```
+
+Lúc này đoạn:
+
+```text
+[left, mid]
+```
+
+được sắp xếp tăng dần.
+
+Nếu:
+
+```cpp
+nums[left] <= target && target < nums[mid]
+```
+
+thì target chắc chắn nằm trong nửa trái.
+
+Khi đó:
+
+```cpp
+right = mid - 1;
+```
+
+Ngược lại:
+
+```cpp
+left = mid + 1;
+```
+
+---
+
+### Trường hợp 2: Nửa phải được sắp xếp
+
+Nếu:
+
+```cpp
+nums[left] > nums[mid]
+```
+
+Ví dụ:
+
+```text
+[6,7 | 0,1,2,4,5]
+```
+
+thì đoạn:
+
+```text
+[mid, right]
+```
+
+được sắp xếp.
+
+Nếu:
+
+```cpp
+nums[mid] < target && target <= nums[right]
+```
+
+thì target nằm trong nửa phải.
+
+Khi đó:
+
+```cpp
+left = mid + 1;
+```
+
+Ngược lại:
+
+```cpp
+right = mid - 1;
+```
+
+---
+
+## Vì sao dùng dấu <= ở left và right?
+
+Trong vòng lặp ta chỉ kiểm tra:
+
+```cpp
+if (nums[mid] == target)
+    return mid;
+```
+
+Ta không kiểm tra:
+
+```cpp
+nums[left]
+nums[right]
+```
+
+Do đó:
+
+```cpp
+nums[left] <= target
+```
+
+và
+
+```cpp
+target <= nums[right]
+```
+
+phải cho phép dấu bằng.
+
+Ngược lại, phía chứa `mid` dùng:
+
+```cpp
+target < nums[mid]
+```
+
+hoặc
+
+```cpp
+nums[mid] < target
+```
+
+vì trường hợp bằng đã được xử lý từ trước.
+
+---
+
+## Minh họa
+
+Tìm:
+
+```text
+target = 0
+
+nums = [4,5,6,7,0,1,2]
+```
+
+### Bước 1
+
+```text
+L=0 R=6
+M=3
+nums[M]=7
+```
+
+Nửa trái được sắp xếp:
+
+```text
+[4,5,6,7]
+```
+
+Kiểm tra:
+
+```text
+4 <= 0 < 7
+```
+
+Sai.
+
+Loại bỏ nửa trái:
+
+```text
+L = M + 1
+```
+
+---
+
+### Bước 2
+
+```text
+[0,1,2]
+
+L=4 R=6
+M=5
+nums[M]=1
+```
+
+Nửa trái được sắp xếp:
+
+```text
+[0,1]
+```
+
+Kiểm tra:
+
+```text
+0 <= 0 < 1
+```
+
+Đúng.
+
+Thu hẹp:
+
+```text
+R = M - 1
+```
+
+---
+
+### Bước 3
+
+```text
+L=4 R=4
+M=4
+```
+
+```cpp
+nums[4] == target
+```
+
+Trả về:
+
+```text
+4
+```
+
+---
+
+## Độ phức tạp
+
+### Time Complexity
+
+Mỗi lần loại bỏ một nửa không gian tìm kiếm:
+
+```text
+O(log n)
+```
+
+### Space Complexity
+
+Không sử dụng cấu trúc dữ liệu phụ:
+
+```text
+O(1)
+```
+
+---
+
+# C++ Code
+
+```cpp
+class Solution {
+public:
+    int search(vector<int>& nums, int target) {
+        int left = 0;
+        int right = nums.size() - 1;
+
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+
+            if (nums[mid] == target)
+                return mid;
+
+            // Nửa trái được sắp xếp
+            if (nums[left] <= nums[mid]) {
+
+                if (nums[left] <= target &&
+                    target < nums[mid]) {
+                    right = mid - 1;
+                }
+                else {
+                    left = mid + 1;
+                }
+            }
+
+            // Nửa phải được sắp xếp
+            else {
+
+                if (nums[mid] < target &&
+                    target <= nums[right]) {
+                    left = mid + 1;
+                }
+                else {
+                    right = mid - 1;
+                }
+            }
+        }
+
+        return -1;
+    }
+};
+```
+
+## Kết luận
+
+Mấu chốt của bài toán là:
+
+- Trong mỗi lần Binary Search luôn có ít nhất một nửa được sắp xếp hoàn toàn.
+- Dùng `nums[left] <= nums[mid]` để nhận biết nửa trái có được sắp xếp hay không.
+- Kiểm tra target có thuộc khoảng giá trị của nửa đã sắp xếp đó hay không.
+- Loại bỏ một nửa mảng ở mỗi bước.
+
+Nhờ vậy bài toán được giải trong:
+
+```text
+O(log n)
+```
+
+mà không cần tìm pivot trước.
