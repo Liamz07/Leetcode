@@ -1,4 +1,4 @@
-# LeetCode 594 - Longest Harmonious Subsequence
+# Longest Harmonious Subsequence - Leetcode
 
 ## Đề bài
 
@@ -82,7 +82,7 @@ không phải 1.
 
 ---
 
-# Phân tích bài toán
+## Phân tích bài toán
 
 Điều kiện của harmonious subsequence:
 
@@ -239,9 +239,9 @@ Kết quả:
 
 ---
 
-# Hướng tiếp cận tối ưu
+## Hướng tiếp cận tối ưu
 
-## Bước 1
+### Bước 1
 
 Dùng Hash Map đếm số lần xuất hiện.
 
@@ -251,7 +251,7 @@ unordered_map<int,int> freq;
 
 ---
 
-## Bước 2
+### Bước 2
 
 Duyệt từng phần tử trong Hash Map.
 
@@ -277,19 +277,19 @@ Cập nhật đáp án.
 
 ---
 
-## Bước 3
+### Bước 3
 
 Trả về giá trị lớn nhất.
 
 ---
 
-# Vì sao thuật toán đúng?
+## Vì sao thuật toán đúng?
 
 Ta chứng minh như sau.
 
 ---
 
-## Mệnh đề 1
+### Mệnh đề 1
 
 Một harmonious subsequence chỉ chứa đúng hai giá trị:
 
@@ -299,7 +299,7 @@ và
 x+1
 ```
 
-### Chứng minh
+#### Chứng minh
 
 Theo định nghĩa:
 
@@ -331,7 +331,7 @@ Mệnh đề đúng.
 
 ---
 
-## Mệnh đề 2
+### Mệnh đề 2
 
 Nếu tồn tại cả:
 
@@ -343,7 +343,7 @@ x+1
 
 thì subsequence tốt nhất chứa toàn bộ số lần xuất hiện của hai giá trị này.
 
-### Chứng minh
+#### Chứng minh
 
 Thêm một phần tử bằng:
 
@@ -371,7 +371,7 @@ Mệnh đề đúng.
 
 ---
 
-## Mệnh đề 3
+### Mệnh đề 3
 
 Độ dài tối ưu bằng:
 
@@ -385,7 +385,7 @@ Từ Mệnh đề 1 và 2 suy ra thuật toán là đúng.
 
 ---
 
-# C++ tối ưu
+## C++ tối ưu
 
 ```cpp
 class Solution {
@@ -416,7 +416,7 @@ public:
 
 ---
 
-# Phân tích độ phức tạp
+## Phân tích độ phức tạp
 
 Gọi:
 
@@ -460,7 +460,7 @@ O(n)
 
 ---
 
-# Có thể tốt hơn O(n) không?
+## Có thể tốt hơn O(n) không?
 
 Không.
 
@@ -487,7 +487,7 @@ O(n)
 
 ---
 
-# Kết luận
+## Kết luận
 
 Ý tưởng cốt lõi:
 
