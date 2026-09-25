@@ -1,0 +1,1213 @@
+# Shortest Path in Binary Matrix — LeetCode
+
+> **Bài toán:** [Shortest Path in Binary Matrix](https://leetcode.com/problems/shortest-path-in-binary-matrix/)  
+> **Chủ đề:** Grid, Graph, BFS, Shortest Path, Unweighted Graph
+
+---
+
+## 1. Phân tích bài toán
+
+Cho ma trận vuông `n x n`:
+
+- `0`: ô có thể đi qua.
+- `1`: ô bị chặn.
+
+Cần tìm độ dài **đường đi ngắn nhất** từ:
+
+```text
+(0, 0)
+```
+
+đến:
+
+```text
+(n - 1, n - 1)
+```
+
+Một bước đi được phép theo **8 hướng**:
+
+```text
+↖  ↑  ↗
+←  X  →
+↙  ↓  ↘
+```
+
+Nếu không tồn tại đường đi, trả về:
+
+```cpp
+-1
+```
+
+Đặc biệt, đường đi tính cả ô bắt đầu. Vì vậy nếu:
+
+```text
+grid = [[0]]
+```
+
+thì đáp án là:
+
+```text
+1
+```
+
+---
+
+# 2. Nhận diện bản chất bài toán
+
+Đây là bài **Shortest Path trên Grid**.
+
+Ta có thể xem Grid như một Graph:
+
+- Mỗi ô `0` là một node.
+- Hai ô `0` có thể đi trực tiếp tới nhau nếu chúng kề nhau theo 8 hướng.
+- Mỗi lần di chuyển có cost bằng `1`.
+- Cần tìm shortest path từ node `(0,0)` tới node `(n-1,n-1)`.
+
+Vì vậy:
+
+```text
+Grid
+ ↓
+Graph
+ ↓
+Shortest Path
+ ↓
+Mọi cạnh có cùng cost = 1
+ ↓
+BFS
+```
+
+Đây là pattern quan trọng cần ghi nhớ.
+
+---
+
+# 3. Tại sao dùng BFS?
+
+BFS — Breadth First Search — khám phá Graph theo từng **level**.
+
+Ví dụ:
+
+```text
+Start
+  ↓
+Distance 2
+  ↓
+Distance 3
+  ↓
+Distance 4
+  ↓
+...
+```
+
+Vì mỗi bước có cost bằng `1`, nên:
+
+- Các ô cách Start 1 bước được xử lý trước.
+- Sau đó các ô cách 2 bước.
+- Sau đó các ô cách 3 bước.
+- ...
+
+Do đó, **lần đầu tiên BFS tới một ô thì khoảng cách đó là ngắn nhất**.
+
+Đặc biệt:
+
+> Lần đầu tiên BFS tới `(n-1, n-1)` chính là shortest path.
+
+---
+
+# 4. Tại sao không dùng DFS?
+
+DFS có thể tìm được một đường đi, nhưng không đảm bảo đó là đường ngắn nhất.
+
+Ví dụ có hai đường:
+
+```text
+Start → A → B → C → End
+```
+
+và:
+
+```text
+Start → D → End
+```
+
+DFS có thể đi vào nhánh:
+
+```text
+Start → A → B → C → End
+```
+
+trước, mặc dù đường:
+
+```text
+Start → D → End
+```
+
+ngắn hơn.
+
+Trong khi BFS luôn xử lý theo thứ tự:
+
+```text
+1 bước
+2 bước
+3 bước
+4 bước
+...
+```
+
+nên phù hợp trực tiếp với shortest path trên Graph không trọng số.
+
+---
+
+# 5. Kiểm tra Start và End
+
+Trước khi BFS cần kiểm tra:
+
+```cpp
+if (grid[0][0] == 1 ||
+    grid[n - 1][n - 1] == 1) {
+    return -1;
+}
+```
+
+Nếu Start bị chặn thì không thể xuất phát.
+
+Nếu End bị chặn thì không thể tới đích.
+
+---
+
+# 6. Tại sao đáp án của `[[0]]` là 1?
+
+Đây là một chi tiết dễ nhầm.
+
+Ta không tính:
+
+```text
+số lần di chuyển
+```
+
+mà tính:
+
+```text
+số ô trên đường đi
+```
+
+Ví dụ:
+
+```text
+Start → A → End
+```
+
+có:
+
+```text
+3 ô
+```
+
+nên path length là:
+
+```text
+3
+```
+
+Vì vậy ta khởi tạo:
+
+```cpp
+distance = 1;
+```
+
+cho ô Start.
+
+---
+
+# 7. Biểu diễn 8 hướng
+
+Có thể dùng:
+
+```cpp
+int dx[8] = {
+    -1, -1, -1,
+     0,  0,
+     1,  1,  1
+};
+
+int dy[8] = {
+    -1,  0,  1,
+    -1,  1,
+    -1,  0,  1
+};
+```
+
+Mỗi cặp:
+
+```cpp
+(dx[k], dy[k])
+```
+
+là một hướng.
+
+| `k` | `(dx[k], dy[k])` | Hướng |
+|---:|---|---|
+| 0 | `(-1,-1)` | ↖ |
+| 1 | `(-1,0)` | ↑ |
+| 2 | `(-1,1)` | ↗ |
+| 3 | `(0,-1)` | ← |
+| 4 | `(0,1)` | → |
+| 5 | `(1,-1)` | ↙ |
+| 6 | `(1,0)` | ↓ |
+| 7 | `(1,1)` | ↘ |
+
+Khác với **Number of Islands**, bài này dùng **8 hướng**, không phải 4 hướng.
+
+---
+
+# 8. BFS cơ bản
+
+Ta dùng:
+
+```cpp
+queue
+```
+
+để lưu các ô cần khám phá.
+
+Mỗi phần tử có thể lưu:
+
+```text
+(row, column, distance)
+```
+
+Ban đầu:
+
+```cpp
+q.push({0, 0, 1});
+```
+
+Nghĩa là:
+
+```text
+row      = 0
+column   = 0
+distance = 1
+```
+
+Sau đó:
+
+```text
+while queue không rỗng
+    lấy một ô
+    nếu là đích → trả về distance
+    xét 8 hàng xóm
+    nếu hàng xóm hợp lệ
+        đánh dấu
+        đưa vào queue
+```
+
+---
+
+# 9. Đánh dấu ô đã thăm
+
+Có thể tạo:
+
+```cpp
+vector<vector<bool>> visited;
+```
+
+nhưng không cần thiết.
+
+Ta có thể tận dụng trực tiếp `grid`.
+
+Ban đầu:
+
+```text
+0 = có thể đi
+1 = bị chặn
+```
+
+Khi một ô `0` đã được đưa vào queue:
+
+```cpp
+grid[nx][ny] = 1;
+```
+
+Lúc này `1` mang ý nghĩa:
+
+> Ô này đã được xử lý và không cần đưa vào queue lần nữa.
+
+Như vậy không cần `visited` riêng.
+
+---
+
+# 10. Tại sao phải đánh dấu ngay khi `push`?
+
+Đây là chi tiết rất quan trọng.
+
+Phải làm:
+
+```cpp
+grid[nx][ny] = 1;
+q.push({nx, ny, dist + 1});
+```
+
+ngay khi phát hiện ô hợp lệ.
+
+Không nên đợi tới lúc `pop`.
+
+Ví dụ:
+
+```text
+      B
+     /     A   C
+     \ /
+      D
+```
+
+Cả `B` và `C` đều có thể phát hiện `D`.
+
+Nếu chỉ đánh dấu khi `pop`, `D` có thể được đưa vào queue nhiều lần:
+
+```text
+B → D
+C → D
+```
+
+Nếu đánh dấu ngay khi `push`:
+
+```text
+B → D
+```
+
+thì khi `C` xét tới `D`, nó đã được đánh dấu:
+
+```cpp
+grid[D] == 1
+```
+
+nên bỏ qua.
+
+Do đó mỗi ô chỉ được đưa vào queue tối đa một lần.
+
+---
+
+# 11. Queue nên lưu gì?
+
+Có thể dùng:
+
+```cpp
+queue<tuple<int, int, int>> q;
+```
+
+với:
+
+```text
+(row, column, distance)
+```
+
+Ví dụ:
+
+```cpp
+q.push({0, 0, 1});
+```
+
+Khi đi sang ô mới:
+
+```cpp
+q.push({nx, ny, dist + 1});
+```
+
+Đây là cách trực quan và dễ hiểu nhất.
+
+---
+
+# 12. Code BFS tối ưu
+
+```cpp
+class Solution {
+public:
+    int shortestPathBinaryMatrix(vector<vector<int>>& grid) {
+        int n = grid.size();
+
+        // Start hoặc End bị chặn
+        if (grid[0][0] == 1 ||
+            grid[n - 1][n - 1] == 1) {
+            return -1;
+        }
+
+        // 8 hướng
+        int dx[8] = {
+            -1, -1, -1,
+             0,  0,
+             1,  1,  1
+        };
+
+        int dy[8] = {
+            -1,  0,  1,
+            -1,  1,
+            -1,  0,  1
+        };
+
+        // {row, column, distance}
+        queue<tuple<int, int, int>> q;
+
+        // Start có distance = 1
+        q.push({0, 0, 1});
+
+        // Đánh dấu Start đã thăm
+        grid[0][0] = 1;
+
+        while (!q.empty()) {
+            auto [x, y, dist] = q.front();
+            q.pop();
+
+            // Đã tới đích
+            if (x == n - 1 && y == n - 1) {
+                return dist;
+            }
+
+            // Xét 8 hướng
+            for (int k = 0; k < 8; k++) {
+                int nx = x + dx[k];
+                int ny = y + dy[k];
+
+                // Ngoài Grid
+                if (nx < 0 || nx >= n ||
+                    ny < 0 || ny >= n) {
+                    continue;
+                }
+
+                // Bị chặn hoặc đã thăm
+                if (grid[nx][ny] == 1) {
+                    continue;
+                }
+
+                // Đánh dấu ngay khi đưa vào queue
+                grid[nx][ny] = 1;
+
+                q.push({nx, ny, dist + 1});
+            }
+        }
+
+        // Không tồn tại đường đi
+        return -1;
+    }
+};
+```
+
+---
+
+# 13. Dry Run
+
+Xét:
+
+```text
+0 0 0
+1 1 0
+1 1 0
+```
+
+Bắt đầu:
+
+```text
+(0,0)
+```
+
+với:
+
+```text
+distance = 1
+```
+
+Queue:
+
+```text
+(0,0,1)
+```
+
+Từ `(0,0)`, các ô có thể đi tới gồm:
+
+```text
+(0,1)
+```
+
+Các ô:
+
+```text
+(1,0)
+(1,1)
+```
+
+đều là `1`.
+
+Queue:
+
+```text
+(0,1,2)
+```
+
+Từ `(0,1)`:
+
+```text
+(0,2)
+(1,2)
+```
+
+có thể đi.
+
+Cả hai có:
+
+```text
+distance = 3
+```
+
+Queue:
+
+```text
+(0,2,3)
+(1,2,3)
+```
+
+Từ `(1,2)` có thể tới:
+
+```text
+(2,2)
+```
+
+nên:
+
+```text
+distance = 4
+```
+
+Khi lấy `(2,2,4)` ra:
+
+```cpp
+x == n - 1
+y == n - 1
+```
+
+nên trả về:
+
+```text
+4
+```
+
+---
+
+# 14. Vì sao BFS đảm bảo shortest path?
+
+BFS xử lý các node theo khoảng cách không giảm:
+
+```text
+distance 1
+    ↓
+distance 2
+    ↓
+distance 3
+    ↓
+distance 4
+    ↓
+...
+```
+
+Giả sử BFS lần đầu tới đích với:
+
+```text
+distance = d
+```
+
+Nếu tồn tại một đường đi ngắn hơn với:
+
+```text
+distance = k
+```
+
+và:
+
+```text
+k < d
+```
+
+thì BFS phải khám phá đường đi đó trước khi tới đích ở distance `d`.
+
+Điều này mâu thuẫn với việc `d` là lần đầu tiên BFS tới đích.
+
+Do đó:
+
+> **Lần đầu tiên BFS tới đích chính là shortest path.**
+
+---
+
+# 15. Có thể dùng level-order BFS
+
+Ngoài cách lưu `distance` trong queue, có thể tính distance theo từng level.
+
+Ví dụ:
+
+```cpp
+int dist = 1;
+
+while (!q.empty()) {
+    int size = q.size();
+
+    for (int i = 0; i < size; i++) {
+        // xử lý toàn bộ node của level hiện tại
+    }
+
+    dist++;
+}
+```
+
+Mỗi lần hoàn thành một level:
+
+```text
+distance++
+```
+
+Cách này cũng đạt:
+
+```text
+O(n²)
+```
+
+và rất phổ biến trong các bài BFS.
+
+Tuy nhiên, lưu `distance` cùng node thường trực quan hơn đối với người mới học.
+
+---
+
+# 16. Tại sao không dùng Dijkstra?
+
+Dijkstra cũng giải được shortest path, nhưng không cần thiết.
+
+Dijkstra phù hợp khi các cạnh có trọng số khác nhau:
+
+```text
+2
+5
+10
+...
+```
+
+Trong bài này mọi bước đều có:
+
+```text
+cost = 1
+```
+
+Vì vậy BFS đơn giản hơn:
+
+```text
+BFS       → O(V + E)
+Dijkstra  → O((V + E) log V) với priority queue
+```
+
+Trong Grid:
+
+```text
+V = O(n²)
+E = O(n²)
+```
+
+nên BFS cho:
+
+```text
+O(n²)
+```
+
+và không cần `priority_queue`.
+
+---
+
+# 17. So sánh BFS, DFS và Dijkstra
+
+| Thuật toán | Trường hợp phù hợp |
+|---|---|
+| DFS | Duyệt / tìm connected component |
+| BFS | Shortest path trên Graph không trọng số |
+| Dijkstra | Shortest path với trọng số không âm |
+| 0-1 BFS | Cạnh có trọng số chỉ `0` hoặc `1` |
+
+Với bài này:
+
+```text
+Mọi bước = 1
+```
+
+→ **BFS**.
+
+---
+
+# 18. Độ phức tạp
+
+Grid có:
+
+```text
+n × n
+```
+
+ô.
+
+Mỗi ô được:
+
+- đưa vào queue tối đa một lần;
+- lấy ra tối đa một lần;
+- kiểm tra tối đa 8 hướng.
+
+8 là hằng số:
+
+```text
+O(8) = O(1)
+```
+
+Do đó:
+
+```text
+Time Complexity = O(n²)
+```
+
+---
+
+# 19. Space Complexity
+
+Queue có thể chứa tối đa:
+
+```text
+O(n²)
+```
+
+ô trong trường hợp xấu nhất.
+
+Ta không tạo `visited` riêng vì sử dụng trực tiếp `grid`.
+
+Do đó:
+
+```text
+Auxiliary Space = O(n²)
+```
+
+---
+
+# 20. Vì sao O(n²) là tối ưu?
+
+Có tổng cộng:
+
+```text
+n²
+```
+
+ô.
+
+Trong trường hợp xấu nhất, có thể phải kiểm tra toàn bộ Grid để kết luận không có đường đi hoặc tìm đường đi.
+
+Vì vậy có cận dưới:
+
+```text
+Ω(n²)
+```
+
+BFS chạy:
+
+```text
+O(n²)
+```
+
+nên đạt tối ưu về asymptotic time complexity.
+
+---
+
+# 21. Những lỗi thường gặp
+
+## Lỗi 1 — Chỉ kiểm tra 4 hướng
+
+Sai:
+
+```cpp
+dx[4]
+dy[4]
+```
+
+Bài này cho phép đi đường chéo nên phải kiểm tra:
+
+```text
+8 hướng
+```
+
+---
+
+## Lỗi 2 — Quên kiểm tra Start
+
+Nếu:
+
+```cpp
+grid[0][0] == 1
+```
+
+thì:
+
+```cpp
+return -1;
+```
+
+---
+
+## Lỗi 3 — Quên kiểm tra End
+
+Nếu:
+
+```cpp
+grid[n - 1][n - 1] == 1
+```
+
+thì cũng không có đường đi.
+
+---
+
+## Lỗi 4 — Trả về 0 khi `n == 1`
+
+Với:
+
+```text
+[[0]]
+```
+
+đáp án là:
+
+```text
+1
+```
+
+vì đường đi bao gồm ô bắt đầu.
+
+---
+
+## Lỗi 5 — Đánh dấu khi `pop`
+
+Không nên chờ đến lúc lấy node ra khỏi queue mới đánh dấu.
+
+Nên:
+
+```cpp
+grid[nx][ny] = 1;
+q.push({nx, ny, dist + 1});
+```
+
+ngay khi phát hiện node mới.
+
+---
+
+## Lỗi 6 — Dùng DFS để tìm shortest path
+
+DFS không có tính chất:
+
+```text
+lần đầu tới node = shortest distance
+```
+
+BFS mới có tính chất này trong Graph không trọng số.
+
+---
+
+# 22. Pattern cần ghi nhớ
+
+Một pattern rất quan trọng:
+
+```text
+Grid
+ ↓
+Graph
+ ↓
+Shortest Path
+ ↓
+Mọi cạnh có cost bằng nhau
+ ↓
+BFS
+```
+
+Nếu đề hỏi:
+
+> "Số bước ít nhất để đi từ A đến B"
+
+và mỗi bước đều có cost bằng:
+
+```text
+1
+```
+
+hãy nghĩ ngay tới:
+
+```text
+BFS
+```
+
+---
+
+# 23. So sánh với Number of Islands
+
+Hai bài đều là Grid nhưng mục tiêu khác nhau:
+
+| Number of Islands | Shortest Path in Binary Matrix |
+|---|---|
+| Đếm connected components | Tìm shortest path |
+| DFS/BFS đều phù hợp | BFS là lựa chọn chính |
+| 4 hướng | 8 hướng |
+| `ans++` khi gặp đảo mới | `dist` tăng theo level |
+| Khám phá toàn bộ component | Dừng khi tới đích |
+
+Có thể xem đây là bước phát triển từ:
+
+```text
+Grid traversal
+```
+
+sang:
+
+```text
+Grid shortest path
+```
+
+---
+
+# 24. Tư duy tổng quát
+
+Khi gặp một bài Grid, hãy tự hỏi:
+
+### Câu hỏi 1
+
+```text
+Ô nào có thể đi qua?
+```
+
+Ở đây:
+
+```text
+0
+```
+
+### Câu hỏi 2
+
+```text
+Có thể đi tới những ô nào?
+```
+
+Ở đây:
+
+```text
+8 hướng
+```
+
+### Câu hỏi 3
+
+```text
+Có cần tìm đường ngắn nhất không?
+```
+
+Có.
+
+### Câu hỏi 4
+
+```text
+Mỗi bước có cùng cost không?
+```
+
+Có:
+
+```text
+cost = 1
+```
+
+### Kết luận
+
+```text
+BFS
+```
+
+Đây chính là cách nhận diện bài thay vì học thuộc code.
+
+---
+
+# 25. Chứng minh tính đúng đắn
+
+Ta chứng minh theo 3 ý.
+
+### Ý 1 — Mỗi ô chỉ được đưa vào queue một lần
+
+Khi phát hiện ô hợp lệ:
+
+```cpp
+grid[nx][ny] = 1;
+q.push(...);
+```
+
+Sau đó nếu gặp lại ô này:
+
+```cpp
+grid[nx][ny] == 1
+```
+
+nên không đưa vào queue nữa.
+
+---
+
+### Ý 2 — BFS xử lý theo khoảng cách tăng dần
+
+Start có:
+
+```text
+distance = 1
+```
+
+Mỗi hàng xóm có:
+
+```text
+distance + 1
+```
+
+Do queue là FIFO, các node ở khoảng cách nhỏ hơn luôn được xử lý trước các node ở khoảng cách lớn hơn.
+
+---
+
+### Ý 3 — Lần đầu tới End là shortest path
+
+Nếu lần đầu tới End có distance `d`, không thể có đường ngắn hơn.
+
+Nếu có đường ngắn hơn `k < d`, BFS phải tới End qua đường đó trước.
+
+Mâu thuẫn.
+
+Vậy kết quả trả về là shortest path.
+
+---
+
+# 26. Final Code — BFS tối ưu
+
+```cpp
+class Solution {
+public:
+    int shortestPathBinaryMatrix(vector<vector<int>>& grid) {
+        int n = grid.size();
+
+        // Start hoặc End bị chặn
+        if (grid[0][0] == 1 ||
+            grid[n - 1][n - 1] == 1) {
+            return -1;
+        }
+
+        // 8 hướng
+        int dx[8] = {
+            -1, -1, -1,
+             0,  0,
+             1,  1,  1
+        };
+
+        int dy[8] = {
+            -1,  0,  1,
+            -1,  1,
+            -1,  0,  1
+        };
+
+        // {row, column, distance}
+        queue<tuple<int, int, int>> q;
+
+        // Start có distance = 1
+        q.push({0, 0, 1});
+
+        // Đánh dấu Start đã thăm
+        grid[0][0] = 1;
+
+        while (!q.empty()) {
+            auto [x, y, dist] = q.front();
+            q.pop();
+
+            // Đã tới đích
+            if (x == n - 1 && y == n - 1) {
+                return dist;
+            }
+
+            // Xét 8 hướng
+            for (int k = 0; k < 8; k++) {
+                int nx = x + dx[k];
+                int ny = y + dy[k];
+
+                // Ngoài Grid
+                if (nx < 0 || nx >= n ||
+                    ny < 0 || ny >= n) {
+                    continue;
+                }
+
+                // Bị chặn hoặc đã thăm
+                if (grid[nx][ny] == 1) {
+                    continue;
+                }
+
+                // Đánh dấu ngay khi push
+                grid[nx][ny] = 1;
+
+                q.push({nx, ny, dist + 1});
+            }
+        }
+
+        // Không tồn tại đường đi
+        return -1;
+    }
+};
+```
+
+---
+
+# 27. Complexity Summary
+
+| Thành phần | Độ phức tạp |
+|---|---:|
+| BFS | `O(n²)` |
+| Mỗi ô kiểm tra 8 hướng | `O(1)` |
+| **Tổng thời gian** | **O(n²)** |
+| Queue | **O(n²)** worst case |
+| `visited` bổ sung | **Không cần** |
+
+---
+
+# 28. Key Insight
+
+Ba điều quan trọng nhất:
+
+### 1. Đây là Shortest Path trên Graph không trọng số
+
+```text
+Grid → Graph
+```
+
+Mỗi bước:
+
+```text
+cost = 1
+```
+
+→ dùng:
+
+```text
+BFS
+```
+
+### 2. Có 8 hướng
+
+```text
+↖ ↑ ↗
+←   →
+↙ ↓ ↘
+```
+
+→ phải kiểm tra **8 neighbor**.
+
+### 3. Đánh dấu ngay khi push
+
+```cpp
+grid[nx][ny] = 1;
+q.push({nx, ny, dist + 1});
+```
+
+Điều này đảm bảo mỗi ô chỉ được đưa vào queue một lần.
+
+---
+
+## Tóm tắt một câu
+
+> **Shortest Path in Binary Matrix là bài toán tìm đường đi ngắn nhất trên Grid không trọng số; vì mỗi bước có cost = 1 nên dùng BFS, kiểm tra 8 hướng và đánh dấu ô ngay khi đưa vào queue, đạt `O(n²)` thời gian và `O(n²)` bộ nhớ.**
