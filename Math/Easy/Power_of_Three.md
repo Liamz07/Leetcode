@@ -1,0 +1,700 @@
+# Power of Three
+
+## 1. Đề bài
+
+Cho một số nguyên `n`, hãy xác định xem `n` có phải là **lũy thừa của 3** hay không.
+
+Nói cách khác, cần kiểm tra xem có tồn tại số nguyên không âm `k` sao cho:
+
+\[
+n = 3^k
+\]
+
+Nếu có thì trả về `true`, ngược lại trả về `false`.
+
+### Ví dụ
+
+```text
+Input: n = 27
+Output: true
+
+Giải thích:
+27 = 3^3
+```
+
+```text
+Input: n = 0
+Output: false
+```
+
+```text
+Input: n = -3
+Output: false
+```
+
+---
+
+# 2. Phân tích bài toán
+
+Các số là lũy thừa của `3` có dạng:
+
+\[
+1,\ 3,\ 9,\ 27,\ 81,\ 243,\ldots
+\]
+
+Trong đó:
+
+\[
+3^0 = 1
+\]
+
+Vì vậy `1` cũng được xem là một lũy thừa của `3`.
+
+Điểm quan trọng là:
+
+- `n <= 0` chắc chắn không phải lũy thừa của `3`.
+- Với `n > 0`, ta cần kiểm tra xem `n` có thể được tạo ra bằng cách nhân `3` với chính nó nhiều lần hay không.
+
+---
+
+# 3. Phương hướng 1: Chia liên tục cho 3
+
+Đây là cách trực tiếp và dễ hiểu nhất.
+
+Nếu `n` là lũy thừa của `3` thì:
+
+\[
+n = 3^k
+\]
+
+Chia cho `3`:
+
+\[
+\frac{n}{3} = 3^{k-1}
+\]
+
+Tiếp tục chia:
+
+\[
+3^k \rightarrow 3^{k-1} \rightarrow 3^{k-2} \rightarrow \cdots \rightarrow 3^1 \rightarrow 3^0 = 1
+\]
+
+Do đó, ta có thể:
+
+1. Nếu `n <= 0` → trả về `false`.
+2. Trong khi `n` chia hết cho `3`:
+   - Chia `n` cho `3`.
+3. Sau khi vòng lặp kết thúc:
+   - Nếu `n == 1` → `n` ban đầu là lũy thừa của `3`.
+   - Ngược lại → không phải.
+
+## Ví dụ `n = 81`
+
+```text
+81 % 3 == 0
+81 / 3 = 27
+
+27 % 3 == 0
+27 / 3 = 9
+
+9 % 3 == 0
+9 / 3 = 3
+
+3 % 3 == 0
+3 / 3 = 1
+```
+
+Lúc này:
+
+```text
+n == 1
+```
+
+→ `81` là lũy thừa của `3`.
+
+---
+
+# 4. Tại sao chỉ cần kiểm tra `n == 1`?
+
+Giả sử `n` ban đầu là lũy thừa của `3`:
+
+\[
+n = 3^k
+\]
+
+Mỗi lần chia cho `3`, số mũ giảm đi `1`:
+
+\[
+3^k \rightarrow 3^{k-1} \rightarrow \cdots \rightarrow 3^0
+\]
+
+Mà:
+
+\[
+3^0 = 1
+\]
+
+Vì vậy, nếu chia hết cho `3` liên tục mà cuối cùng thu được `1`, chắc chắn số ban đầu có dạng `3^k`.
+
+Ngược lại, nếu giữa chừng xuất hiện một số không chia hết cho `3`, vòng lặp dừng lại ở một số khác `1`.
+
+Ví dụ:
+
+```text
+n = 45
+
+45 % 3 == 0
+45 / 3 = 15
+
+15 % 3 == 0
+15 / 3 = 5
+
+5 % 3 != 0
+```
+
+Dừng tại `5`.
+
+Vì:
+
+```text
+5 != 1
+```
+
+nên `45` không phải là lũy thừa của `3`.
+
+---
+
+# 5. Độ phức tạp
+
+Mỗi vòng lặp làm cho `n` giảm đi `3` lần.
+
+Sau `k` lần chia:
+
+\[
+\frac{n}{3^k}
+\]
+
+Để đưa `n` về `1`, ta cần:
+
+\[
+3^k = n
+\]
+
+suy ra:
+
+\[
+k = \log_3 n
+\]
+
+Do đó:
+
+- **Time:** `O(log_3 n)` → có thể viết gọn là `O(log n)`.
+- **Space:** `O(1)`.
+
+Đây là một lời giải rất tốt vì mỗi bước đều làm giảm đáng kể giá trị của `n`.
+
+---
+
+# 6. Lời giải C++
+
+```cpp
+class Solution {
+public:
+    bool isPowerOfThree(int n) {
+        if (n <= 0) return false;
+
+        while (n % 3 == 0) {
+            n /= 3;
+        }
+
+        return n == 1;
+    }
+};
+```
+
+---
+
+# 7. Phân tích từng dòng code
+
+### Kiểm tra `n <= 0`
+
+```cpp
+if (n <= 0) return false;
+```
+
+Lũy thừa của `3` luôn dương:
+
+\[
+3^0 = 1,\quad 3^1 = 3,\quad 3^2 = 9,\ldots
+\]
+
+Vì vậy các giá trị:
+
+```text
+0, -1, -3, -9, ...
+```
+
+đều không hợp lệ.
+
+---
+
+### Vòng lặp
+
+```cpp
+while (n % 3 == 0) {
+    n /= 3;
+}
+```
+
+Điều kiện:
+
+```cpp
+n % 3 == 0
+```
+
+có nghĩa là `n` chia hết cho `3`.
+
+Khi đó:
+
+```cpp
+n /= 3;
+```
+
+để loại bỏ một thừa số `3`.
+
+Ví dụ:
+
+```text
+81
+→ 27
+→ 9
+→ 3
+→ 1
+```
+
+---
+
+### Kiểm tra kết quả
+
+```cpp
+return n == 1;
+```
+
+Nếu cuối cùng bằng `1`:
+
+```text
+true
+```
+
+Nếu cuối cùng khác `1`:
+
+```text
+false
+```
+
+---
+
+# 8. Mô phỏng một số testcase
+
+## Test 1: `n = 27`
+
+Ban đầu:
+
+```text
+n = 27
+```
+
+Lần 1:
+
+```text
+27 % 3 == 0
+n = 27 / 3 = 9
+```
+
+Lần 2:
+
+```text
+9 % 3 == 0
+n = 9 / 3 = 3
+```
+
+Lần 3:
+
+```text
+3 % 3 == 0
+n = 3 / 3 = 1
+```
+
+Lúc này:
+
+```text
+n == 1
+```
+
+Kết quả:
+
+```text
+true
+```
+
+---
+
+## Test 2: `n = 1`
+
+Ngay từ đầu:
+
+```text
+n = 1
+```
+
+Điều kiện:
+
+```text
+1 % 3 == 0
+```
+
+là sai nên vòng lặp không chạy.
+
+Sau đó:
+
+```cpp
+return n == 1;
+```
+
+tức là:
+
+```text
+return true;
+```
+
+Điều này đúng vì:
+
+\[
+1 = 3^0
+\]
+
+---
+
+## Test 3: `n = 45`
+
+```text
+45 → 15 → 5
+```
+
+Tại `5`:
+
+```text
+5 % 3 != 0
+```
+
+nên vòng lặp dừng.
+
+Sau đó:
+
+```text
+n == 1
+```
+
+là sai.
+
+Kết quả:
+
+```text
+false
+```
+
+---
+
+## Test 4: `n = 0`
+
+Ngay lập tức:
+
+```cpp
+if (n <= 0) return false;
+```
+
+Kết quả:
+
+```text
+false
+```
+
+---
+
+## Test 5: `n = -27`
+
+Tương tự:
+
+```cpp
+if (n <= 0) return false;
+```
+
+Kết quả:
+
+```text
+false
+```
+
+---
+
+# 9. Một cách tiếp cận khác: Dùng giới hạn số lớn nhất
+
+Có một mẹo toán học để kiểm tra lũy thừa của `3`.
+
+Với kiểu `int` 32-bit, số nguyên dương lớn nhất có thể biểu diễn là:
+
+\[
+2^{31}-1
+\]
+
+Lũy thừa lớn nhất của `3` không vượt quá giới hạn này là:
+
+\[
+3^{19} = 1162261467
+\]
+
+Ta có tính chất:
+
+> Nếu `n` là lũy thừa của `3` thì `n` phải là ước của `3^19`.
+
+Vì:
+
+\[
+3^{19} = 3^{19}
+\]
+
+và mọi lũy thừa nhỏ hơn của `3` đều có dạng:
+
+\[
+3^0,3^1,\ldots,3^{19}
+\]
+
+Do đó có thể kiểm tra:
+
+```cpp
+1162261467 % n == 0
+```
+
+với điều kiện `n > 0`.
+
+Ví dụ:
+
+```text
+n = 27
+
+1162261467 % 27 == 0
+```
+
+→ `27` là lũy thừa của `3`.
+
+Nhưng:
+
+```text
+n = 45
+
+1162261467 % 45 != 0
+```
+
+→ `45` không phải lũy thừa của `3`.
+
+Code:
+
+```cpp
+class Solution {
+public:
+    bool isPowerOfThree(int n) {
+        return n > 0 && 1162261467 % n == 0;
+    }
+};
+```
+
+## Độ phức tạp
+
+- **Time:** `O(1)`
+- **Space:** `O(1)`
+
+Về mặt độ phức tạp lý thuyết, cách này nhanh hơn cách chia liên tục.
+
+Tuy nhiên, nó phụ thuộc vào giới hạn của kiểu dữ liệu `int` và con số `1162261467`. Nếu thay đổi kiểu dữ liệu hoặc giới hạn đầu vào, phải tính lại giá trị này.
+
+---
+
+# 10. So sánh hai cách
+
+| Phương pháp | Time | Space | Ưu điểm | Nhược điểm |
+|---|---:|---:|---|---|
+| Chia liên tục cho `3` | `O(log n)` | `O(1)` | Dễ hiểu, tổng quát, không phụ thuộc vào magic number | Có vòng lặp |
+| Dùng `3^19 % n` | `O(1)` | `O(1)` | Rất ngắn, nhanh | Phụ thuộc giới hạn `int` |
+
+Trong bài LeetCode này, cách **chia liên tục cho `3`** thường là cách nên ưu tiên nếu mục tiêu là một lời giải rõ ràng, dễ hiểu và dễ áp dụng sang các bài tương tự.
+
+---
+
+# 11. Có nên dùng `log()` không?
+
+Có thể nghĩ đến việc lấy log:
+
+\[
+k = \log_3 n = \frac{\log n}{\log 3}
+\]
+
+Sau đó kiểm tra `k` có phải số nguyên hay không.
+
+Ví dụ:
+
+\[
+\log_3 27 = 3
+\]
+
+nhưng:
+
+\[
+\log_3 45
+\]
+
+không phải số nguyên.
+
+Tuy nhiên, **không nên ưu tiên cách này** trong bài lập trình.
+
+Lý do là các hàm `log` sử dụng số thực (`double`), nên có thể xuất hiện sai số dấu phẩy động.
+
+Ví dụ về mặt toán học:
+
+```text
+log3(27) = 3
+```
+
+nhưng máy tính có thể lưu kết quả gần:
+
+```text
+2.999999999...
+```
+
+hoặc:
+
+```text
+3.000000000...
+```
+
+Do đó phải xử lý sai số cẩn thận.
+
+Trong khi đó, phép chia nguyên:
+
+```cpp
+n % 3
+n /= 3
+```
+
+hoàn toàn chính xác và đơn giản hơn.
+
+---
+
+# 12. Ý tưởng quan trọng cần ghi nhớ
+
+Bài toán này có thể nhìn theo hai hướng tương đương.
+
+### Hướng 1: Sinh các lũy thừa
+
+Bắt đầu từ `1`:
+
+```text
+1 → 3 → 9 → 27 → 81 → ...
+```
+
+rồi xem có gặp `n` hay không.
+
+Nhưng cách này có thể phải sinh nhiều số.
+
+### Hướng 2: Phân tích ngược
+
+Thay vì đi từ:
+
+```text
+1 → 3 → 9 → 27 → ...
+```
+
+ta đi ngược từ `n`:
+
+```text
+n → n/3 → n/9 → ... → 1
+```
+
+miễn là phép chia được thực hiện chính xác.
+
+Đây chính là ý tưởng của lời giải:
+
+```cpp
+while (n % 3 == 0) {
+    n /= 3;
+}
+```
+
+Cách suy nghĩ này rất quan trọng và có thể áp dụng cho nhiều bài kiểm tra dạng:
+
+> "Một số có phải là lũy thừa của một số `k` hay không?"
+
+Ví dụ với lũy thừa của `2`, chỉ cần thay `3` bằng `2`:
+
+```cpp
+while (n % 2 == 0) {
+    n /= 2;
+}
+```
+
+sau đó kiểm tra:
+
+```cpp
+return n == 1;
+```
+
+---
+
+# 13. Kết luận
+
+Lời giải đơn giản và tổng quát nhất:
+
+```cpp
+class Solution {
+public:
+    bool isPowerOfThree(int n) {
+        if (n <= 0) return false;
+
+        while (n % 3 == 0) {
+            n /= 3;
+        }
+
+        return n == 1;
+    }
+};
+```
+
+Luồng tư duy cốt lõi:
+
+```text
+n <= 0
+   ↓
+false
+
+n > 0
+   ↓
+liên tục chia cho 3 khi còn chia hết
+   ↓
+cuối cùng kiểm tra n == 1
+   ↓
+đúng  → true
+sai   → false
+```
+
+Độ phức tạp:
+
+\[
+\boxed{O(\log n)}
+\]
+
+về thời gian và:
+
+\[
+\boxed{O(1)}
+\]
+
+về bộ nhớ.
