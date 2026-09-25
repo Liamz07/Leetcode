@@ -1,0 +1,999 @@
+# Arranging Coins — LeetCode
+
+**Bài toán:** [Arranging Coins](https://leetcode.com/problems/arranging-coins/)
+
+---
+
+## 1. Mô tả bài toán
+
+Bạn có `n` đồng xu và muốn xếp chúng thành một cầu thang.
+
+- Hàng thứ `1` cần `1` đồng xu.
+- Hàng thứ `2` cần `2` đồng xu.
+- Hàng thứ `3` cần `3` đồng xu.
+- ...
+- Hàng thứ `k` cần `k` đồng xu.
+
+Mỗi hàng phải được xếp **đầy đủ**.
+
+Hãy tìm số hàng đầy đủ `k` có thể tạo được từ `n` đồng xu.
+
+### Ví dụ 1
+
+```text
+Input: n = 5
+Output: 2
+```
+
+Có thể xếp:
+
+```text
+*
+**
+```
+
+Tổng số xu:
+
+```text
+1 + 2 = 3
+```
+
+Hàng thứ `3` cần thêm `3` đồng:
+
+```text
+1 + 2 + 3 = 6 > 5
+```
+
+Vì vậy chỉ có `2` hàng đầy đủ.
+
+---
+
+### Ví dụ 2
+
+```text
+Input: n = 8
+Output: 3
+```
+
+Ta có:
+
+```text
+*
+**
+***
+```
+
+Tổng:
+
+```text
+1 + 2 + 3 = 6
+```
+
+Hàng thứ `4` cần:
+
+```text
+1 + 2 + 3 + 4 = 10 > 8
+```
+
+Do đó đáp án là:
+
+```text
+3
+```
+
+---
+
+# 2. Nhận xét quan trọng của bạn
+
+Bạn nhận thấy bài này liên quan đến:
+
+```text
+n * (n + 1) / 2
+```
+
+Nhận xét này **hoàn toàn chính xác**.
+
+Nếu có `k` hàng đầy đủ thì số xu cần dùng là:
+
+```text
+1 + 2 + 3 + ... + k
+```
+
+Đây là tổng của `k` số nguyên dương đầu tiên:
+
+```text
+1 + 2 + 3 + ... + k = k(k + 1) / 2
+```
+
+Vì vậy để có `k` hàng đầy đủ, ta cần:
+
+```text
+k(k + 1) / 2 <= n
+```
+
+Đây chính là công thức cốt lõi của bài toán.
+
+---
+
+# 3. Chuyển bài toán thành bài toán toán học
+
+Ta cần tìm `k` lớn nhất sao cho:
+
+```text
+k(k + 1) / 2 <= n
+```
+
+Nhân hai vế với `2`:
+
+```text
+k(k + 1) <= 2n
+```
+
+Khai triển:
+
+```text
+k² + k <= 2n
+```
+
+Chuyển về dạng phương trình:
+
+```text
+k² + k - 2n <= 0
+```
+
+Nếu xét phương trình:
+
+```text
+k² + k - 2n = 0
+```
+
+thì theo công thức nghiệm phương trình bậc hai:
+
+```text
+k = (-1 ± sqrt(1 + 8n)) / 2
+```
+
+Vì `k` phải là số nguyên không âm, nghiệm cần quan tâm là:
+
+```text
+k = (-1 + sqrt(1 + 8n)) / 2
+```
+
+Do đó về mặt toán học:
+
+```text
+answer = floor((-1 + sqrt(1 + 8n)) / 2)
+```
+
+---
+
+# 4. Ví dụ với n = 5
+
+Ta có:
+
+```text
+k = floor((-1 + sqrt(1 + 8 * 5)) / 2)
+```
+
+Tính:
+
+```text
+k = floor((-1 + sqrt(41)) / 2)
+```
+
+Vì:
+
+```text
+sqrt(41) ≈ 6.403
+```
+
+nên:
+
+```text
+k = floor((5.403) / 2)
+  = floor(2.7015)
+  = 2
+```
+
+Kết quả:
+
+```text
+2
+```
+
+---
+
+# 5. Có thể giải trực tiếp bằng công thức không?
+
+Có.
+
+Ta có thể viết:
+
+```cpp
+int arrangeCoins(int n) {
+    return (long long)(sqrt(1LL + 8LL * n) - 1) / 2;
+}
+```
+
+Ý tưởng rất ngắn:
+
+```text
+k = floor((-1 + sqrt(1 + 8n)) / 2)
+```
+
+### Độ phức tạp
+
+```text
+Time Complexity: O(1)
+Space Complexity: O(1)
+```
+
+Đây là cách có độ phức tạp lý thuyết rất tốt.
+
+Tuy nhiên, khi code thực tế, có một vấn đề cần lưu ý:
+
+> `sqrt()` sử dụng số thực (`double`), vì vậy trong các bài toán yêu cầu độ chính xác tuyệt đối với số nguyên, cách dùng công thức trực tiếp cần cẩn thận với sai số số thực.
+
+Với giới hạn của bài LeetCode này, công thức thường hoạt động tốt khi sử dụng kiểu số đủ lớn như `long long`, nhưng nếu muốn một lời giải **chắc chắn theo số nguyên**, Binary Search là lựa chọn rất tốt.
+
+---
+
+# 6. Cách tiếp cận Binary Search
+
+Thay vì tính trực tiếp nghiệm của phương trình, ta tìm `k` lớn nhất thỏa mãn:
+
+```text
+k(k + 1) / 2 <= n
+```
+
+## Tại sao Binary Search áp dụng được?
+
+Xét hàm:
+
+```text
+f(k) = k(k + 1) / 2
+```
+
+Khi `k` tăng thì `f(k)` cũng tăng.
+
+Ví dụ:
+
+```text
+k       số xu cần
+-----------------
+1          1
+2          3
+3          6
+4         10
+5         15
+6         21
+```
+
+Nếu:
+
+```text
+k(k + 1) / 2 <= n
+```
+
+thì mọi giá trị nhỏ hơn `k` cũng thỏa mãn.
+
+Nếu:
+
+```text
+k(k + 1) / 2 > n
+```
+
+thì mọi giá trị lớn hơn `k` cũng không thỏa mãn.
+
+Đây chính là tính chất **đơn điệu**, cho phép sử dụng Binary Search.
+
+---
+
+# 7. Xây dựng Binary Search
+
+Ta cần tìm:
+
+```text
+k lớn nhất
+```
+
+sao cho:
+
+```text
+k(k + 1) / 2 <= n
+```
+
+Có thể đặt:
+
+```text
+left = 0
+right = n
+```
+
+Sau đó:
+
+```text
+mid = left + (right - left) / 2
+```
+
+Kiểm tra:
+
+```text
+mid(mid + 1) / 2 <= n
+```
+
+---
+
+## Trường hợp 1: mid hợp lệ
+
+Nếu:
+
+```text
+mid(mid + 1) / 2 <= n
+```
+
+thì ta biết:
+
+```text
+mid
+```
+
+có thể tạo được.
+
+Nhưng có thể vẫn còn đáp án lớn hơn.
+
+Vì vậy:
+
+```text
+left = mid + 1
+```
+
+---
+
+## Trường hợp 2: mid không hợp lệ
+
+Nếu:
+
+```text
+mid(mid + 1) / 2 > n
+```
+
+thì `mid` quá lớn.
+
+Ta phải tìm bên trái:
+
+```text
+right = mid - 1
+```
+
+---
+
+# 8. Ví dụ Binary Search với n = 8
+
+Ta cần tìm `k` sao cho:
+
+```text
+k(k + 1) / 2 <= 8
+```
+
+Các giá trị:
+
+```text
+k = 1 → 1
+k = 2 → 3
+k = 3 → 6
+k = 4 → 10
+```
+
+Do:
+
+```text
+3 * 4 / 2 = 6 <= 8
+```
+
+nên `3` hợp lệ.
+
+Nhưng:
+
+```text
+4 * 5 / 2 = 10 > 8
+```
+
+nên `4` không hợp lệ.
+
+Kết quả:
+
+```text
+3
+```
+
+---
+
+# 9. Một vấn đề quan trọng: Integer Overflow
+
+Đây là phần rất đáng chú ý khi viết C++.
+
+Ta có:
+
+```cpp
+mid * (mid + 1)
+```
+
+Nếu `mid` lớn, phép nhân có thể vượt giới hạn của `int`.
+
+Ví dụ:
+
+```cpp
+int mid;
+mid * (mid + 1);
+```
+
+cả hai toán hạng đều là `int`, vì vậy phép tính được thực hiện dưới kiểu `int` trước.
+
+Để an toàn, nên ép sang `long long`:
+
+```cpp
+1LL * mid * (mid + 1)
+```
+
+Sau đó so sánh:
+
+```cpp
+1LL * mid * (mid + 1) / 2 <= n
+```
+
+hoặc chuyển bất đẳng thức thành:
+
+```cpp
+1LL * mid * (mid + 1) <= 2LL * n
+```
+
+Cách thứ hai rất rõ ràng:
+
+```cpp
+if (1LL * mid * (mid + 1) <= 2LL * n)
+```
+
+---
+
+# 10. Lời giải Binary Search tối ưu
+
+```cpp
+class Solution {
+public:
+    int arrangeCoins(int n) {
+        long long left = 0;
+        long long right = n;
+
+        while (left <= right) {
+            long long mid = left + (right - left) / 2;
+
+            long long coins = mid * (mid + 1) / 2;
+
+            if (coins <= n) {
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+
+        return right;
+    }
+};
+```
+
+---
+
+# 11. Tại sao return `right`?
+
+Đây là phần rất quan trọng.
+
+Sau khi Binary Search kết thúc:
+
+```text
+left > right
+```
+
+Trong đó:
+
+- `right` là giá trị **lớn nhất vẫn hợp lệ**.
+- `left` là giá trị **đầu tiên không còn hợp lệ**.
+
+Ta có thể hình dung:
+
+```text
+Hợp lệ                     Không hợp lệ
+---------------------------------------->
+...  1   2   3   4   5   6   7 ...
+                ↑   ↑
+              right left
+```
+
+Do đó:
+
+```cpp
+return right;
+```
+
+là hợp lý.
+
+---
+
+# 12. Trace với n = 5
+
+Ban đầu:
+
+```text
+left = 0
+right = 5
+```
+
+### Lần 1
+
+```text
+mid = 2
+```
+
+Số xu cần:
+
+```text
+2 * 3 / 2 = 3
+```
+
+Vì:
+
+```text
+3 <= 5
+```
+
+nên `2` hợp lệ:
+
+```text
+left = 3
+```
+
+---
+
+### Lần 2
+
+```text
+left = 3
+right = 5
+
+mid = 4
+```
+
+Số xu cần:
+
+```text
+4 * 5 / 2 = 10
+```
+
+Vì:
+
+```text
+10 > 5
+```
+
+nên `4` không hợp lệ:
+
+```text
+right = 3
+```
+
+---
+
+### Lần 3
+
+```text
+left = 3
+right = 3
+
+mid = 3
+```
+
+Số xu cần:
+
+```text
+3 * 4 / 2 = 6
+```
+
+Vì:
+
+```text
+6 > 5
+```
+
+nên:
+
+```text
+right = 2
+```
+
+Bây giờ:
+
+```text
+left = 3
+right = 2
+```
+
+Vòng lặp kết thúc.
+
+Kết quả:
+
+```cpp
+return right;
+```
+
+tức là:
+
+```text
+2
+```
+
+---
+
+# 13. Có thể tối ưu cận Binary Search
+
+Ta đang sử dụng:
+
+```cpp
+left = 0;
+right = n;
+```
+
+Cách này hoàn toàn đúng.
+
+Nhưng có thể nhận thấy:
+
+```text
+k(k + 1) / 2 <= n
+```
+
+suy ra:
+
+```text
+k <= sqrt(2n)
+```
+
+Do đó không cần tìm từ `0` đến `n`.
+
+Tuy nhiên, việc giới hạn `right` bằng `n` vẫn cho:
+
+```text
+O(log n)
+```
+
+nên không làm thay đổi bản chất độ phức tạp.
+
+Nếu ưu tiên code dễ hiểu, dùng:
+
+```cpp
+right = n;
+```
+
+là hợp lý.
+
+---
+
+# 14. So sánh hai cách tiếp cận
+
+| Cách | Time | Space | Đặc điểm |
+|---|---:|---:|---|
+| Duyệt tuần tự | O(n) | O(1) | Dễ nghĩ nhưng chậm hơn |
+| Binary Search | O(log n) | O(1) | Chắc chắn, không phụ thuộc số thực |
+| Công thức nghiệm | O(1) | O(1) | Ngắn nhất, cần chú ý số thực |
+
+---
+
+# 15. Duyệt tuần tự — cách dễ nghĩ nhất
+
+Một cách đơn giản là:
+
+```text
+hàng 1 cần 1 xu
+hàng 2 cần 2 xu
+hàng 3 cần 3 xu
+...
+```
+
+Ta liên tục trừ:
+
+```text
+n -= row
+```
+
+Ví dụ `n = 5`:
+
+```text
+n = 5
+
+row = 1 → n = 4
+row = 2 → n = 2
+row = 3 → không đủ
+```
+
+Kết quả:
+
+```text
+2
+```
+
+Nhưng trường hợp xấu nhất phải duyệt rất nhiều hàng.
+
+Độ phức tạp:
+
+```text
+O(sqrt(n))
+```
+
+vì tổng:
+
+```text
+1 + 2 + ... + k = k(k + 1)/2
+```
+
+và `k` có cỡ `sqrt(n)`.
+
+Cách này tốt để hiểu bài nhưng không phải lựa chọn tối ưu nhất.
+
+---
+
+# 16. Vì sao Binary Search tốt hơn duyệt tuần tự?
+
+Duyệt tuần tự có khoảng:
+
+```text
+sqrt(n)
+```
+
+bước.
+
+Binary Search chỉ cần:
+
+```text
+log(n)
+```
+
+bước.
+
+Ví dụ về mặt tăng trưởng:
+
+```text
+n rất lớn
+
+sqrt(n)  >>  log(n)
+```
+
+Do đó Binary Search hiệu quả hơn.
+
+---
+
+# 17. Công thức trực tiếp — cách ngắn nhất
+
+Nếu muốn tận dụng hoàn toàn nhận xét của bạn về:
+
+```text
+n(n + 1)/2
+```
+
+thì có thể giải bằng công thức.
+
+Ta có:
+
+```text
+k(k + 1)/2 <= n
+```
+
+Suy ra nghiệm:
+
+```text
+k <= (-1 + sqrt(1 + 8n)) / 2
+```
+
+Do `k` phải nguyên:
+
+```text
+answer = floor((-1 + sqrt(1 + 8n)) / 2)
+```
+
+Code:
+
+```cpp
+class Solution {
+public:
+    int arrangeCoins(int n) {
+        return (long long)(sqrt(1LL + 8LL * n) - 1) / 2;
+    }
+};
+```
+
+Đây là lời giải rất ngắn.
+
+---
+
+# 18. Nên chọn công thức hay Binary Search?
+
+Có hai góc nhìn.
+
+### Nếu ưu tiên công thức toán học
+
+Dùng:
+
+```cpp
+sqrt(1 + 8n)
+```
+
+Ưu điểm:
+
+```text
+O(1) thời gian
+O(1) bộ nhớ
+```
+
+và thể hiện rất đẹp bản chất toán học của bài.
+
+### Nếu ưu tiên tính chắc chắn của phép tính nguyên
+
+Dùng Binary Search.
+
+Ưu điểm:
+
+- Không cần phụ thuộc vào phép tính số thực để quyết định đáp án.
+- Dễ chứng minh tính đúng đắn.
+- Pattern Binary Search này áp dụng được cho rất nhiều bài khác.
+
+Vì đây là bài LeetCode, cả hai cách đều đáng biết.
+
+---
+
+# 19. Cách tiếp cận nên ghi nhớ
+
+Bài này có một pattern rất quan trọng:
+
+```text
+Bài toán
+   ↓
+Tìm k lớn nhất
+   ↓
+Xây dựng điều kiện kiểm tra
+   ↓
+k(k + 1)/2 <= n
+   ↓
+Điều kiện đơn điệu
+   ↓
+Binary Search
+```
+
+Đây là tư duy quan trọng hơn việc chỉ nhớ công thức.
+
+---
+
+# 20. Liên hệ với các bài toán khác
+
+Khi gặp một bài có dạng:
+
+> Tìm giá trị lớn nhất/nhỏ nhất thỏa mãn một điều kiện.
+
+Hãy thử hỏi:
+
+```text
+Nếu x hợp lệ thì các giá trị nhỏ hơn có chắc chắn hợp lệ không?
+```
+
+hoặc:
+
+```text
+Nếu x không hợp lệ thì các giá trị lớn hơn có chắc chắn không hợp lệ không?
+```
+
+Nếu câu trả lời là có, rất có thể có thể dùng:
+
+```text
+Binary Search on Answer
+```
+
+Trong bài này:
+
+```text
+k(k + 1)/2 <= n
+```
+
+là điều kiện đơn điệu.
+
+---
+
+# 21. Độ phức tạp của lời giải đề xuất
+
+Với Binary Search:
+
+```text
+Time Complexity:  O(log n)
+Space Complexity: O(1)
+```
+
+Đây là lời giải số nguyên chắc chắn và hiệu quả.
+
+Nếu dùng công thức nghiệm:
+
+```text
+Time Complexity:  O(1)
+Space Complexity: O(1)
+```
+
+nhưng cần chú ý việc tính toán bằng số thực.
+
+---
+
+# 22. Code hoàn chỉnh khuyến nghị
+
+Nếu mục tiêu là một lời giải **an toàn, rõ ràng và tối ưu theo hướng Binary Search**, có thể dùng:
+
+```cpp
+class Solution {
+public:
+    int arrangeCoins(int n) {
+        long long left = 0;
+        long long right = n;
+
+        while (left <= right) {
+            long long mid = left + (right - left) / 2;
+
+            if (mid * (mid + 1) / 2 <= n) {
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+
+        return right;
+    }
+};
+```
+
+---
+
+# 23. Tổng kết
+
+Điểm quan trọng nhất của bài **Arranging Coins** là nhận ra:
+
+```text
+1 + 2 + 3 + ... + k
+= k(k + 1)/2
+```
+
+Do đó bài toán trở thành:
+
+```text
+Tìm k lớn nhất sao cho:
+
+k(k + 1)/2 <= n
+```
+
+Từ đây có hai hướng tối ưu đáng biết:
+
+### Hướng 1 — Công thức toán học
+
+```text
+k = floor((-1 + sqrt(1 + 8n)) / 2)
+```
+
+```text
+Time:  O(1)
+Space: O(1)
+```
+
+### Hướng 2 — Binary Search
+
+Tìm `k` lớn nhất thỏa:
+
+```text
+k(k + 1)/2 <= n
+```
+
+```text
+Time:  O(log n)
+Space: O(1)
+```
+
+Nếu đang học DSA, bài này đặc biệt đáng ghi nhớ vì nó kết hợp được **Toán học + Binary Search + Binary Search on Answer**.
