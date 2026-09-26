@@ -1,0 +1,1304 @@
+# Gas Station — LeetCode
+
+**Bài toán:** [Gas Station](https://leetcode.com/problems/gas-station/)
+
+---
+
+## 1. Mô tả bài toán
+
+Có `n` trạm xăng được sắp xếp thành một vòng tròn.
+
+Hai mảng:
+
+```text
+gas[i]  = lượng xăng nhận được tại trạm i
+cost[i] = lượng xăng cần dùng để đi từ i đến trạm tiếp theo
+```
+
+Mỗi lần đến trạm `i`, ta nhận `gas[i]` đơn vị xăng và cần dùng `cost[i]` để đi tiếp.
+
+Cần tìm một chỉ số `start` sao cho bắt đầu từ `start`, ta có thể đi qua toàn bộ vòng tròn đúng một lần và quay lại `start`.
+
+Nếu không tồn tại, trả về `-1`.
+
+---
+
+# 2. Ví dụ
+
+```text
+gas  = [1, 2, 3, 4, 5]
+cost = [3, 4, 5, 1, 2]
+```
+
+Đáp án:
+
+```text
+3
+```
+
+Bắt đầu tại trạm `3`:
+
+```text
+4 - 1 = 3
+3 + 5 - 2 = 6
+6 + 1 - 3 = 4
+4 + 2 - 3 = 3
+3 + 3 - 4 = 2
+```
+
+Cuối cùng vẫn còn xăng nên có thể quay lại trạm `3`.
+
+---
+
+# 3. Nhận xét quan trọng: gas - cost
+
+Thay vì xét riêng:
+
+```text
+gas[i]
+cost[i]
+```
+
+ta xét:
+
+```text
+du[i] = gas[i] - cost[i]
+```
+
+`du[i]` là lượng xăng thay đổi sau khi lấy xăng ở trạm `i` và đi đến trạm tiếp theo.
+
+Ví dụ:
+
+```text
+gas[i] = 5
+cost[i] = 3
+```
+
+thì:
+
+```text
+du[i] = 2
+```
+
+Ta có thêm 2 đơn vị xăng.
+
+Nếu:
+
+```text
+gas[i] = 2
+cost[i] = 5
+```
+
+thì:
+
+```text
+du[i] = -3
+```
+
+Ta bị thiếu 3 đơn vị xăng khi đi qua đoạn đó.
+
+---
+
+# 4. Điều kiện tồn tại đáp án
+
+Tính tổng:
+
+```text
+total = (gas[0] - cost[0])
+      + (gas[1] - cost[1])
+      + ...
+      + (gas[n - 1] - cost[n - 1])
+```
+
+Tương đương:
+
+```text
+total = tổng gas - tổng cost
+```
+
+Nếu:
+
+```text
+total < 0
+```
+
+thì chắc chắn không thể đi hết vòng.
+
+Lý do:
+
+> Tổng lượng xăng mà tất cả các trạm cung cấp nhỏ hơn tổng lượng xăng cần dùng để đi hết toàn bộ vòng tròn.
+
+Do đó:
+
+```cpp
+if (total < 0)
+    return -1;
+```
+
+Đây là điều kiện cần.
+
+Nếu:
+
+```text
+total >= 0
+```
+
+thì chắc chắn tồn tại ít nhất một điểm bắt đầu hợp lệ.
+
+---
+
+# 5. Tư duy Greedy
+
+Ta duyệt từ trái sang phải và duy trì:
+
+```text
+tank
+```
+
+Trong đó:
+
+```text
+tank = lượng xăng hiện có
+```
+
+Mỗi trạm:
+
+```cpp
+tank += gas[i] - cost[i];
+```
+
+Nếu:
+
+```text
+tank >= 0
+```
+
+ta tiếp tục.
+
+Nếu:
+
+```text
+tank < 0
+```
+
+thì điểm bắt đầu hiện tại chắc chắn thất bại.
+
+Điều đặc biệt là:
+
+> Không chỉ điểm bắt đầu hiện tại thất bại, mà tất cả các trạm nằm giữa điểm bắt đầu và `i` cũng không thể là điểm bắt đầu.
+
+Vì vậy ta có thể bỏ qua toàn bộ đoạn đó:
+
+```cpp
+start = i + 1;
+tank = 0;
+```
+
+Đây chính là bước greedy quan trọng nhất.
+
+---
+
+# 6. Vì sao khi tank < 0 có thể bỏ cả đoạn?
+
+Giả sử đang bắt đầu tại:
+
+```text
+start
+```
+
+và lần đầu tiên gặp:
+
+```text
+tank < 0
+```
+
+tại trạm:
+
+```text
+i
+```
+
+Ta có:
+
+```text
+sum(start -> i) < 0
+```
+
+Nhưng vì đây là lần đầu tiên `tank` âm nên với mọi:
+
+```text
+j < i
+```
+
+trong đoạn từ `start` đến `i`:
+
+```text
+sum(start -> j) >= 0
+```
+
+Bây giờ xét một điểm `j` nằm trong đoạn:
+
+```text
+start < j <= i
+```
+
+Tổng từ `j` đến `i` là:
+
+```text
+sum(j -> i)
+=
+sum(start -> i) - sum(start -> j - 1)
+```
+
+Ta biết:
+
+```text
+sum(start -> i) < 0
+```
+
+và:
+
+```text
+sum(start -> j - 1) >= 0
+```
+
+Do đó:
+
+```text
+sum(j -> i) < 0
+```
+
+Điều này có nghĩa:
+
+> Nếu bắt đầu từ `j`, ta cũng không thể đi qua đến `i`.
+
+Vì vậy toàn bộ:
+
+```text
+start ... i
+```
+
+đều có thể loại bỏ.
+
+Điểm bắt đầu tiếp theo cần thử là:
+
+```text
+i + 1
+```
+
+Đây là cơ sở toán học của greedy.
+
+---
+
+# 7. Một ví dụ trực quan
+
+Giả sử:
+
+```text
+gas - cost = [-2, -2, -2, 3, 3]
+```
+
+Bắt đầu từ `0`:
+
+```text
+tank = -2
+```
+
+Thất bại ngay tại `0`.
+
+Ta bỏ `0`, chuyển:
+
+```text
+start = 1
+```
+
+Tại `1`:
+
+```text
+tank = -2
+```
+
+lại thất bại.
+
+Chuyển:
+
+```text
+start = 2
+```
+
+Tại `2`:
+
+```text
+tank = -2
+```
+
+thất bại.
+
+Chuyển:
+
+```text
+start = 3
+```
+
+Tại `3`:
+
+```text
+tank = 3
+```
+
+Tiếp tục.
+
+Tại `4`:
+
+```text
+tank = 6
+```
+
+Tổng toàn bộ:
+
+```text
+-2 - 2 - 2 + 3 + 3 = 0
+```
+
+nên có nghiệm.
+
+Kết quả:
+
+```text
+3
+```
+
+---
+
+# 8. Tại sao không cần thử lại các trạm đã bỏ?
+
+Đây là bản chất của greedy.
+
+Nếu:
+
+```text
+start = 2
+```
+
+và tại:
+
+```text
+i = 5
+```
+
+ta bị:
+
+```text
+tank < 0
+```
+
+thì mọi vị trí:
+
+```text
+2, 3, 4, 5
+```
+
+đều đã được chứng minh là không thể làm điểm bắt đầu.
+
+Do đó không cần:
+
+```text
+thử 2
+thử 3
+thử 4
+thử 5
+```
+
+một lần nữa.
+
+Ta nhảy thẳng:
+
+```text
+start = 6
+```
+
+Mỗi trạm chỉ được xử lý một lần.
+
+---
+
+# 9. Thuật toán Greedy
+
+Ta dùng ba biến:
+
+```text
+total
+tank
+start
+```
+
+### `total`
+
+Tổng xăng dư của toàn bộ vòng:
+
+```text
+total += gas[i] - cost[i]
+```
+
+Dùng để kiểm tra có tồn tại đáp án.
+
+### `tank`
+
+Lượng xăng hiện tại tính từ `start`:
+
+```text
+tank += gas[i] - cost[i]
+```
+
+### `start`
+
+Điểm bắt đầu đang được thử.
+
+---
+
+# 10. Pseudocode
+
+```text
+total = 0
+tank = 0
+start = 0
+
+for i từ 0 đến n - 1:
+
+    du = gas[i] - cost[i]
+
+    total += du
+    tank += du
+
+    nếu tank < 0:
+
+        start = i + 1
+        tank = 0
+
+nếu total < 0:
+
+    return -1
+
+return start
+```
+
+---
+
+# 11. Code C++ tối ưu
+
+```cpp
+class Solution {
+public:
+    int canCompleteCircuit(vector<int>& gas, vector<int>& cost) {
+        int total = 0;
+        int tank = 0;
+        int start = 0;
+
+        for (int i = 0; i < gas.size(); i++) {
+            int du = gas[i] - cost[i];
+
+            total += du;
+            tank += du;
+
+            if (tank < 0) {
+                start = i + 1;
+                tank = 0;
+            }
+        }
+
+        if (total < 0) {
+            return -1;
+        }
+
+        return start;
+    }
+};
+```
+
+---
+
+# 12. Phân tích từng dòng code
+
+## Khởi tạo
+
+```cpp
+int total = 0;
+int tank = 0;
+int start = 0;
+```
+
+Ban đầu:
+
+```text
+total = tổng xăng dư toàn bộ mảng
+tank  = xăng hiện có từ start
+start = 0
+```
+
+---
+
+## Duyệt từng trạm
+
+```cpp
+for (int i = 0; i < gas.size(); i++)
+```
+
+Ta chỉ cần duyệt một lần:
+
+```text
+0 -> 1 -> 2 -> ... -> n - 1
+```
+
+Không cần mô phỏng vòng tròn lần thứ hai.
+
+---
+
+## Tính lượng xăng dư
+
+```cpp
+int du = gas[i] - cost[i];
+```
+
+Đây là lượng xăng tăng hoặc giảm sau khi đi qua đoạn:
+
+```text
+i -> i + 1
+```
+
+---
+
+## Cập nhật tổng toàn cục
+
+```cpp
+total += du;
+```
+
+Sau vòng lặp:
+
+```text
+total = tổng gas - tổng cost
+```
+
+---
+
+## Cập nhật lượng xăng hiện tại
+
+```cpp
+tank += du;
+```
+
+`tank` chỉ có ý nghĩa với điểm bắt đầu hiện tại.
+
+---
+
+## Khi tank âm
+
+```cpp
+if (tank < 0) {
+    start = i + 1;
+    tank = 0;
+}
+```
+
+Nếu:
+
+```text
+tank < 0
+```
+
+thì không thể đi từ `start` đến `i + 1`.
+
+Theo chứng minh greedy, toàn bộ:
+
+```text
+start ... i
+```
+
+đều bị loại.
+
+Vì vậy:
+
+```cpp
+start = i + 1;
+```
+
+Sau đó bắt đầu tích lũy lại:
+
+```cpp
+tank = 0;
+```
+
+---
+
+## Kiểm tra tổng cuối cùng
+
+```cpp
+if (total < 0) {
+    return -1;
+}
+```
+
+Nếu tổng xăng nhỏ hơn tổng chi phí thì không tồn tại nghiệm.
+
+---
+
+## Trả về đáp án
+
+```cpp
+return start;
+```
+
+Nếu:
+
+```text
+total >= 0
+```
+
+thì `start` đã tìm được là một điểm bắt đầu hợp lệ.
+
+---
+
+# 13. Dry Run đầy đủ
+
+Xét:
+
+```text
+gas  = [1, 2, 3, 4, 5]
+cost = [3, 4, 5, 1, 2]
+```
+
+Ta có:
+
+```text
+du = [-2, -2, -2, 3, 3]
+```
+
+Bảng:
+
+| i | gas | cost | du | tank | start |
+|---:|---:|---:|---:|---:|---:|
+| 0 | 1 | 3 | -2 | -2 | 0 |
+| 1 | 2 | 4 | -2 | -2 | 1 |
+| 2 | 3 | 5 | -2 | -2 | 2 |
+| 3 | 4 | 1 | 3 | 3 | 3 |
+| 4 | 5 | 2 | 3 | 6 | 3 |
+
+Tổng:
+
+```text
+-2 - 2 - 2 + 3 + 3 = 0
+```
+
+Vì:
+
+```text
+total >= 0
+```
+
+nên đáp án tồn tại.
+
+Kết quả:
+
+```text
+3
+```
+
+---
+
+# 14. Tại sao total >= 0 lại đảm bảo có nghiệm?
+
+Đây là phần quan trọng của bài.
+
+Sau khi chuyển thành:
+
+```text
+du[i] = gas[i] - cost[i]
+```
+
+ta có:
+
+```text
+total = du[0] + du[1] + ... + du[n - 1]
+```
+
+Nếu:
+
+```text
+total < 0
+```
+
+thì tổng toàn bộ vòng là âm.
+
+Không có cách nào đi hết vòng vì toàn bộ lượng tài nguyên không đủ.
+
+Ngược lại, nếu:
+
+```text
+total >= 0
+```
+
+thì tổng toàn bộ vòng không âm.
+
+Trong quá trình duyệt, mỗi khi tổng từ `start` bị âm, ta loại bỏ đoạn đó và chọn điểm sau đoạn thất bại.
+
+Cuối cùng, `start` là vị trí sau đoạn có tổng dồn nhỏ nhất theo cách mà greedy phát hiện.
+
+Phần tổng còn lại đủ để bù lại những phần đã thiếu khi đi vòng về đầu.
+
+Do đó `start` là điểm bắt đầu hợp lệ.
+
+---
+
+# 15. Cách hiểu bằng Prefix Sum
+
+Đây là một cách nhìn rất đẹp về bài toán.
+
+Đặt:
+
+```text
+du[i] = gas[i] - cost[i]
+```
+
+Sau đó tính prefix sum:
+
+```text
+prefix[0] = du[0]
+prefix[1] = du[0] + du[1]
+prefix[2] = du[0] + du[1] + du[2]
+...
+```
+
+Ta cần tìm một điểm bắt đầu sao cho khi đi từ đó, tổng dồn không bao giờ âm.
+
+Một cách nhìn là:
+
+> Điểm bắt đầu hợp lệ có thể được chọn ngay sau vị trí có prefix sum nhỏ nhất.
+
+Ví dụ:
+
+```text
+du = [2, -3, 4, -2, 3]
+```
+
+Prefix:
+
+```text
+2, -1, 3, 1, 4
+```
+
+Prefix nhỏ nhất là:
+
+```text
+-1
+```
+
+ở vị trí `1`.
+
+Vì vậy có thể chọn:
+
+```text
+start = 2
+```
+
+Greedy không cần lưu mảng prefix nhưng vẫn tìm được kết quả tương tự.
+
+---
+
+# 16. Greedy và Prefix Sum thực chất liên quan với nhau
+
+Hai cách nhìn:
+
+```text
+Prefix Sum
+    ↓
+Tìm vị trí prefix nhỏ nhất
+    ↓
+Bắt đầu sau vị trí đó
+```
+
+và:
+
+```text
+Greedy
+    ↓
+tank < 0
+    ↓
+Loại bỏ đoạn thất bại
+    ↓
+start = i + 1
+```
+
+thực chất đang khai thác cùng một cấu trúc.
+
+Greedy chỉ là cách thực hiện tiết kiệm bộ nhớ hơn.
+
+---
+
+# 17. So sánh với Brute Force
+
+## Brute Force
+
+Ta thử từng `start`:
+
+```text
+start = 0
+start = 1
+start = 2
+...
+```
+
+Mỗi lần thử có thể phải đi qua gần `n` trạm.
+
+Độ phức tạp xấu nhất:
+
+```text
+O(n²)
+```
+
+---
+
+## Greedy
+
+Mỗi trạm chỉ được duyệt một lần.
+
+```text
+O(n)
+```
+
+Bộ nhớ:
+
+```text
+O(1)
+```
+
+Do đó greedy tốt hơn rất nhiều.
+
+---
+
+# 18. Sai lầm thường gặp 1: Chỉ kiểm tra gas[i] >= cost[i]
+
+Ví dụ:
+
+```text
+gas  = [5, 1, 2]
+cost = [4, 3, 1]
+```
+
+Tại trạm `0`:
+
+```text
+5 >= 4
+```
+
+nhưng:
+
+```text
+tank = 5 - 4 = 1
+```
+
+Đến trạm `1`:
+
+```text
+tank = 1 + 1 - 3
+      = -1
+```
+
+Không thể đi tiếp.
+
+Vì vậy:
+
+> Một trạm có gas >= cost chưa chắc là điểm bắt đầu hợp lệ.
+
+Phải xét cả hành trình.
+
+---
+
+# 19. Sai lầm thường gặp 2: Thử tất cả điểm bắt đầu
+
+Cách này dễ nghĩ nhưng có thể lên đến:
+
+```text
+O(n²)
+```
+
+Không cần thiết.
+
+Greedy cho phép bỏ cả một đoạn ứng viên ngay khi phát hiện thất bại.
+
+---
+
+# 20. Sai lầm thường gặp 3: Quên kiểm tra total
+
+Có thể trong quá trình duyệt ta tìm được một `start` nào đó.
+
+Nhưng nếu:
+
+```text
+total < 0
+```
+
+thì toàn bộ vòng vẫn không đủ xăng.
+
+Phải:
+
+```cpp
+if (total < 0)
+    return -1;
+```
+
+---
+
+# 21. Sai lầm thường gặp 4: Nghĩ rằng phải dùng vòng lặp kép
+
+Vì bài toán là vòng tròn, người mới thường nghĩ phải:
+
+```text
+for start:
+    for từng trạm:
+```
+
+Không cần.
+
+Điều kiện:
+
+```text
+total >= 0
+```
+
+đã xử lý phần quay vòng.
+
+Greedy chỉ cần:
+
+```text
+0 -> n - 1
+```
+
+một lần.
+
+---
+
+# 22. Có cần dùng modulo không?
+
+Không cần trong lời giải greedy.
+
+Mặc dù bài toán có:
+
+```text
+(i + 1) % n
+```
+
+về mặt mô tả, code greedy không cần mô phỏng trực tiếp cạnh:
+
+```text
+n - 1 -> 0
+```
+
+Chỉ cần tính:
+
+```text
+total
+tank
+start
+```
+
+---
+
+# 23. Có nhiều đáp án hay chỉ một?
+
+Có thể có nhiều điểm bắt đầu hợp lệ.
+
+Ví dụ:
+
+```text
+gas  = [2, 2, 2]
+cost = [2, 2, 2]
+```
+
+Mọi vị trí đều có thể bắt đầu:
+
+```text
+0
+1
+2
+```
+
+Thuật toán trả về:
+
+```text
+0
+```
+
+Đây vẫn là đáp án hợp lệ.
+
+LeetCode chỉ yêu cầu một điểm bắt đầu hợp lệ.
+
+---
+
+# 24. Test Case đặc biệt
+
+## Case 1 — Một trạm
+
+```text
+gas  = [5]
+cost = [4]
+```
+
+Kết quả:
+
+```text
+0
+```
+
+---
+
+## Case 2 — Không đủ tổng xăng
+
+```text
+gas  = [2, 3]
+cost = [3, 4]
+```
+
+Tổng:
+
+```text
+gas  = 5
+cost = 7
+```
+
+Kết quả:
+
+```text
+-1
+```
+
+---
+
+## Case 3 — Tất cả bằng nhau
+
+```text
+gas  = [2, 2, 2]
+cost = [2, 2, 2]
+```
+
+Kết quả có thể là:
+
+```text
+0
+```
+
+---
+
+# 25. Có cần long long không?
+
+Với giới hạn của bài LeetCode, `int` thường đủ.
+
+Tuy nhiên, trong bài toán tổng quát nếu giá trị đầu vào lớn, có thể dùng:
+
+```cpp
+long long total = 0;
+long long tank = 0;
+```
+
+Phiên bản:
+
+```cpp
+class Solution {
+public:
+    int canCompleteCircuit(vector<int>& gas, vector<int>& cost) {
+        long long total = 0;
+        long long tank = 0;
+        int start = 0;
+
+        for (int i = 0; i < gas.size(); i++) {
+            long long du = 1LL * gas[i] - cost[i];
+
+            total += du;
+            tank += du;
+
+            if (tank < 0) {
+                start = i + 1;
+                tank = 0;
+            }
+        }
+
+        return total >= 0 ? start : -1;
+    }
+};
+```
+
+---
+
+# 26. Độ phức tạp
+
+Thuật toán chỉ duyệt mảng một lần:
+
+```text
+Time Complexity: O(n)
+```
+
+Chỉ dùng một vài biến:
+
+```text
+total
+tank
+start
+du
+```
+
+Không tạo mảng phụ:
+
+```text
+Space Complexity: O(1)
+```
+
+Đây là lời giải tối ưu về độ phức tạp theo thời gian và bộ nhớ.
+
+---
+
+# 27. Pattern DSA cần ghi nhớ
+
+## Pattern 1 — Tổng tài nguyên
+
+Trước tiên kiểm tra:
+
+```text
+tổng tài nguyên >= tổng chi phí
+```
+
+Nếu không:
+
+```text
+không tồn tại đáp án
+```
+
+---
+
+## Pattern 2 — Greedy loại bỏ ứng viên
+
+Nếu lựa chọn hiện tại thất bại:
+
+```text
+tank < 0
+```
+
+không nhất thiết phải thử lại từng lựa chọn tiếp theo.
+
+Có thể chứng minh rằng cả đoạn:
+
+```text
+start ... i
+```
+
+đều thất bại.
+
+Do đó:
+
+```text
+start = i + 1
+```
+
+---
+
+## Pattern 3 — Prefix Sum
+
+Biến:
+
+```text
+gas[i] - cost[i]
+```
+
+thành một dãy số và xét tổng dồn.
+
+---
+
+## Pattern 4 — Vòng tròn không nhất thiết phải mô phỏng
+
+Không cần tạo:
+
+```text
+gas + gas
+```
+
+hoặc chạy vòng lặp hai lần.
+
+Tổng toàn cục đã xử lý phần quay vòng.
+
+---
+
+# 28. Tư duy ngắn gọn để nhớ bài
+
+Khi gặp lại Gas Station:
+
+```text
+gas[i] - cost[i]
+        ↓
+du
+        ↓
+total < 0 ?
+        ↓
+Có → -1
+        ↓
+Không → chắc chắn có nghiệm
+        ↓
+tank += du
+        ↓
+tank < 0 ?
+        ↓
+Có → start = i + 1
+     tank = 0
+        ↓
+Duyệt tiếp
+        ↓
+return start
+```
+
+Điểm mấu chốt:
+
+```text
+Nếu bắt đầu từ start mà bị âm tại i,
+thì mọi vị trí từ start đến i đều không thể
+là điểm bắt đầu.
+```
+
+Nhờ đó ta loại bỏ được cả một đoạn và chỉ cần một lần duyệt.
+
+---
+
+# 29. Code cuối cùng nên ghi nhớ
+
+```cpp
+class Solution {
+public:
+    int canCompleteCircuit(vector<int>& gas, vector<int>& cost) {
+        int total = 0;
+        int tank = 0;
+        int start = 0;
+
+        for (int i = 0; i < gas.size(); i++) {
+            int du = gas[i] - cost[i];
+
+            total += du;
+            tank += du;
+
+            if (tank < 0) {
+                start = i + 1;
+                tank = 0;
+            }
+        }
+
+        if (total < 0) {
+            return -1;
+        }
+
+        return start;
+    }
+};
+```
+
+**Độ phức tạp:**
+
+```text
+Time Complexity: O(n)
+Space Complexity: O(1)
+```
+
+Đây là lời giải Greedy tối ưu cho bài Gas Station.
