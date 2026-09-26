@@ -1,0 +1,952 @@
+# Jump Game — LeetCode
+
+**Link bài toán:** https://leetcode.com/problems/jump-game/
+
+## 1. Mô tả bài toán
+
+Cho một mảng số nguyên `nums`.
+
+Ta bắt đầu tại vị trí đầu tiên `index = 0`.
+
+Giá trị `nums[i]` cho biết từ vị trí `i`, ta có thể nhảy **tối đa** `nums[i]` bước.
+
+Nhiệm vụ là xác định xem có thể đi từ vị trí đầu tiên đến vị trí cuối cùng của mảng hay không.
+
+Nếu có thể, trả về `true`. Nếu không thể, trả về `false`.
+
+### Ví dụ
+
+```text
+nums = [2,3,1,1,4]
+
+0 -> 1 -> 4
+
+Kết quả: true
+```
+
+```text
+nums = [3,2,1,0,4]
+
+0 -> 1 -> 2 -> 3
+
+nums[3] = 0 nên bị mắc kẹt.
+Không thể đến index 4.
+
+Kết quả: false
+```
+
+---
+
+# 2. Phân tích bản chất bài toán
+
+Điểm quan trọng nhất là:
+
+> `nums[i]` là số bước **tối đa**, không phải số bước bắt buộc phải nhảy.
+
+Ví dụ:
+
+```text
+nums[i] = 3
+```
+
+thì từ `i` ta có thể nhảy:
+
+```text
+1 bước
+2 bước
+3 bước
+```
+
+Nếu thử tất cả các khả năng ở mỗi vị trí, số lượng đường đi có thể tăng rất nhanh.
+
+Do đó, thay vì hỏi:
+
+> "Tôi nên nhảy đến vị trí nào?"
+
+ta đổi góc nhìn thành:
+
+> "Từ tất cả những vị trí tôi đã có thể đi đến, tôi có thể vươn xa nhất đến đâu?"
+
+Đây chính là chìa khóa của bài toán.
+
+---
+
+# 3. Ý tưởng Greedy
+
+Ta duy trì một biến:
+
+```cpp
+maxReach
+```
+
+Trong đó:
+
+```text
+maxReach = vị trí xa nhất mà ta có thể đi tới được
+```
+
+Khi đang xét vị trí `i`:
+
+- Nếu `i > maxReach`, vị trí `i` không thể đến được.
+- Nếu `i <= maxReach`, vị trí `i` có thể đến được.
+- Từ `i`, ta có thể vươn tới tối đa:
+
+```text
+i + nums[i]
+```
+
+Vì vậy cập nhật:
+
+```cpp
+maxReach = max(maxReach, i + nums[i]);
+```
+
+Đây là chiến lược Greedy:
+
+> Luôn duy trì phạm vi tiếp cận xa nhất có thể.
+
+---
+
+# 4. Ví dụ chi tiết: `[2,3,1,1,4]`
+
+Ban đầu:
+
+```text
+maxReach = 0
+```
+
+## Xét index 0
+
+```text
+nums[0] = 2
+```
+
+Từ `0` có thể đi xa nhất tới:
+
+```text
+0 + 2 = 2
+```
+
+Cập nhật:
+
+```text
+maxReach = 2
+```
+
+Ta biết có thể đến các index:
+
+```text
+0, 1, 2
+```
+
+---
+
+## Xét index 1
+
+```text
+1 <= maxReach
+```
+
+nên index `1` có thể đến được.
+
+Từ index `1`:
+
+```text
+1 + nums[1]
+= 1 + 3
+= 4
+```
+
+Cập nhật:
+
+```text
+maxReach = 4
+```
+
+Mà index cuối cùng là:
+
+```text
+4
+```
+
+Do đó có thể đến cuối mảng.
+
+Kết quả:
+
+```text
+true
+```
+
+---
+
+# 5. Ví dụ không thể đi đến cuối: `[3,2,1,0,4]`
+
+Ban đầu:
+
+```text
+maxReach = 0
+```
+
+## Index 0
+
+```text
+0 + 3 = 3
+```
+
+Nên:
+
+```text
+maxReach = 3
+```
+
+Có thể đến:
+
+```text
+0, 1, 2, 3
+```
+
+---
+
+## Index 1
+
+```text
+1 + 2 = 3
+```
+
+Không mở rộng được thêm:
+
+```text
+maxReach = 3
+```
+
+---
+
+## Index 2
+
+```text
+2 + 1 = 3
+```
+
+Vẫn:
+
+```text
+maxReach = 3
+```
+
+---
+
+## Index 3
+
+```text
+nums[3] = 0
+```
+
+Từ index `3` không thể đi xa hơn:
+
+```text
+3 + 0 = 3
+```
+
+Do đó:
+
+```text
+maxReach = 3
+```
+
+---
+
+## Index 4
+
+Bây giờ:
+
+```text
+i = 4
+maxReach = 3
+```
+
+Ta có:
+
+```text
+4 > 3
+```
+
+Điều này có nghĩa là index `4` không thể đến được.
+
+Vì vậy:
+
+```text
+false
+```
+
+---
+
+# 6. Vì sao chỉ cần lưu `maxReach`?
+
+Đây là insight quan trọng nhất.
+
+Giả sử:
+
+```text
+maxReach = 7
+```
+
+Điều đó có nghĩa là ta đã tìm được cách để tiếp cận tới vị trí `7`.
+
+Ta không cần lưu:
+
+```text
+đường đi cụ thể
+```
+
+hay:
+
+```text
+đã nhảy từ đâu đến đâu
+```
+
+Bởi vì đề bài chỉ hỏi:
+
+```text
+Có thể đến cuối hay không?
+```
+
+chứ không yêu cầu:
+
+```text
+Đường đi ngắn nhất là gì?
+```
+
+Vì vậy thông tin quan trọng duy nhất là:
+
+```text
+vị trí xa nhất hiện tại có thể đạt được
+```
+
+---
+
+# 7. Vì sao `maxReach` luôn đúng?
+
+Giả sử ta đang xét vị trí `i`.
+
+Nếu:
+
+```text
+i <= maxReach
+```
+
+thì `i` chắc chắn nằm trong vùng có thể tiếp cận.
+
+Từ `i`, ta có thể đi tới:
+
+```text
+i + nums[i]
+```
+
+Do đó vùng tiếp cận mới phải ít nhất bao phủ:
+
+```text
+i + nums[i]
+```
+
+Ta lấy:
+
+```text
+max(
+    maxReach,
+    i + nums[i]
+)
+```
+
+để không làm mất đi phạm vi đã đạt được trước đó.
+
+Nếu:
+
+```text
+i > maxReach
+```
+
+thì `i` nằm ngoài toàn bộ vùng có thể tiếp cận.
+
+Không có vị trí hợp lệ nào trước đó có thể đưa ta tới `i`.
+
+Do đó không thể đi tiếp và kết quả chắc chắn là:
+
+```text
+false
+```
+
+---
+
+# 8. Hình dung bằng "vùng tiếp cận"
+
+Ta có thể tưởng tượng:
+
+```text
+[0 ........ maxReach]
+```
+
+là vùng mà ta có thể đi tới.
+
+Ví dụ:
+
+```text
+nums = [2,3,1,1,4]
+```
+
+Ban đầu:
+
+```text
+maxReach = 0
+```
+
+Sau khi xét index `0`:
+
+```text
+[0 1 2]
+```
+
+vì:
+
+```text
+0 + nums[0] = 2
+```
+
+Khi xét index `1`:
+
+```text
+1 + nums[1] = 4
+```
+
+vùng tiếp cận được mở rộng:
+
+```text
+[0 1 2 3 4]
+```
+
+Đã chạm vị trí cuối.
+
+---
+
+# 9. Pseudocode
+
+```text
+maxReach = 0
+
+Duyệt i từ 0 đến n - 1:
+
+    Nếu i > maxReach:
+        return false
+
+    maxReach = max(maxReach, i + nums[i])
+
+return true
+```
+
+---
+
+# 10. Lời giải C++ tối ưu
+
+```cpp
+class Solution {
+public:
+    bool canJump(vector<int>& nums) {
+        int maxReach = 0;
+
+        for (int i = 0; i < nums.size(); i++) {
+            if (i > maxReach)
+                return false;
+
+            maxReach = max(maxReach, i + nums[i]);
+        }
+
+        return true;
+    }
+};
+```
+
+---
+
+# 11. Phân tích từng dòng code
+
+## Khởi tạo
+
+```cpp
+int maxReach = 0;
+```
+
+Ban đầu ta đang đứng tại index `0`.
+
+Do đó vị trí xa nhất có thể đến được ít nhất là:
+
+```text
+0
+```
+
+---
+
+## Kiểm tra vị trí hiện tại
+
+```cpp
+if (i > maxReach)
+    return false;
+```
+
+Nếu:
+
+```text
+i > maxReach
+```
+
+thì `i` nằm ngoài vùng có thể tiếp cận.
+
+Không có cách nào đi tới `i`.
+
+Do đó cũng không thể đi đến các vị trí phía sau.
+
+Ta có thể kết luận ngay:
+
+```text
+false
+```
+
+---
+
+## Mở rộng phạm vi
+
+```cpp
+maxReach = max(maxReach, i + nums[i]);
+```
+
+Nếu `i` có thể đến được, ta xem từ `i` có thể đi xa nhất đến đâu:
+
+```text
+i + nums[i]
+```
+
+Sau đó lấy lớn nhất giữa:
+
+```text
+maxReach cũ
+```
+
+và:
+
+```text
+i + nums[i]
+```
+
+---
+
+# 12. Tại sao không cần kiểm tra `maxReach >= n - 1`?
+
+Có thể viết:
+
+```cpp
+if (maxReach >= nums.size() - 1)
+    return true;
+```
+
+ngay trong vòng lặp.
+
+Nhưng không bắt buộc.
+
+Nếu duyệt hết mảng mà không gặp:
+
+```cpp
+i > maxReach
+```
+
+thì vị trí cuối chắc chắn đã nằm trong vùng có thể đến được.
+
+Vì vậy code ngắn hơn:
+
+```cpp
+class Solution {
+public:
+    bool canJump(vector<int>& nums) {
+        int maxReach = 0;
+
+        for (int i = 0; i < nums.size(); i++) {
+            if (i > maxReach)
+                return false;
+
+            maxReach = max(maxReach, i + nums[i]);
+        }
+
+        return true;
+    }
+};
+```
+
+là đủ.
+
+---
+
+# 13. Test case
+
+## Test 1
+
+```text
+nums = [0]
+```
+
+Ta đang ở ngay vị trí cuối.
+
+Kết quả:
+
+```text
+true
+```
+
+---
+
+## Test 2
+
+```text
+nums = [2,0,0]
+```
+
+Từ index `0` có thể nhảy trực tiếp tới index `2`:
+
+```text
+0 -> 2
+```
+
+Kết quả:
+
+```text
+true
+```
+
+---
+
+## Test 3
+
+```text
+nums = [1,0,0]
+```
+
+Ta có:
+
+```text
+0 -> 1
+```
+
+Nhưng:
+
+```text
+nums[1] = 0
+```
+
+nên không thể đến index `2`.
+
+Kết quả:
+
+```text
+false
+```
+
+---
+
+## Test 4
+
+```text
+nums = [2,3,1,1,4]
+```
+
+Từ `0`:
+
+```text
+maxReach = 2
+```
+
+Đến `1`:
+
+```text
+maxReach = max(2, 1 + 3)
+          = 4
+```
+
+Đã tới cuối.
+
+Kết quả:
+
+```text
+true
+```
+
+---
+
+## Test 5
+
+```text
+nums = [3,2,1,0,4]
+```
+
+Ta đạt tối đa:
+
+```text
+maxReach = 3
+```
+
+Sau đó:
+
+```text
+i = 4
+4 > 3
+```
+
+Không thể đến cuối.
+
+Kết quả:
+
+```text
+false
+```
+
+---
+
+# 14. Vì sao không dùng Brute Force?
+
+Ta có thể thử tất cả các bước nhảy.
+
+Ví dụ:
+
+```text
+nums = [2,3,1,1,4]
+```
+
+Từ `0` có:
+
+```text
+0 -> 1
+0 -> 2
+```
+
+Sau đó từ mỗi vị trí lại có nhiều lựa chọn.
+
+Số đường đi có thể tăng nhanh.
+
+Nếu cài đặt trực tiếp bằng đệ quy/backtracking, có thể phải xét rất nhiều trường hợp giống nhau.
+
+Không cần thiết vì bài toán chỉ hỏi:
+
+```text
+Có thể đến cuối không?
+```
+
+Ta có thể giải bằng một biến `maxReach`.
+
+---
+
+# 15. Vì sao không cần Dynamic Programming?
+
+Một cách khác là:
+
+```text
+dp[i] = có thể đến index i hay không
+```
+
+Sau đó từ mỗi `i` ta đánh dấu các vị trí có thể nhảy tới.
+
+Cách này đúng nhưng có thể cần:
+
+```text
+O(n^2)
+```
+
+thời gian trong cách triển khai trực tiếp.
+
+Trong khi Greedy chỉ cần:
+
+```text
+O(n)
+```
+
+thời gian và:
+
+```text
+O(1)
+```
+
+bộ nhớ phụ.
+
+Vì vậy DP là một hướng có thể nghĩ tới nhưng không cần thiết.
+
+---
+
+# 16. Vì sao không cần BFS?
+
+Có thể coi mỗi index là một node.
+
+Ví dụ:
+
+```text
+0 -> 1, 2
+1 -> 2, 3, 4
+```
+
+Sau đó dùng BFS.
+
+Nhưng số cạnh có thể rất lớn.
+
+Trong khi bài toán không yêu cầu tìm đường đi, số bước ít nhất hay khoảng cách.
+
+Ta chỉ cần biết:
+
+```text
+vùng xa nhất có thể tiếp cận
+```
+
+nên Greedy đơn giản hơn rất nhiều.
+
+---
+
+# 17. So sánh các cách tiếp cận
+
+| Cách tiếp cận | Ý tưởng | Time | Space |
+|---|---|---:|---:|
+| Brute Force | Thử mọi đường đi | Rất lớn | Có thể lớn |
+| DP | Lưu khả năng đến từng index | O(n^2) thường gặp | O(n) |
+| BFS | Xem index như node | Có thể O(n^2) | O(n) |
+| Greedy | Duy trì vị trí xa nhất | **O(n)** | **O(1)** |
+
+Greedy là lựa chọn tối ưu cho bài toán này.
+
+---
+
+# 18. Insight quan trọng
+
+Thay vì suy nghĩ:
+
+```text
+Từ vị trí này tôi nên nhảy đi đâu?
+```
+
+hãy suy nghĩ:
+
+```text
+Từ tất cả những vị trí tôi đã có thể đến,
+tôi có thể vươn xa nhất đến đâu?
+```
+
+Ta chỉ cần duy trì:
+
+```text
+maxReach
+```
+
+Mỗi vị trí có thể đến được sẽ có khả năng mở rộng `maxReach`.
+
+Nếu vùng tiếp cận chạm vị trí cuối:
+
+```text
+true
+```
+
+Nếu gặp một vị trí nằm ngoài vùng:
+
+```text
+i > maxReach
+```
+
+thì:
+
+```text
+false
+```
+
+Đây là một pattern Greedy rất đáng nhớ.
+
+---
+
+# 19. Độ phức tạp
+
+Gọi:
+
+```text
+n = nums.size()
+```
+
+Ta duyệt mảng đúng một lần.
+
+Mỗi vị trí được xử lý một số lần cố định.
+
+Do đó:
+
+```text
+Time Complexity: O(n)
+```
+
+Ta chỉ sử dụng một biến:
+
+```cpp
+maxReach
+```
+
+ngoài biến vòng lặp.
+
+Không tạo thêm mảng hay cấu trúc dữ liệu phụ.
+
+Do đó:
+
+```text
+Space Complexity: O(1)
+```
+
+Đây là độ phức tạp tối ưu cho bài toán.
+
+---
+
+# 20. Lời giải cuối cùng
+
+```cpp
+class Solution {
+public:
+    bool canJump(vector<int>& nums) {
+        int maxReach = 0;
+
+        for (int i = 0; i < nums.size(); i++) {
+            if (i > maxReach)
+                return false;
+
+            maxReach = max(maxReach, i + nums[i]);
+        }
+
+        return true;
+    }
+};
+```
+
+## Tóm tắt
+
+```text
+1. Khởi tạo maxReach = 0.
+2. Duyệt từng index i.
+3. Nếu i > maxReach:
+      không thể đến i
+      -> false
+4. Nếu i có thể đến:
+      mở rộng maxReach:
+      maxReach = max(maxReach, i + nums[i])
+5. Duyệt hết mảng:
+      -> true
+```
+
+### Độ phức tạp
+
+```text
+Time:  O(n)
+Space: O(1)
+```
+
+### Công thức cần nhớ
+
+```cpp
+if (i > maxReach)
+    return false;
+
+maxReach = max(maxReach, i + nums[i]);
+```
+
+Đây chính là phần cốt lõi của lời giải Greedy cho `Jump Game`.
