@@ -1,0 +1,770 @@
+# Valid Perfect Square
+
+## 1. Đề bài
+
+Cho một số nguyên `num`, hãy xác định xem `num` có phải là **số chính phương** hay không.
+
+Một số chính phương là số có dạng:
+
+\[
+num = x^2
+\]
+
+với `x` là một số nguyên.
+
+Ví dụ:
+
+```text
+1 = 1²
+4 = 2²
+9 = 3²
+16 = 4²
+25 = 5²
+```
+
+Vì vậy:
+
+```text
+16 → true
+25 → true
+14 → false
+```
+
+**Lưu ý:** Bài yêu cầu không được sử dụng `sqrt()`.
+
+---
+
+# 2. Ý tưởng chính
+
+Ta cần tìm một số nguyên `x` sao cho:
+
+\[
+x^2 = num
+\]
+
+Nếu thử lần lượt:
+
+```text
+1², 2², 3², 4², ...
+```
+
+thì với `num` lớn sẽ phải thử rất nhiều giá trị.
+
+Ta nhận thấy:
+
+\[
+1^2 < 2^2 < 3^2 < 4^2 < \cdots
+\]
+
+Nghĩa là `x²` tăng dần khi `x > 0`.
+
+Đây chính là tính chất cho phép dùng **Binary Search**.
+
+---
+
+# 3. Binary Search trên giá trị căn
+
+Ta tìm `x` trong khoảng:
+
+```text
+[1, num]
+```
+
+Ở mỗi bước lấy:
+
+```cpp
+mid = left + (right - left) / 2;
+```
+
+Sau đó tính:
+
+```cpp
+mid * mid
+```
+
+Có 3 trường hợp:
+
+### Trường hợp 1: `mid² == num`
+
+Đã tìm được căn nguyên:
+
+```text
+return true
+```
+
+### Trường hợp 2: `mid² < num`
+
+`mid` quá nhỏ, nên phải tìm ở bên phải:
+
+```cpp
+left = mid + 1;
+```
+
+### Trường hợp 3: `mid² > num`
+
+`mid` quá lớn, nên phải tìm ở bên trái:
+
+```cpp
+right = mid - 1;
+```
+
+Nếu hết khoảng tìm kiếm mà không tìm được:
+
+```text
+return false
+```
+
+---
+
+# 4. Vì sao Binary Search hoạt động?
+
+Hàm:
+
+\[
+f(x)=x^2
+\]
+
+tăng dần với `x > 0`.
+
+Ví dụ:
+
+```text
+x:   1   2   3   4   5   6
+x²:  1   4   9  16  25  36
+```
+
+Giả sử:
+
+```text
+num = 20
+mid = 5
+```
+
+Ta có:
+
+```text
+5² = 25 > 20
+```
+
+Mọi số lớn hơn `5` còn có bình phương lớn hơn nữa, nên chắc chắn không thể là đáp án.
+
+Ta có thể bỏ toàn bộ nửa bên phải.
+
+Ngược lại, nếu:
+
+```text
+mid² < num
+```
+
+thì `mid` quá nhỏ và ta có thể bỏ toàn bộ nửa bên trái.
+
+Đó chính là bản chất của Binary Search.
+
+---
+
+# 5. Lưu ý quan trọng về overflow
+
+Không nên chủ quan viết:
+
+```cpp
+int mid = ...;
+int binhphuong = mid * mid;
+```
+
+Vì `mid * mid` có thể vượt giới hạn của `int`.
+
+Ví dụ:
+
+\[
+50000^2 = 2,500,000,000
+\]
+
+Trong khi `int` 32-bit chỉ biểu diễn tối đa khoảng:
+
+\[
+2,147,483,647
+\]
+
+Do đó nên dùng `long long`:
+
+```cpp
+long long mid = ...;
+long long binhphuong = mid * mid;
+```
+
+Ngoài ra, khi tính `mid`, nên viết:
+
+```cpp
+long long mid = left + (right - left) / 2;
+```
+
+thay vì:
+
+```cpp
+long long mid = (left + right) / 2;
+```
+
+để tránh overflow khi cộng hai đầu mút.
+
+---
+
+# 6. Lời giải C++
+
+```cpp
+class Solution {
+public:
+    bool isPerfectSquare(int num) {
+        long long left = 1;
+        long long right = num;
+
+        while (left <= right) {
+            long long mid = left + (right - left) / 2;
+            long long binhphuong = mid * mid;
+
+            if (binhphuong == num) {
+                return true;
+            }
+
+            if (binhphuong < num) {
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+
+        return false;
+    }
+};
+```
+
+---
+
+# 7. Phân tích từng dòng
+
+## Khởi tạo phạm vi
+
+```cpp
+long long left = 1;
+long long right = num;
+```
+
+Nếu `num` là số chính phương dương thì căn nguyên của nó chắc chắn nằm trong khoảng này.
+
+Ví dụ:
+
+```text
+num = 16
+
+căn = 4
+
+1 <= 4 <= 16
+```
+
+---
+
+## Vòng lặp
+
+```cpp
+while (left <= right)
+```
+
+Chừng nào đoạn:
+
+```text
+[left, right]
+```
+
+còn phần tử để xét thì tiếp tục Binary Search.
+
+Khi:
+
+```text
+left > right
+```
+
+thì không còn giá trị nào có thể là căn của `num`.
+
+---
+
+## Tìm phần tử giữa
+
+```cpp
+long long mid = left + (right - left) / 2;
+```
+
+Đây là giá trị ứng viên hiện tại.
+
+---
+
+## Tính bình phương
+
+```cpp
+long long binhphuong = mid * mid;
+```
+
+Ta kiểm tra xem:
+
+\[
+mid^2
+\]
+
+so với `num` như thế nào.
+
+---
+
+## Tìm thấy
+
+```cpp
+if (binhphuong == num) {
+    return true;
+}
+```
+
+Điều này có nghĩa:
+
+\[
+mid^2 = num
+\]
+
+nên `num` là số chính phương.
+
+---
+
+## `mid` quá nhỏ
+
+```cpp
+if (binhphuong < num) {
+    left = mid + 1;
+}
+```
+
+Vì `x²` tăng theo `x`, nên mọi giá trị nhỏ hơn hoặc bằng `mid` đều không thể cho kết quả `num`.
+
+Ta tìm ở bên phải.
+
+---
+
+## `mid` quá lớn
+
+```cpp
+else {
+    right = mid - 1;
+}
+```
+
+Tương tự, nếu:
+
+\[
+mid^2 > num
+\]
+
+thì `mid` và tất cả giá trị lớn hơn nó đều quá lớn.
+
+Ta tìm ở bên trái.
+
+---
+
+# 8. Mô phỏng `num = 16`
+
+Ban đầu:
+
+```text
+left = 1
+right = 16
+```
+
+### Lần 1
+
+```text
+mid = 1 + (16 - 1) / 2
+    = 8
+```
+
+```text
+8² = 64 > 16
+```
+
+Nên:
+
+```text
+right = 7
+```
+
+### Lần 2
+
+```text
+left = 1
+right = 7
+mid = 4
+```
+
+```text
+4² = 16
+```
+
+Ta tìm thấy:
+
+```text
+16 = 4²
+```
+
+→ `true`.
+
+---
+
+# 9. Mô phỏng `num = 14`
+
+Ban đầu:
+
+```text
+left = 1
+right = 14
+```
+
+### Lần 1
+
+```text
+mid = 7
+7² = 49 > 14
+```
+
+```text
+right = 6
+```
+
+### Lần 2
+
+```text
+mid = 3
+3² = 9 < 14
+```
+
+```text
+left = 4
+```
+
+### Lần 3
+
+```text
+mid = 5
+5² = 25 > 14
+```
+
+```text
+right = 4
+```
+
+### Lần 4
+
+```text
+mid = 4
+4² = 16 > 14
+```
+
+```text
+right = 3
+```
+
+Bây giờ:
+
+```text
+left = 4
+right = 3
+```
+
+`left > right`, kết thúc vòng lặp.
+
+Không tìm được số nguyên `x` sao cho:
+
+\[
+x^2=14
+\]
+
+→ `false`.
+
+---
+
+# 10. Trường hợp `num = 1`
+
+Ban đầu:
+
+```text
+left = 1
+right = 1
+```
+
+Ta có:
+
+```text
+mid = 1
+1² = 1
+```
+
+→ `true`.
+
+---
+
+# 11. Vì sao không dùng cách duyệt tuần tự?
+
+Có thể viết:
+
+```cpp
+for (long long i = 1; i * i <= num; i++) {
+    if (i * i == num) {
+        return true;
+    }
+}
+
+return false;
+```
+
+Cách này đúng, nhưng phải duyệt đến khoảng:
+
+\[
+\sqrt{num}
+\]
+
+nên có độ phức tạp:
+
+\[
+O(\sqrt n)
+\]
+
+Trong khi Binary Search chỉ cần:
+
+\[
+O(\log n)
+\]
+
+Do đó Binary Search hiệu quả hơn khi `num` lớn.
+
+---
+
+# 12. Tại sao không dùng `sqrt()`?
+
+Trong bài này `sqrt()` bị cấm.
+
+Thông thường có thể nghĩ:
+
+```cpp
+sqrt(num)
+```
+
+để lấy căn bậc hai.
+
+Nhưng Binary Search có ưu điểm:
+
+- Không cần số thực.
+- Không cần xử lý sai số floating-point.
+- Chỉ dùng phép toán nguyên.
+- Độ phức tạp `O(log n)`.
+- Phù hợp trực tiếp với yêu cầu của bài.
+
+---
+
+# 13. Một cách tối ưu phạm vi tìm kiếm
+
+Ta có thể dùng:
+
+```cpp
+long long right = num / 2;
+```
+
+với `num > 1`, vì:
+
+\[
+\sqrt{num} \le \frac{num}{2}
+\]
+
+đối với `num >= 4`.
+
+Nhưng khi đó phải xử lý riêng `num = 1` và các giá trị nhỏ.
+
+Ví dụ:
+
+```cpp
+class Solution {
+public:
+    bool isPerfectSquare(int num) {
+        if (num == 1) return true;
+
+        long long left = 1;
+        long long right = num / 2;
+
+        while (left <= right) {
+            long long mid = left + (right - left) / 2;
+            long long binhphuong = mid * mid;
+
+            if (binhphuong == num) return true;
+
+            if (binhphuong < num) {
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+
+        return false;
+    }
+};
+```
+
+Tuy nhiên, cách này không cải thiện đáng kể độ phức tạp.
+
+Vì vậy lời giải dùng:
+
+```cpp
+right = num;
+```
+
+có ưu điểm là đơn giản và không cần case đặc biệt.
+
+---
+
+# 14. So sánh các phương pháp
+
+| Phương pháp | Time | Space | Ghi chú |
+|---|---:|---:|---|
+| Duyệt từ `1` đến `num` | `O(n)` | `O(1)` | Không hiệu quả |
+| Duyệt đến `√num` | `O(√n)` | `O(1)` | Dễ hiểu nhưng chưa tối ưu |
+| Binary Search | `O(log n)` | `O(1)` | **Nên dùng** |
+| `sqrt()` | Thao tác trực tiếp | `O(1)` | Không được dùng theo yêu cầu |
+
+---
+
+# 15. Độ phức tạp
+
+Mỗi lần lặp Binary Search loại bỏ khoảng một nửa phạm vi.
+
+Do đó:
+
+### Time Complexity
+
+\[
+\boxed{O(\log n)}
+\]
+
+### Space Complexity
+
+\[
+\boxed{O(1)}
+\]
+
+Không sử dụng mảng hay cấu trúc dữ liệu phụ.
+
+---
+
+# 16. Luồng tư duy cần nhớ
+
+Khi gặp bài này, có thể suy nghĩ theo chuỗi:
+
+```text
+Cần kiểm tra num có phải x² không
+                ↓
+Cần tìm x sao cho x² = num
+                ↓
+x² tăng dần khi x > 0
+                ↓
+Có thể Binary Search trên x
+                ↓
+Tính mid²
+                ↓
+mid² == num → true
+                ↓
+mid² < num → tìm bên phải
+                ↓
+mid² > num → tìm bên trái
+                ↓
+Hết khoảng tìm kiếm → false
+```
+
+Ba trường hợp quan trọng:
+
+```cpp
+binhphuong == num
+```
+
+→ tìm thấy.
+
+```cpp
+binhphuong < num
+```
+
+→
+
+```cpp
+left = mid + 1;
+```
+
+```cpp
+binhphuong > num
+```
+
+→
+
+```cpp
+right = mid - 1;
+```
+
+---
+
+# 17. Kết luận
+
+Bản chất của `Valid Perfect Square` là một bài **Binary Search trên đáp án**.
+
+Thay vì thử từng số `1, 2, 3, ...`, ta tìm kiếm nhị phân giá trị `x` sao cho:
+
+\[
+x^2=num
+\]
+
+Nhờ tính đơn điệu:
+
+\[
+1^2 < 2^2 < 3^2 < 4^2 < \cdots
+\]
+
+ta có thể loại bỏ một nửa phạm vi sau mỗi lần kiểm tra.
+
+Lời giải đề xuất:
+
+```cpp
+class Solution {
+public:
+    bool isPerfectSquare(int num) {
+        long long left = 1;
+        long long right = num;
+
+        while (left <= right) {
+            long long mid = left + (right - left) / 2;
+            long long binhphuong = mid * mid;
+
+            if (binhphuong == num) {
+                return true;
+            }
+
+            if (binhphuong < num) {
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+
+        return false;
+    }
+};
+```
+
+Đạt:
+
+\[
+\boxed{O(\log n)\text{ time}}
+\]
+
+và:
+
+\[
+\boxed{O(1)\text{ space}}
+\]
+
+đồng thời **không sử dụng `sqrt()`**.
