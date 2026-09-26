@@ -1,0 +1,998 @@
+# Minimum Moves to Convert String — LeetCode
+
+## 1. Đề bài
+
+Cho một chuỗi `s` chỉ gồm hai ký tự:
+
+```text
+'X' và 'O'
+```
+
+Mỗi lần thực hiện một phép biến đổi, ta chọn **3 ký tự liên tiếp** trong chuỗi và thay đổi cả 3 ký tự đó thành `O`.
+
+Mục tiêu là biến toàn bộ chuỗi thành:
+
+```text
+"OOOO..."
+```
+
+Hãy trả về **số phép biến đổi nhỏ nhất** cần thực hiện.
+
+### Ví dụ
+
+```text
+Input:  s = "XXX"
+Output: 1
+```
+
+Chọn 3 ký tự:
+
+```text
+XXX
+↓
+OOO
+```
+
+Chỉ cần 1 phép biến đổi.
+
+Một ví dụ khác:
+
+```text
+Input:  s = "XXOX"
+Output: 2
+```
+
+Ta xử lý `X` đầu tiên bằng một phép biến đổi trên 3 vị trí đầu, sau đó xử lý `X` còn lại bằng một phép biến đổi khác.
+
+---
+
+# 2. Quan sát quan trọng
+
+Mỗi phép biến đổi luôn biến **3 ký tự liên tiếp thành `O`**.
+
+Do đó:
+
+- `O` đã ở trạng thái đúng và không cần xử lý.
+- Chỉ có `X` mới cần được xử lý.
+
+Vì vậy, thay vì quan tâm đến toàn bộ chuỗi sau mỗi phép biến đổi, ta chỉ cần quan tâm đến:
+
+> Ký tự `X` đầu tiên chưa được xử lý đang nằm ở đâu.
+
+Đây là chìa khóa để giải bài toán bằng Greedy.
+
+---
+
+# 3. Điều gì xảy ra khi gặp `X` đầu tiên?
+
+Giả sử ta duyệt từ trái sang phải và gặp:
+
+```text
+s[i] == 'X'
+```
+
+Ký tự `X` này chắc chắn phải được biến thành `O`.
+
+Do một phép biến đổi xử lý 3 vị trí liên tiếp, ta có thể dùng một phép biến đổi cho vùng:
+
+```text
+i, i + 1, i + 2
+```
+
+Sau đó 3 vị trí này đều được xem như đã xử lý.
+
+Vì vậy:
+
+```text
+answer += 1
+i += 3
+```
+
+Ta không cần quay lại các vị trí vừa xử lý.
+
+---
+
+# 4. Vì sao xử lý X đầu tiên ngay lập tức là tối ưu?
+
+Đây là phần quan trọng nhất của bài toán.
+
+Giả sử `X` đầu tiên chưa được xử lý nằm tại vị trí `i`.
+
+Mọi vị trí trước `i` đều đã là `O`.
+
+Ký tự `X` tại `i` **bắt buộc** phải được xử lý trong ít nhất một phép biến đổi.
+
+Vì vậy, dù dùng chiến lược nào, ta cũng phải dành ít nhất 1 phép biến đổi cho `X` này.
+
+Ta chọn xử lý ngay:
+
+```text
+i, i + 1, i + 2
+```
+
+Điều này có hai lợi ích:
+
+1. Chắc chắn xử lý được `X` tại `i`.
+2. Đồng thời xử lý luôn các vị trí tiếp theo.
+
+Không có lợi ích nào khi trì hoãn `X` này, bởi vì nó chắc chắn phải được xử lý.
+
+Do đó:
+
+> Khi gặp `X` đầu tiên chưa xử lý, xử lý nó ngay là một lựa chọn Greedy hợp lệ.
+
+---
+
+# 5. Tại sao có thể bỏ qua 3 vị trí?
+
+Giả sử:
+
+```text
+s = "XXOXOX"
+```
+
+Ta đánh chỉ số:
+
+```text
+Index:  0 1 2 3 4 5
+        X X O X O X
+```
+
+Tại:
+
+```text
+i = 0
+```
+
+ta gặp `X`.
+
+Ta dùng một phép biến đổi cho:
+
+```text
+0, 1, 2
+```
+
+Khi đó vùng này đã được xử lý:
+
+```text
+[0 1 2] 3 4 5
+```
+
+Không cần xét lại:
+
+```text
+0, 1, 2
+```
+
+Ta chỉ cần tiếp tục từ:
+
+```text
+i = 3
+```
+
+Đây chính là ý nghĩa của:
+
+```cpp
+i += 3;
+```
+
+---
+
+# 6. Không cần thực sự sửa chuỗi
+
+Một cách mô phỏng trực tiếp có thể là:
+
+```cpp
+s[i] = 'O';
+s[i + 1] = 'O';
+s[i + 2] = 'O';
+```
+
+Nhưng việc này không cần thiết.
+
+Ta chỉ cần biết rằng:
+
+```text
+i
+i + 1
+i + 2
+```
+
+đã được xử lý.
+
+Vì vậy, thay vì thay đổi dữ liệu, ta thay đổi cách duyệt:
+
+```cpp
+i += 3;
+```
+
+Đây là một kỹ thuật rất hữu ích:
+
+> Không nhất thiết phải cập nhật trạng thái của toàn bộ dữ liệu nếu có thể biểu diễn trạng thái mới bằng cách thay đổi chỉ số duyệt.
+
+---
+
+# 7. Ví dụ mô phỏng chi tiết
+
+Xét:
+
+```text
+s = "XXOXOXXO"
+```
+
+Đánh chỉ số:
+
+```text
+Index:  0 1 2 3 4 5 6 7
+        X X O X O X X O
+```
+
+## Lần 1
+
+```text
+i = 0
+s[0] = X
+```
+
+Ta cần một phép biến đổi.
+
+Xử lý:
+
+```text
+0, 1, 2
+```
+
+Số phép:
+
+```text
+answer = 1
+```
+
+Tiếp tục từ:
+
+```text
+i = 3
+```
+
+---
+
+## Lần 2
+
+```text
+i = 3
+s[3] = X
+```
+
+Xử lý:
+
+```text
+3, 4, 5
+```
+
+Số phép:
+
+```text
+answer = 2
+```
+
+Tiếp tục từ:
+
+```text
+i = 6
+```
+
+---
+
+## Lần 3
+
+```text
+i = 6
+s[6] = X
+```
+
+Xử lý:
+
+```text
+6, 7, 8
+```
+
+Vị trí `8` nằm ngoài chuỗi, nhưng ta không cần truy cập nó.
+
+Ta chỉ cần ghi nhận:
+
+```text
+answer = 3
+```
+
+Sau đó:
+
+```text
+i = 9
+```
+
+và kết thúc.
+
+Kết quả:
+
+```text
+3
+```
+
+---
+
+# 8. Tại sao X gần cuối chuỗi vẫn chỉ cần 1 phép?
+
+Ví dụ:
+
+```text
+s = "OOOX"
+```
+
+`X` nằm ở vị trí cuối.
+
+Ta vẫn cần một phép biến đổi để xử lý nó.
+
+Điểm quan trọng là code không cần thực sự truy cập:
+
+```text
+s[i + 1]
+s[i + 2]
+```
+
+Ta chỉ cần:
+
+```cpp
+ans++;
+i += 3;
+```
+
+Do đó không xảy ra lỗi truy cập ngoài phạm vi mảng.
+
+---
+
+# 9. Thuật toán
+
+Ta duyệt chuỗi từ trái sang phải.
+
+### Nếu `s[i] == 'O'`
+
+Không cần làm gì:
+
+```text
+i += 1
+```
+
+### Nếu `s[i] == 'X'`
+
+Ta cần một phép biến đổi:
+
+```text
+answer += 1
+i += 3
+```
+
+Sau khi duyệt hết chuỗi, `answer` chính là kết quả.
+
+---
+
+# 10. Pseudocode
+
+```text
+answer = 0
+i = 0
+
+while i < length(s):
+
+    if s[i] == 'X':
+        answer += 1
+        i += 3
+    else:
+        i += 1
+
+return answer
+```
+
+Có thể ghi nhớ rất ngắn gọn:
+
+```text
+O → i + 1
+X → answer + 1, i + 3
+```
+
+---
+
+# 11. Chứng minh tính đúng đắn
+
+Ta chứng minh theo từng bước.
+
+## Bước 1: Mọi X đều phải được xử lý
+
+Mục tiêu cuối cùng là:
+
+```text
+OOOO...
+```
+
+Vì vậy mọi `X` ban đầu đều phải được biến thành `O`.
+
+---
+
+## Bước 2: X đầu tiên bắt buộc phải được xử lý
+
+Giả sử `X` đầu tiên chưa xử lý nằm tại `i`.
+
+Không thể bỏ qua nó vĩnh viễn.
+
+Do đó mọi lời giải đều cần ít nhất một phép biến đổi chứa vị trí `i`.
+
+Thuật toán cũng sử dụng đúng một phép biến đổi cho `X` này.
+
+---
+
+## Bước 3: Phép biến đổi đó đồng thời xử lý các vị trí tiếp theo
+
+Ta chọn vùng:
+
+```text
+i, i + 1, i + 2
+```
+
+Vì phép biến đổi biến cả 3 vị trí thành `O`, nên sau bước này ta không cần xử lý lại chúng.
+
+Do đó có thể bỏ qua 3 vị trí.
+
+---
+
+## Bước 4: Bài toán còn lại có cùng bản chất
+
+Sau khi bỏ qua 3 vị trí, ta tiếp tục xét phần còn lại.
+
+Nếu gặp `X`, ta lại thực hiện chính xác cùng chiến lược.
+
+Vì mỗi `X` đầu tiên chưa xử lý bắt buộc phải được xử lý và thuật toán dùng đúng một phép cho nó, tổng số phép là nhỏ nhất.
+
+---
+
+# 12. Lời giải C++
+
+## Cách 1: Dùng `while`
+
+Đây là cách dễ hiểu nhất vì việc nhảy 3 vị trí được thể hiện trực tiếp.
+
+```cpp
+class Solution {
+public:
+    int minimumMoves(string s) {
+        int ans = 0;
+        int i = 0;
+
+        while (i < s.size()) {
+            if (s[i] == 'X') {
+                ans++;
+
+                // Ba vị trí bắt đầu từ i đã được xử lý
+                i += 3;
+            }
+            else {
+                i++;
+            }
+        }
+
+        return ans;
+    }
+};
+```
+
+---
+
+# 13. Giải thích từng phần code
+
+### Khởi tạo đáp án
+
+```cpp
+int ans = 0;
+```
+
+`ans` lưu số phép biến đổi đã sử dụng.
+
+---
+
+### Chỉ số duyệt
+
+```cpp
+int i = 0;
+```
+
+Bắt đầu từ ký tự đầu tiên.
+
+---
+
+### Duyệt chuỗi
+
+```cpp
+while (i < s.size())
+```
+
+Chừng nào `i` còn nằm trong chuỗi, ta tiếp tục xử lý.
+
+---
+
+### Gặp O
+
+```cpp
+if (s[i] == 'X')
+```
+
+Nếu là `X`, nó cần được xử lý.
+
+Ta tăng số phép:
+
+```cpp
+ans++;
+```
+
+Sau đó bỏ qua 3 vị trí:
+
+```cpp
+i += 3;
+```
+
+---
+
+### Gặp O
+
+Nếu không phải `X`, nghĩa là:
+
+```text
+s[i] == 'O'
+```
+
+Ký tự này đã đúng nên chỉ cần:
+
+```cpp
+i++;
+```
+
+---
+
+# 14. Có thể dùng vòng `for`
+
+Ta cũng có thể viết ngắn hơn:
+
+```cpp
+class Solution {
+public:
+    int minimumMoves(string s) {
+        int ans = 0;
+
+        for (int i = 0; i < s.size(); i++) {
+            if (s[i] == 'X') {
+                ans++;
+
+                // for sẽ tự động i++
+                // nên i += 2 ở đây tạo thành tổng cộng 3 bước
+                i += 2;
+            }
+        }
+
+        return ans;
+    }
+};
+```
+
+### Tại sao là `i += 2` chứ không phải `i += 3`?
+
+Vì vòng `for` đã có:
+
+```cpp
+i++
+```
+
+ở cuối mỗi vòng lặp.
+
+Nếu bên trong ta viết:
+
+```cpp
+i += 2;
+```
+
+thì tổng cộng:
+
+```text
+i += 2
++
+i += 1
+=
+i += 3
+```
+
+Nếu viết:
+
+```cpp
+i += 3;
+```
+
+thì thực tế sẽ nhảy:
+
+```text
+i += 4
+```
+
+và có thể bỏ qua một vị trí chưa được xử lý.
+
+Vì vậy phiên bản `while` thường trực quan hơn.
+
+---
+
+# 15. Độ phức tạp
+
+## Thời gian
+
+Ta chỉ duyệt chuỗi từ trái sang phải.
+
+Mỗi vị trí được xét tối đa một lần.
+
+- Gặp `O`: tăng `i` lên 1.
+- Gặp `X`: tăng `i` lên 3.
+
+Do đó:
+
+```text
+Time Complexity: O(n)
+```
+
+với `n` là độ dài chuỗi.
+
+---
+
+## Không gian
+
+Ta chỉ sử dụng:
+
+```cpp
+ans
+i
+```
+
+Không tạo thêm cấu trúc dữ liệu phụ thuộc vào `n`.
+
+Do đó:
+
+```text
+Space Complexity: O(1)
+```
+
+---
+
+# 16. Đây có phải là tối ưu không?
+
+Có.
+
+Để biết kết quả, trong trường hợp tổng quát ta cần biết vị trí của các `X`.
+
+Do đó ít nhất phải xem qua các ký tự của chuỗi.
+
+Thuật toán chỉ cần một lần duyệt:
+
+```text
+O(n)
+```
+
+và sử dụng:
+
+```text
+O(1)
+```
+
+bộ nhớ phụ.
+
+Vì vậy đây là lời giải tối ưu về mặt độ phức tạp.
+
+---
+
+# 17. Các trường hợp đặc biệt
+
+## Trường hợp 1: Toàn bộ là O
+
+```text
+s = "OOOOO"
+```
+
+Không có ký tự nào cần xử lý.
+
+Kết quả:
+
+```text
+0
+```
+
+---
+
+## Trường hợp 2: Toàn bộ là X
+
+```text
+s = "XXXXXX"
+```
+
+Ta xử lý:
+
+```text
+XXX
+```
+
+rồi:
+
+```text
+XXX
+```
+
+Kết quả:
+
+```text
+2
+```
+
+---
+
+## Trường hợp 3: Một X duy nhất
+
+```text
+s = "OOOXOO"
+```
+
+Chỉ cần một phép biến đổi.
+
+Kết quả:
+
+```text
+1
+```
+
+---
+
+## Trường hợp 4: Ba X liên tiếp
+
+```text
+s = "XXX"
+```
+
+Một phép biến đổi có thể xử lý cả ba:
+
+```text
+XXX
+↓
+OOO
+```
+
+Kết quả:
+
+```text
+1
+```
+
+---
+
+# 18. Những lỗi thường gặp
+
+## Lỗi 1: Đếm số lượng X
+
+Không đúng.
+
+Ví dụ:
+
+```text
+XXX
+```
+
+có 3 ký tự `X`, nhưng chỉ cần 1 phép biến đổi.
+
+Do một phép biến đổi có thể xử lý 3 vị trí.
+
+---
+
+## Lỗi 2: Mỗi X tăng đáp án nhưng chỉ đi 1 vị trí
+
+Ví dụ:
+
+```cpp
+for (int i = 0; i < s.size(); i++) {
+    if (s[i] == 'X') {
+        ans++;
+    }
+}
+```
+
+Với:
+
+```text
+XXX
+```
+
+sẽ cho:
+
+```text
+3
+```
+
+trong khi đáp án là:
+
+```text
+1
+```
+
+Cần nhớ rằng sau khi xử lý một `X`, ta bỏ qua 3 vị trí.
+
+---
+
+## Lỗi 3: Luôn kiểm tra `i + 1` và `i + 2`
+
+Không cần thiết.
+
+Ví dụ:
+
+```cpp
+if (s[i] == 'X') {
+    s[i] = 'O';
+    s[i + 1] = 'O';
+    s[i + 2] = 'O';
+}
+```
+
+Có thể gây truy cập ngoài phạm vi khi `X` nằm gần cuối chuỗi.
+
+Trong khi đó ta chỉ cần:
+
+```cpp
+ans++;
+i += 3;
+```
+
+---
+
+## Lỗi 4: Dùng `i += 3` trong vòng `for`
+
+Sai trong cách cài đặt phổ biến:
+
+```cpp
+for (int i = 0; i < s.size(); i++) {
+    if (s[i] == 'X') {
+        ans++;
+        i += 3;
+    }
+}
+```
+
+Bởi vì `for` còn tự động:
+
+```cpp
+i++;
+```
+
+nên tổng cộng sẽ nhảy 4 vị trí.
+
+Nếu dùng `for`, hãy dùng:
+
+```cpp
+i += 2;
+```
+
+hoặc dùng `while` để có thể viết:
+
+```cpp
+i += 3;
+```
+
+một cách trực tiếp.
+
+---
+
+# 19. Tư duy Greedy tổng quát
+
+Bài toán này là một ví dụ điển hình của chiến lược:
+
+> Gặp phần tử đầu tiên chưa được xử lý thì xử lý nó ngay bằng một thao tác có thể bao phủ nhiều phần tử nhất.
+
+Mẫu tư duy:
+
+```text
+Duyệt từ trái sang phải
+        ↓
+Gặp phần tử đã đúng?
+        ↓
+      Có
+        ↓
+   Bỏ qua 1 phần tử
+
+Gặp phần tử cần xử lý?
+        ↓
+Thực hiện 1 phép biến đổi
+        ↓
+Đánh dấu vùng đã xử lý
+        ↓
+Bỏ qua vùng đó
+```
+
+Trong bài này:
+
+```text
+Phần tử cần xử lý = X
+Độ dài vùng xử lý = 3
+```
+
+nên:
+
+```text
+X → ans++ → i += 3
+```
+
+---
+
+# 20. Tóm tắt lời giải
+
+Có thể ghi nhớ toàn bộ bài toán bằng 3 dòng:
+
+```text
+Duyệt từ trái sang phải.
+
+Nếu gặp O:
+    i++
+
+Nếu gặp X:
+    ans++
+    i += 3
+```
+
+Code:
+
+```cpp
+class Solution {
+public:
+    int minimumMoves(string s) {
+        int ans = 0;
+        int i = 0;
+
+        while (i < s.size()) {
+            if (s[i] == 'X') {
+                ans++;
+                i += 3;
+            }
+            else {
+                i++;
+            }
+        }
+
+        return ans;
+    }
+};
+```
+
+Độ phức tạp:
+
+```text
+Time:  O(n)
+Space: O(1)
+```
+
+---
+
+# 21. Kết luận
+
+`Minimum Moves to Convert String` là một bài toán Greedy đơn giản nhưng rất hữu ích để luyện cách nhận diện **vùng đã được xử lý**.
+
+Điểm mấu chốt là:
+
+1. Chỉ `X` mới cần xử lý.
+2. `X` đầu tiên chưa xử lý bắt buộc phải được biến thành `O`.
+3. Một phép biến đổi có thể xử lý `X` đó cùng hai vị trí tiếp theo.
+4. Sau khi xử lý, không cần mô phỏng lại ba ký tự.
+5. Chỉ cần nhảy qua ba vị trí.
+6. Duyệt từ trái sang phải nên mỗi vị trí chỉ cần xét tối đa một lần.
+
+Từ đó thu được:
+
+```text
+Time Complexity: O(n)
+Space Complexity: O(1)
+```
+
+Đây là lời giải tối ưu và cũng là một ví dụ tốt cho kỹ thuật **mô phỏng ngầm bằng cách thay đổi chỉ số duyệt thay vì trực tiếp thay đổi dữ liệu**.
