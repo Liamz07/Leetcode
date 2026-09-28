@@ -1,0 +1,1633 @@
+# Is Subsequence --- Phương hướng tiếp cận tối ưu
+
+## 1. Bài toán
+
+Bài toán **Is Subsequence** trên LeetCode yêu cầu kiểm tra xem chuỗi `s`
+có phải là **subsequence** của chuỗi `t` hay không.
+
+Ta cần trả về:
+
+-   `true` nếu có thể xóa một số ký tự trong `t` mà **không thay đổi thứ
+    tự tương đối của các ký tự còn lại** để thu được `s`.
+-   `false` nếu không thể.
+
+Ví dụ:
+
+``` text
+s = "abc"
+t = "ahbgdc"
+```
+
+Ta có thể lấy:
+
+``` text
+a h b g d c
+^   ^     ^
+```
+
+Các ký tự `a`, `b`, `c` xuất hiện trong `t` theo đúng thứ tự, nên:
+
+``` text
+"abc" là subsequence của "ahbgdc"
+```
+
+Kết quả:
+
+``` text
+true
+```
+
+Một ví dụ khác:
+
+``` text
+s = "axc"
+t = "ahbgdc"
+```
+
+Trong `t` có `a` và `c`, nhưng không có `x`, nên:
+
+``` text
+false
+```
+
+------------------------------------------------------------------------
+
+# 2. Subsequence là gì?
+
+Đây là khái niệm quan trọng nhất của bài.
+
+Một chuỗi `s` là subsequence của `t` nếu ta có thể tạo ra `s` bằng cách:
+
+1.  Đi qua `t` từ trái sang phải.
+2.  Chọn một số ký tự.
+3.  Bỏ qua các ký tự còn lại.
+4.  Không được đảo thứ tự các ký tự đã chọn.
+
+Ví dụ:
+
+``` text
+t = "abcdef"
+```
+
+Các subsequence hợp lệ:
+
+``` text
+""
+"a"
+"ace"
+"acf"
+"bdf"
+"abcdef"
+```
+
+Các chuỗi không phải subsequence:
+
+``` text
+"ca"
+"fed"
+"az"
+```
+
+Điểm quan trọng:
+
+> Subsequence cho phép bỏ ký tự, nhưng không cho phép đổi thứ tự.
+
+------------------------------------------------------------------------
+
+# 3. Phân biệt Subsequence và Substring
+
+Đây là lỗi rất dễ gặp.
+
+## Substring
+
+Substring là một đoạn **liên tiếp** trong chuỗi.
+
+Ví dụ:
+
+``` text
+t = "abcdef"
+```
+
+Các substring:
+
+``` text
+"abc"
+"bcd"
+"cde"
+"def"
+"abcd"
+```
+
+Nhưng:
+
+``` text
+"ace"
+```
+
+không phải substring vì các ký tự không đứng liên tiếp.
+
+## Subsequence
+
+Subsequence không yêu cầu liên tiếp.
+
+Ví dụ:
+
+``` text
+t = "abcdef"
+s = "ace"
+```
+
+Ta chọn:
+
+``` text
+a b c d e f
+^   ^   ^
+```
+
+Do đó `"ace"` là subsequence.
+
+Có thể nhớ ngắn gọn:
+
+``` text
+Substring  -> liên tiếp
+Subsequence -> giữ thứ tự, không cần liên tiếp
+```
+
+------------------------------------------------------------------------
+
+# 4. Nhận diện bản chất bài toán
+
+Ta có:
+
+``` text
+s = chuỗi cần kiểm tra
+t = chuỗi nguồn
+```
+
+Mục tiêu là kiểm tra xem ta có thể tìm được toàn bộ `s` bên trong `t`
+theo thứ tự hay không.
+
+Ví dụ:
+
+``` text
+s = "abc"
+t = "ahbgdc"
+```
+
+Ta cần tìm:
+
+``` text
+a -> b -> c
+```
+
+trong `t`.
+
+Quan sát:
+
+-   Tìm được `a` ở vị trí 0.
+-   Sau khi tìm được `a`, ta chỉ được tìm `b` ở phía sau vị trí đó.
+-   Sau khi tìm được `b`, ta chỉ được tìm `c` ở phía sau vị trí của `b`.
+
+Điều này dẫn trực tiếp đến ý tưởng **two pointers**.
+
+------------------------------------------------------------------------
+
+# 5. Ý tưởng tối ưu: Two Pointers
+
+Ta sử dụng hai con trỏ:
+
+``` text
+i -> vị trí hiện tại trong s
+j -> vị trí hiện tại trong t
+```
+
+Ban đầu:
+
+``` text
+i = 0
+j = 0
+```
+
+Mục tiêu:
+
+-   `i` cho biết ta đang cần tìm ký tự nào của `s`.
+-   `j` cho biết ta đang xét ký tự nào của `t`.
+
+Tại mỗi bước:
+
+``` text
+s[i] và t[j]
+```
+
+Nếu:
+
+``` text
+s[i] == t[j]
+```
+
+thì ta đã tìm được ký tự tiếp theo của `s`.
+
+Vì vậy:
+
+``` text
+i++
+j++
+```
+
+Nếu:
+
+``` text
+s[i] != t[j]
+```
+
+thì ký tự `t[j]` không cần thiết.
+
+Ta bỏ qua nó:
+
+``` text
+j++
+```
+
+Điểm cực kỳ quan trọng:
+
+> Khi hai ký tự khác nhau, chỉ `j` tăng. `i` không được tăng vì ta vẫn
+> chưa tìm thấy ký tự hiện tại của `s`.
+
+------------------------------------------------------------------------
+
+# 6. Minh họa từng bước
+
+Xét:
+
+``` text
+s = "abc"
+t = "ahbgdc"
+```
+
+Ban đầu:
+
+``` text
+s: a b c
+   ^
+   i
+
+t: a h b g d c
+   ^
+   j
+```
+
+So sánh:
+
+``` text
+s[i] = 'a'
+t[j] = 'a'
+```
+
+Hai ký tự giống nhau.
+
+Ta tăng cả hai:
+
+``` text
+i = 1
+j = 1
+```
+
+------------------------------------------------------------------------
+
+## Bước 2
+
+``` text
+s: a b c
+     ^
+     i
+
+t: a h b g d c
+     ^
+     j
+```
+
+So sánh:
+
+``` text
+'b' != 'h'
+```
+
+Không thể dùng `h`.
+
+Chỉ tăng `j`:
+
+``` text
+i = 1
+j = 2
+```
+
+------------------------------------------------------------------------
+
+## Bước 3
+
+``` text
+s: a b c
+     ^
+     i
+
+t: a h b g d c
+       ^
+       j
+```
+
+So sánh:
+
+``` text
+'b' == 'b'
+```
+
+Đã tìm được `b`.
+
+Tăng cả hai:
+
+``` text
+i = 2
+j = 3
+```
+
+------------------------------------------------------------------------
+
+## Bước 4
+
+``` text
+s: a b c
+       ^
+       i
+
+t: a h b g d c
+         ^
+         j
+```
+
+So sánh:
+
+``` text
+'c' != 'g'
+```
+
+Bỏ qua `g`:
+
+``` text
+j++
+```
+
+------------------------------------------------------------------------
+
+## Bước 5
+
+``` text
+s: a b c
+       ^
+       i
+
+t: a h b g d c
+           ^
+           j
+```
+
+So sánh:
+
+``` text
+'c' != 'd'
+```
+
+Tiếp tục bỏ qua `d`.
+
+``` text
+j++
+```
+
+------------------------------------------------------------------------
+
+## Bước 6
+
+``` text
+s: a b c
+       ^
+       i
+
+t: a h b g d c
+             ^
+             j
+```
+
+So sánh:
+
+``` text
+'c' == 'c'
+```
+
+Tăng:
+
+``` text
+i++
+j++
+```
+
+Bây giờ:
+
+``` text
+i = 3
+```
+
+và:
+
+``` text
+s.size() = 3
+```
+
+Ta đã tìm được toàn bộ `s`.
+
+Kết quả:
+
+``` text
+true
+```
+
+------------------------------------------------------------------------
+
+# 7. Tại sao chỉ cần hai con trỏ?
+
+Đây là phần quan trọng để hiểu bản chất thay vì chỉ học thuộc code.
+
+Giả sử ta đã tìm được một prefix của `s`.
+
+Ví dụ:
+
+``` text
+s = "abc"
+```
+
+Ta đã tìm được:
+
+``` text
+"a"
+```
+
+tại một vị trí nào đó trong `t`.
+
+Khi đó, để tìm `b`, ta **không được quay lại phía trước**.
+
+Nếu `b` xuất hiện trước `a`, vị trí đó không còn có ích nữa.
+
+Do đó, sau khi `j` đã đi qua một vị trí trong `t`, ta không cần quay lại
+vị trí đó.
+
+Điều này cho phép ta duyệt `t` đúng một lần.
+
+Đây chính là lý do thuật toán đạt:
+
+``` text
+O(|t|)
+```
+
+thời gian.
+
+------------------------------------------------------------------------
+
+# 8. Greedy --- tại sao chọn ký tự xuất hiện sớm nhất là đúng?
+
+Thuật toán trên thực chất là một chiến lược **greedy**.
+
+Khi đang cần tìm:
+
+``` text
+s[i]
+```
+
+ta lấy lần xuất hiện đầu tiên có thể trong `t`.
+
+Ví dụ:
+
+``` text
+s = "abc"
+t = "aaxbxc"
+```
+
+Khi cần `a`, ta lấy `a` đầu tiên.
+
+Tại sao không chờ một `a` xuất hiện muộn hơn?
+
+Vì lấy `a` sớm hơn chỉ giúp ta có **nhiều vị trí hơn** để tìm các ký tự
+còn lại.
+
+Ví dụ:
+
+``` text
+a ... a ... b ... c
+^
+chọn vị trí sớm
+```
+
+Nếu chọn `a` ở vị trí muộn hơn, ta làm giảm số lượng ký tự còn lại có
+thể sử dụng.
+
+Nói cách khác:
+
+> Chọn một matching position càng sớm càng tốt không thể làm mất đi khả
+> năng tìm các ký tự phía sau.
+
+Đây là lý do greedy hoạt động.
+
+------------------------------------------------------------------------
+
+# 9. Invariant của thuật toán
+
+Một cách tư duy rất tốt khi giải các bài two pointers là xác định
+**invariant**.
+
+Trong thuật toán này, tại mọi thời điểm:
+
+``` text
+s[0 ... i-1]
+```
+
+đã được match thành công trong:
+
+``` text
+t[0 ... j-1]
+```
+
+và các ký tự được match giữ nguyên thứ tự.
+
+Nói đơn giản:
+
+> Mọi ký tự trước `i` trong `s` đã được tìm thấy trong phần `t` mà con
+> trỏ `j` đã đi qua.
+
+Do đó, phần việc còn lại chỉ là:
+
+``` text
+s[i ... cuối]
+```
+
+và:
+
+``` text
+t[j ... cuối]
+```
+
+Điều này giúp ta luôn biết chính xác trạng thái bài toán.
+
+------------------------------------------------------------------------
+
+# 10. Khi nào thuật toán kết luận true?
+
+Ta chỉ cần làm cho:
+
+``` text
+i == s.size()
+```
+
+Điều này có nghĩa là toàn bộ ký tự của `s` đã được match.
+
+Không cần quan tâm `j` đã đi đến cuối `t` hay chưa.
+
+Ví dụ:
+
+``` text
+s = "abc"
+t = "abcdefghi"
+```
+
+Sau khi tìm được:
+
+``` text
+a -> b -> c
+```
+
+ta đã hoàn thành `s`, dù vẫn còn:
+
+``` text
+defghi
+```
+
+trong `t`.
+
+Vì vậy điều kiện thành công là:
+
+``` cpp
+i == s.size()
+```
+
+------------------------------------------------------------------------
+
+# 11. Khi nào thuật toán kết luận false?
+
+Nếu:
+
+``` text
+j == t.size()
+```
+
+nhưng:
+
+``` text
+i < s.size()
+```
+
+thì ta đã duyệt hết `t` nhưng vẫn chưa tìm được toàn bộ `s`.
+
+Khi đó chắc chắn:
+
+``` text
+s không phải subsequence của t
+```
+
+Ví dụ:
+
+``` text
+s = "axc"
+t = "ahbgdc"
+```
+
+Ta tìm được:
+
+``` text
+a
+```
+
+nhưng không bao giờ tìm được:
+
+``` text
+x
+```
+
+Do đó `j` cuối cùng đi hết `t` trong khi `i` chưa hoàn thành.
+
+Kết quả:
+
+``` text
+false
+```
+
+------------------------------------------------------------------------
+
+# 12. Pseudocode
+
+Ý tưởng có thể viết thành pseudocode:
+
+``` text
+i = 0
+j = 0
+
+while i < s.length và j < t.length:
+
+    nếu s[i] == t[j]:
+        i++
+        j++
+    ngược lại:
+        j++
+
+return i == s.length
+```
+
+Có thể rút gọn logic:
+
+``` text
+for mỗi ký tự của t:
+    nếu ký tự đó bằng ký tự hiện tại cần tìm của s:
+        chuyển sang ký tự tiếp theo của s
+
+nếu đã tìm hết s:
+    true
+ngược lại:
+    false
+```
+
+------------------------------------------------------------------------
+
+# 13. C++ tối ưu
+
+``` cpp
+class Solution {
+public:
+    bool isSubsequence(string s, string t) {
+        int i = 0;
+
+        for (char c : t) {
+            if (i < static_cast<int>(s.size()) && s[i] == c) {
+                ++i;
+            }
+        }
+
+        return i == static_cast<int>(s.size());
+    }
+};
+```
+
+Đây là cách viết ngắn gọn và tối ưu cho bài toán.
+
+------------------------------------------------------------------------
+
+# 14. Giải thích từng dòng code
+
+## Khai báo class
+
+``` cpp
+class Solution {
+```
+
+LeetCode yêu cầu đặt lời giải trong class `Solution`.
+
+------------------------------------------------------------------------
+
+## Hàm
+
+``` cpp
+bool isSubsequence(string s, string t)
+```
+
+Hàm nhận:
+
+``` text
+s = chuỗi cần kiểm tra
+t = chuỗi nguồn
+```
+
+và trả về:
+
+``` text
+true / false
+```
+
+------------------------------------------------------------------------
+
+## Con trỏ `i`
+
+``` cpp
+int i = 0;
+```
+
+`i` biểu diễn:
+
+``` text
+ký tự tiếp theo của s cần tìm
+```
+
+Nếu:
+
+``` text
+i = 0
+```
+
+ta đang tìm:
+
+``` text
+s[0]
+```
+
+Nếu:
+
+``` text
+i = 1
+```
+
+ta đã tìm được `s[0]` và đang tìm:
+
+``` text
+s[1]
+```
+
+------------------------------------------------------------------------
+
+## Duyệt `t`
+
+``` cpp
+for (char c : t)
+```
+
+Ta duyệt từng ký tự của `t` từ trái sang phải.
+
+Không cần tạo thêm mảng.
+
+Không cần lưu vị trí.
+
+Không cần quay lại.
+
+------------------------------------------------------------------------
+
+## Kiểm tra matching
+
+``` cpp
+if (i < static_cast<int>(s.size()) && s[i] == c)
+```
+
+Có hai điều kiện.
+
+### Điều kiện 1
+
+``` cpp
+i < s.size()
+```
+
+Đảm bảo ta vẫn còn ký tự cần tìm trong `s`.
+
+### Điều kiện 2
+
+``` cpp
+s[i] == c
+```
+
+Kiểm tra ký tự hiện tại của `t` có phải ký tự ta đang cần hay không.
+
+Nếu đúng:
+
+``` cpp
+++i;
+```
+
+Tức là đã match thêm được một ký tự của `s`.
+
+------------------------------------------------------------------------
+
+## Kết quả
+
+``` cpp
+return i == static_cast<int>(s.size());
+```
+
+Nếu:
+
+``` text
+i == s.size()
+```
+
+thì toàn bộ `s` đã được tìm thấy.
+
+Do đó:
+
+``` text
+true
+```
+
+Ngược lại:
+
+``` text
+false
+```
+
+------------------------------------------------------------------------
+
+# 15. Có thể viết bằng hai con trỏ rõ ràng hơn
+
+Một phiên bản rất dễ hiểu cho người mới học:
+
+``` cpp
+class Solution {
+public:
+    bool isSubsequence(string s, string t) {
+        int i = 0;
+        int j = 0;
+
+        while (i < static_cast<int>(s.size()) &&
+               j < static_cast<int>(t.size())) {
+
+            if (s[i] == t[j]) {
+                ++i;
+            }
+
+            ++j;
+        }
+
+        return i == static_cast<int>(s.size());
+    }
+};
+```
+
+Hai phiên bản có cùng độ phức tạp.
+
+Phiên bản này thể hiện rõ:
+
+``` text
+i -> chạy trên s
+j -> chạy trên t
+```
+
+Trong khi phiên bản range-based `for` gọn hơn.
+
+------------------------------------------------------------------------
+
+# 16. Độ phức tạp
+
+Gọi:
+
+``` text
+n = độ dài s
+m = độ dài t
+```
+
+## Time Complexity
+
+Ta chỉ duyệt `t` một lần.
+
+Mỗi ký tự của `t` được xử lý tối đa một lần.
+
+Vì vậy:
+
+``` text
+O(m)
+```
+
+hay:
+
+``` text
+O(|t|)
+```
+
+Đây là tối ưu theo cách tiếp cận tuyến tính vì trong trường hợp xấu nhất
+ta phải đọc toàn bộ `t` để biết liệu có tồn tại subsequence hay không.
+
+------------------------------------------------------------------------
+
+## Space Complexity
+
+Ta chỉ sử dụng một biến chỉ số:
+
+``` text
+i
+```
+
+Không tạo cấu trúc dữ liệu phụ thuộc vào kích thước input.
+
+Do đó:
+
+``` text
+O(1)
+```
+
+bộ nhớ phụ.
+
+------------------------------------------------------------------------
+
+# 17. Vì sao không cần Dynamic Programming?
+
+Khi gặp subsequence, nhiều người nghĩ ngay đến:
+
+``` text
+Longest Common Subsequence (LCS)
+```
+
+và Dynamic Programming.
+
+Tuy nhiên bài này đơn giản hơn rất nhiều.
+
+Nếu bài toán hỏi:
+
+``` text
+Độ dài subsequence chung dài nhất là bao nhiêu?
+```
+
+thì LCS có thể phù hợp.
+
+Nhưng ở đây ta chỉ hỏi:
+
+``` text
+s có phải subsequence của t hay không?
+```
+
+Thứ ta cần biết chỉ là:
+
+``` text
+Có thể match toàn bộ s theo thứ tự trong t hay không?
+```
+
+Không cần tính độ dài tối ưu.
+
+Không cần xét nhiều trạng thái.
+
+Không cần bảng DP.
+
+Do đó two pointers là đủ.
+
+------------------------------------------------------------------------
+
+# 18. Vì sao không dùng Hash Map?
+
+Một ý tưởng khác có thể là lưu vị trí các ký tự trong `t`.
+
+Ví dụ:
+
+``` text
+a -> các vị trí xuất hiện
+b -> các vị trí xuất hiện
+c -> các vị trí xuất hiện
+```
+
+Sau đó dùng binary search để tìm vị trí tiếp theo.
+
+Cách này có thể hữu ích nếu ta phải kiểm tra **rất nhiều chuỗi `s` khác
+nhau với cùng một `t`**.
+
+Nhưng với phiên bản cơ bản của LeetCode, ta chỉ kiểm tra một `s`.
+
+Khi đó xây dựng thêm cấu trúc dữ liệu là không cần thiết.
+
+Two pointers đơn giản hơn và chỉ cần:
+
+``` text
+O(1)
+```
+
+extra space.
+
+------------------------------------------------------------------------
+
+# 19. Khi nào nên dùng Hash Map + Binary Search?
+
+Đây là một mở rộng quan trọng.
+
+Giả sử:
+
+``` text
+t = một chuỗi rất lớn
+```
+
+và ta phải trả lời:
+
+``` text
+s1 có phải subsequence của t không?
+s2 có phải subsequence của t không?
+s3 có phải subsequence của t không?
+...
+```
+
+Nếu có hàng nghìn hoặc hàng triệu truy vấn, việc duyệt toàn bộ `t` cho
+từng `s` có thể tốn nhiều thời gian.
+
+Ta có thể preprocess `t`.
+
+Ví dụ lưu:
+
+``` text
+positions['a'] = danh sách các vị trí chứa 'a'
+positions['b'] = danh sách các vị trí chứa 'b'
+...
+```
+
+Với mỗi ký tự của `s`, ta dùng binary search để tìm vị trí xuất hiện
+tiếp theo lớn hơn vị trí trước đó.
+
+Khi đó:
+
+``` text
+Preprocessing: O(|t|)
+Mỗi query: xấp xỉ O(|s| log |t|)
+```
+
+Đây là một kỹ thuật khác phù hợp với bài toán **nhiều queries**.
+
+Nhưng với bài Is Subsequence cơ bản:
+
+``` text
+Two Pointers là đủ.
+```
+
+------------------------------------------------------------------------
+
+# 20. Edge Cases
+
+## Case 1: `s` rỗng
+
+``` text
+s = ""
+t = "abc"
+```
+
+Chuỗi rỗng là subsequence của mọi chuỗi.
+
+Kết quả:
+
+``` text
+true
+```
+
+Code xử lý được vì:
+
+``` cpp
+i = 0
+s.size() = 0
+```
+
+nên:
+
+``` cpp
+i == s.size()
+```
+
+là đúng.
+
+------------------------------------------------------------------------
+
+## Case 2: `t` rỗng
+
+``` text
+s = "abc"
+t = ""
+```
+
+Không thể lấy `abc` từ chuỗi rỗng.
+
+Kết quả:
+
+``` text
+false
+```
+
+------------------------------------------------------------------------
+
+## Case 3: Hai chuỗi giống nhau
+
+``` text
+s = "abc"
+t = "abc"
+```
+
+Chắc chắn:
+
+``` text
+true
+```
+
+------------------------------------------------------------------------
+
+## Case 4: `s` dài hơn `t`
+
+Ví dụ:
+
+``` text
+s = "abcd"
+t = "abc"
+```
+
+Không thể.
+
+Kết quả:
+
+``` text
+false
+```
+
+Thuật toán tự xử lý mà không cần viết riêng một điều kiện đặc biệt.
+
+------------------------------------------------------------------------
+
+## Case 5: Ký tự lặp lại
+
+``` text
+s = "aaa"
+t = "aaaaa"
+```
+
+Ta chọn ba ký tự `a` đầu tiên.
+
+Kết quả:
+
+``` text
+true
+```
+
+------------------------------------------------------------------------
+
+## Case 6: Có ký tự xuất hiện nhưng sai thứ tự
+
+``` text
+s = "ba"
+t = "abc"
+```
+
+`b` có tồn tại và `a` cũng có tồn tại, nhưng:
+
+``` text
+a đứng trước b
+```
+
+trong `t`.
+
+Trong khi `s` yêu cầu:
+
+``` text
+b -> a
+```
+
+Do đó:
+
+``` text
+false
+```
+
+Đây là lý do không thể chỉ kiểm tra:
+
+``` text
+mọi ký tự của s có xuất hiện trong t hay không
+```
+
+mà phải kiểm tra **thứ tự**.
+
+------------------------------------------------------------------------
+
+# 21. Sai lầm phổ biến
+
+## Sai lầm 1: Chỉ kiểm tra sự tồn tại
+
+Ví dụ:
+
+``` text
+s = "ba"
+t = "abc"
+```
+
+Cả `b` và `a` đều tồn tại.
+
+Nhưng `"ba"` không phải subsequence.
+
+Phải kiểm tra cả thứ tự.
+
+------------------------------------------------------------------------
+
+## Sai lầm 2: Tăng `i` khi không match
+
+Sai:
+
+``` cpp
+if (s[i] != t[j]) {
+    ++i;
+}
+```
+
+Điều này không đúng.
+
+Nếu:
+
+``` text
+s[i] != t[j]
+```
+
+thì ta chỉ bỏ qua ký tự hiện tại của `t`.
+
+Ta vẫn cần tìm chính `s[i]`.
+
+Vì vậy:
+
+``` cpp
+++j;
+```
+
+------------------------------------------------------------------------
+
+## Sai lầm 3: Quay lại trong `t`
+
+Không cần.
+
+Khi đã bỏ qua một ký tự của `t`, ta không cần xem lại nó.
+
+Điều này chính là sức mạnh của two pointers.
+
+------------------------------------------------------------------------
+
+## Sai lầm 4: Dùng nested loop không cần thiết
+
+Có thể viết kiểu:
+
+``` cpp
+for mỗi ký tự s:
+    tìm nó trong t
+```
+
+Nếu tìm lại từ đầu mỗi lần, có thể dẫn tới:
+
+``` text
+O(|s| * |t|)
+```
+
+Trong khi two pointers chỉ cần:
+
+``` text
+O(|t|)
+```
+
+------------------------------------------------------------------------
+
+## Sai lầm 5: Dùng LCS DP
+
+LCS giải được bài tổng quát hơn nhưng không cần thiết ở đây.
+
+Một lời giải DP thường có độ phức tạp:
+
+``` text
+O(|s| * |t|)
+```
+
+và bộ nhớ có thể là:
+
+``` text
+O(|s| * |t|)
+```
+
+hoặc được tối ưu xuống:
+
+``` text
+O(min(|s|, |t|))
+```
+
+Trong khi bài này chỉ cần:
+
+``` text
+O(|t|) time
+O(1) extra space
+```
+
+------------------------------------------------------------------------
+
+# 22. Cách suy nghĩ để tự nhận ra Two Pointers
+
+Khi gặp bài tương tự, hãy tự hỏi 4 câu:
+
+### Câu 1
+
+Có cần giữ nguyên thứ tự không?
+
+Nếu có, hãy nghĩ đến việc duyệt từ trái sang phải.
+
+### Câu 2
+
+Có được phép bỏ qua phần tử không?
+
+Nếu có, hãy nghĩ đến greedy hoặc two pointers.
+
+### Câu 3
+
+Sau khi bỏ qua một phần tử, có cần quay lại không?
+
+Nếu không, two pointers rất có tiềm năng.
+
+### Câu 4
+
+Có một chuỗi nguồn và một chuỗi cần match theo thứ tự không?
+
+Nếu có:
+
+``` text
+s = pattern cần match
+t = nguồn để tìm
+```
+
+thì kỹ thuật:
+
+``` text
+pointer trên s
+pointer trên t
+```
+
+thường là hướng tiếp cận đầu tiên nên thử.
+
+------------------------------------------------------------------------
+
+# 23. Template Two Pointers tổng quát
+
+Bài này có thể giúp xây dựng một template tư duy:
+
+``` cpp
+int i = 0;
+int j = 0;
+
+while (i < n && j < m) {
+    if (condition) {
+        ++i;
+    }
+
+    ++j;
+}
+```
+
+Trong bài này:
+
+``` text
+i -> s
+j -> t
+condition -> s[i] == t[j]
+```
+
+Đây là một pattern rất phổ biến.
+
+------------------------------------------------------------------------
+
+# 24. Proof of Correctness
+
+Ta có thể chứng minh thuật toán đúng theo hai hướng.
+
+## Nếu thuật toán trả về true
+
+Thuật toán chỉ tăng `i` khi:
+
+``` text
+s[i] == t[j]
+```
+
+Do `j` luôn tăng theo chiều từ trái sang phải, các ký tự được chọn từ
+`t` luôn xuất hiện theo đúng thứ tự.
+
+Nếu cuối cùng:
+
+``` text
+i == s.size()
+```
+
+thì tất cả ký tự của `s` đã được match.
+
+Vì vậy:
+
+``` text
+s là subsequence của t.
+```
+
+------------------------------------------------------------------------
+
+## Nếu `s` là subsequence của `t`
+
+Giả sử tồn tại một cách chọn các vị trí trong `t` tạo thành `s`.
+
+Khi thuật toán đang cần một ký tự `s[i]`, nó luôn chọn lần xuất hiện đầu
+tiên phù hợp kể từ vị trí hiện tại.
+
+Lần xuất hiện đầu tiên này không nằm sau một vị trí cần thiết của một
+lời giải hợp lệ; ngược lại, nó sớm hơn hoặc bằng vị trí tương ứng trong
+lời giải đó.
+
+Do đó, việc chọn nó không làm mất khả năng match các ký tự tiếp theo.
+
+Lặp lại lập luận này cho từng ký tự của `s`, thuật toán cuối cùng sẽ
+match toàn bộ `s`.
+
+Vì vậy nếu `s` thực sự là subsequence của `t`, thuật toán sẽ trả về:
+
+``` text
+true
+```
+
+------------------------------------------------------------------------
+
+# 25. Tại sao O(\|t\|) là tối ưu?
+
+Trong trường hợp xấu nhất, ta phải đọc toàn bộ `t`.
+
+Ví dụ:
+
+``` text
+s = "z"
+t = "aaaaaaaaaaaaaaaaaaaaaaaa..."
+```
+
+Muốn biết `z` có xuất hiện hay không, ta phải kiểm tra hết `t`.
+
+Vì vậy không thể nói rằng bài toán tổng quát này có thể giải trong thời
+gian nhỏ hơn tuyến tính theo kích thước `t` nếu chưa có thông tin được
+preprocess về `t`.
+
+Do đó:
+
+``` text
+O(|t|)
+```
+
+là độ phức tạp tự nhiên và tối ưu cho phiên bản một query.
+
+------------------------------------------------------------------------
+
+# 26. Phiên bản C++ nên dùng khi submit
+
+``` cpp
+class Solution {
+public:
+    bool isSubsequence(string s, string t) {
+        int i = 0;
+
+        for (char c : t) {
+            if (i < static_cast<int>(s.size()) && s[i] == c) {
+                ++i;
+            }
+        }
+
+        return i == static_cast<int>(s.size());
+    }
+};
+```
+
+Nếu muốn code trực quan hơn cho mục đích học two pointers:
+
+``` cpp
+class Solution {
+public:
+    bool isSubsequence(string s, string t) {
+        int i = 0;
+        int j = 0;
+
+        while (i < static_cast<int>(s.size()) &&
+               j < static_cast<int>(t.size())) {
+
+            if (s[i] == t[j]) {
+                ++i;
+            }
+
+            ++j;
+        }
+
+        return i == static_cast<int>(s.size());
+    }
+};
+```
+
+Cả hai đều có:
+
+``` text
+Time:  O(|t|)
+Space: O(1)
+```
+
+------------------------------------------------------------------------
+
+# 27. Checklist khi đi phỏng vấn
+
+Nếu gặp bài này trong interview, có thể trình bày theo thứ tự:
+
+1.  "`s` cần xuất hiện trong `t` theo đúng thứ tự nhưng không cần liên
+    tiếp."
+2.  "Tôi sẽ dùng two pointers."
+3.  "`i` trỏ vào ký tự tiếp theo cần match trong `s`."
+4.  "`j` duyệt qua `t` từ trái sang phải."
+5.  "Nếu `s[i] == t[j]`, tôi match ký tự này và tăng `i`."
+6.  "Dù match hay không, `j` luôn tăng."
+7.  "Nếu `i == s.size()`, toàn bộ `s` đã được tìm thấy."
+8.  "Độ phức tạp là O(\|t\|) thời gian và O(1) bộ nhớ phụ."
+
+Đây là cách giải thích ngắn nhưng đầy đủ.
+
+------------------------------------------------------------------------
+
+# 28. Tóm tắt tư duy
+
+Bản chất bài toán chỉ là:
+
+``` text
+Tìm s bên trong t
+nhưng phải giữ nguyên thứ tự.
+```
+
+Do đó:
+
+``` text
+i = vị trí cần tìm trong s
+j = vị trí đang xét trong t
+```
+
+Quy tắc:
+
+``` text
+Nếu s[i] == t[j]:
+    i++
+
+Luôn luôn:
+    j++
+```
+
+Cuối cùng:
+
+``` text
+i == s.size()
+    => true
+
+ngược lại
+    => false
+```
+
+Độ phức tạp:
+
+``` text
+Time:  O(|t|)
+Space: O(1)
+```
+
+------------------------------------------------------------------------
+
+# 29. Mental Model cần nhớ
+
+Có thể ghi nhớ bài này bằng một câu:
+
+> "Tôi đi dọc theo `t`, và mỗi khi gặp đúng ký tự tiếp theo mà `s` cần,
+> tôi lấy nó."
+
+Hoặc ngắn hơn:
+
+``` text
+Scan t
+Match s
+Skip what is unnecessary
+Never go backward
+```
+
+Đây chính là pattern quan trọng của bài **Is Subsequence**.
