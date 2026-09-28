@@ -1,0 +1,767 @@
+# Path Sum
+
+[LeetCode - Path Sum](https://leetcode.com/problems/path-sum/)
+
+## 1. Mô tả bài toán
+
+Cho một cây nhị phân `root` và một số nguyên `targetSum`. Hãy xác định
+xem có tồn tại một **đường đi từ node gốc đến một node lá** sao cho tổng
+giá trị các node trên đường đi bằng `targetSum` hay không.
+
+Nếu có, trả về `true`; nếu không, trả về `false`.
+
+Một node lá là node không có cả con trái và con phải.
+
+Ví dụ:
+
+``` text
+        5
+       /       4   8
+     /   /     11  13  4
+   /  \         7    2       1
+```
+
+Với `targetSum = 22`, đường đi:
+
+``` text
+5 -> 4 -> 11 -> 2
+```
+
+có tổng `22`, nên đáp án là `true`.
+
+------------------------------------------------------------------------
+
+## 2. Quan sát quan trọng
+
+Bài toán không yêu cầu tìm một node bất kỳ có tổng bằng `targetSum`.
+Đường đi bắt buộc phải:
+
+``` text
+root -> ... -> leaf
+```
+
+Ví dụ:
+
+``` text
+    5
+   /
+  4
+ /
+3
+```
+
+Với `targetSum = 9`, ta có `5 + 4 = 9`, nhưng node `4` chưa phải leaf vì
+còn con `3`.
+
+Do đó đáp án là `false`.
+
+Đây là điều kiện quan trọng nhất của bài.
+
+------------------------------------------------------------------------
+
+## 3. Phương pháp tối ưu: DFS đệ quy
+
+Ta duyệt cây theo DFS và truyền theo một trạng thái là:
+
+``` text
+targetSum còn lại
+```
+
+Ban đầu:
+
+``` text
+remainingSum = targetSum
+```
+
+Mỗi khi đi qua một node:
+
+``` text
+remainingSum = remainingSum - root->val
+```
+
+Khi đến một node lá:
+
+-   Nếu `remainingSum == 0`: tìm được đường đi hợp lệ.
+-   Nếu `remainingSum != 0`: đường đi này không hợp lệ.
+
+Ta có thể mô tả thuật toán:
+
+``` text
+pathSum(root, targetSum)
+
+    Nếu root == nullptr
+        return false
+
+    targetSum -= root->val
+
+    Nếu root là leaf
+        return targetSum == 0
+
+    return pathSum(root->left, targetSum)
+           OR
+           pathSum(root->right, targetSum)
+```
+
+------------------------------------------------------------------------
+
+## 4. Tại sao truyền "tổng còn lại"?
+
+Giả sử:
+
+``` text
+targetSum = 22
+```
+
+và đường đi:
+
+``` text
+5 -> 4 -> 11 -> 2
+```
+
+Ta xử lý lần lượt:
+
+``` text
+Ban đầu: 22
+
+Sau 5: 22 - 5 = 17
+
+Sau 4: 17 - 4 = 13
+
+Sau 11: 13 - 11 = 2
+
+Sau 2: 2 - 2 = 0
+```
+
+Node `2` là leaf và tổng còn lại bằng `0`.
+
+Vậy:
+
+``` text
+5 + 4 + 11 + 2 = 22
+```
+
+Không cần lưu toàn bộ path vào vector hay mảng. Chỉ cần truyền giá trị
+tổng còn lại qua các lời gọi đệ quy.
+
+------------------------------------------------------------------------
+
+## 5. Lời giải C++
+
+``` cpp
+class Solution {
+public:
+    bool hasPathSum(TreeNode* root, int targetSum) {
+        if (root == nullptr) {
+            return false;
+        }
+
+        targetSum -= root->val;
+
+        if (root->left == nullptr &&
+            root->right == nullptr) {
+            return targetSum == 0;
+        }
+
+        return hasPathSum(root->left, targetSum) ||
+               hasPathSum(root->right, targetSum);
+    }
+};
+```
+
+------------------------------------------------------------------------
+
+## 6. Giải thích từng phần
+
+### 6.1. Trường hợp cây rỗng
+
+``` cpp
+if (root == nullptr) {
+    return false;
+}
+```
+
+Nếu không có node thì không tồn tại root-to-leaf path.
+
+Đây là điều kiện dừng của đệ quy.
+
+### 6.2. Cập nhật tổng còn lại
+
+``` cpp
+targetSum -= root->val;
+```
+
+Giá trị của node hiện tại đã được đưa vào đường đi, nên ta trừ nó khỏi
+phần tổng còn thiếu.
+
+### 6.3. Kiểm tra node lá
+
+``` cpp
+if (root->left == nullptr &&
+    root->right == nullptr) {
+```
+
+Một node là leaf khi cả hai con đều là `nullptr`.
+
+Sau khi đã trừ giá trị node hiện tại:
+
+``` cpp
+return targetSum == 0;
+```
+
+Nếu bằng `0`, toàn bộ đường đi có tổng đúng bằng giá trị ban đầu.
+
+### 6.4. Tiếp tục DFS
+
+``` cpp
+return hasPathSum(root->left, targetSum) ||
+       hasPathSum(root->right, targetSum);
+```
+
+Nếu node chưa phải leaf, đường đi phải tiếp tục sang cây con trái hoặc
+cây con phải.
+
+Chỉ cần một trong hai nhánh tìm thấy path hợp lệ là đủ.
+
+Toán tử `||` còn có short-circuit: nếu cây con trái trả về `true`, cây
+con phải không cần được duyệt tiếp.
+
+------------------------------------------------------------------------
+
+## 7. Chứng minh thuật toán đúng
+
+### Trường hợp 1: `root == nullptr`
+
+Không có node và không có đường đi nào, nên trả về `false` là đúng.
+
+### Trường hợp 2: `root` là leaf
+
+Sau khi trừ `root->val`, `targetSum` chính là phần tổng còn lại của
+đường đi.
+
+Nếu:
+
+``` text
+targetSum == 0
+```
+
+thì tổng toàn bộ path đúng bằng `targetSum` ban đầu.
+
+Nếu khác `0`, path không hợp lệ.
+
+### Trường hợp 3: `root` không phải leaf
+
+Một root-to-leaf path phải tiếp tục qua cây con trái hoặc cây con phải.
+Thuật toán kiểm tra cả hai và trả về `true` nếu ít nhất một nhánh có
+path hợp lệ.
+
+Vì vậy thuật toán kiểm tra đúng tất cả các khả năng cần thiết.
+
+------------------------------------------------------------------------
+
+## 8. Độ phức tạp
+
+Gọi `n` là số node và `h` là chiều cao cây.
+
+### Time Complexity
+
+Trong trường hợp xấu nhất, mỗi node được duyệt tối đa một lần:
+
+``` text
+O(n)
+```
+
+Đây là độ phức tạp tối ưu về mặt tiệm cận cho việc kiểm tra cấu trúc của
+cây.
+
+### Space Complexity
+
+DFS đệ quy sử dụng call stack theo chiều cao cây:
+
+``` text
+O(h)
+```
+
+Nếu cây cân bằng:
+
+``` text
+h = O(log n)
+```
+
+Nếu cây lệch hoàn toàn:
+
+``` text
+h = O(n)
+```
+
+------------------------------------------------------------------------
+
+## 9. Một cách viết khác: truyền tổng hiện tại
+
+Ta cũng có thể lưu `currentSum` thay vì tổng còn lại:
+
+``` cpp
+class Solution {
+public:
+    bool dfs(TreeNode* root, int currentSum, int targetSum) {
+        if (root == nullptr) {
+            return false;
+        }
+
+        currentSum += root->val;
+
+        if (root->left == nullptr &&
+            root->right == nullptr) {
+            return currentSum == targetSum;
+        }
+
+        return dfs(root->left, currentSum, targetSum) ||
+               dfs(root->right, currentSum, targetSum);
+    }
+
+    bool hasPathSum(TreeNode* root, int targetSum) {
+        return dfs(root, 0, targetSum);
+    }
+};
+```
+
+Hai cách đều có:
+
+``` text
+Time:  O(n)
+Space: O(h)
+```
+
+Trong bài này, cách trừ dần `targetSum` thường ngắn gọn và trực tiếp
+hơn.
+
+------------------------------------------------------------------------
+
+## 10. Tại sao không được dừng khi `targetSum` trở thành 0 ở node thường?
+
+Không được viết:
+
+``` cpp
+if (targetSum == 0) {
+    return true;
+}
+```
+
+mà không kiểm tra leaf.
+
+Ví dụ:
+
+``` text
+    5
+   /
+  4
+ /
+3
+```
+
+Với `targetSum = 9`, sau node `4` tổng còn lại bằng `0`, nhưng `4` chưa
+phải leaf.
+
+Đường đi phải tiếp tục đến `3`, vì vậy tại thời điểm đó chưa thể trả về
+`true`.
+
+Điều kiện đúng là:
+
+``` text
+node là leaf
+AND
+targetSum còn lại bằng 0
+```
+
+------------------------------------------------------------------------
+
+## 11. Không được cắt nhánh chỉ vì tổng còn lại âm
+
+Nếu node có thể chứa số âm, việc `targetSum` trở thành số âm không có
+nghĩa là không còn đáp án.
+
+Ví dụ:
+
+``` text
+    5
+   /
+  10
+  /
+-15
+```
+
+Với:
+
+``` text
+targetSum = 0
+```
+
+ta có:
+
+``` text
+5 + 10 - 15 = 0
+```
+
+Trong quá trình duyệt:
+
+``` text
+0 -> -5 -> -15 -> 0
+```
+
+Vì vậy không được có điều kiện kiểu:
+
+``` cpp
+if (targetSum < 0) {
+    return false;
+}
+```
+
+trừ khi đề bài có thêm ràng buộc đảm bảo tất cả node đều không âm.
+
+------------------------------------------------------------------------
+
+## 12. Những lỗi thường gặp
+
+### Lỗi 1: Quên `root == nullptr`
+
+Sai:
+
+``` cpp
+targetSum -= root->val;
+```
+
+mà không kiểm tra `root`.
+
+Phải xử lý:
+
+``` cpp
+if (root == nullptr) {
+    return false;
+}
+```
+
+### Lỗi 2: Không kiểm tra leaf
+
+Sai:
+
+``` cpp
+if (targetSum == root->val) {
+    return true;
+}
+```
+
+Một node trung gian không được xem là điểm kết thúc.
+
+### Lỗi 3: Coi node chỉ có một con là leaf
+
+Sai vì leaf phải có:
+
+``` text
+left == nullptr
+AND
+right == nullptr
+```
+
+### Lỗi 4: Cộng hai nhánh
+
+Không được tính:
+
+``` text
+leftSum + rightSum
+```
+
+vì một path chỉ đi theo một nhánh từ root xuống leaf.
+
+Ta cần:
+
+``` text
+left OR right
+```
+
+### Lỗi 5: Nhầm số node với số cạnh
+
+Bài toán xét tổng các **node**, không phải số cạnh.
+
+------------------------------------------------------------------------
+
+## 13. Tại sao DFS phù hợp với bài toán?
+
+Bài toán nói về một đường đi:
+
+``` text
+root -> ... -> leaf
+```
+
+DFS có đúng cách hoạt động này:
+
+``` text
+Đi xuống một nhánh
+    ↓
+Cập nhật trạng thái
+    ↓
+Đi tiếp
+    ↓
+Đến leaf
+    ↓
+Kiểm tra kết quả
+    ↓
+Quay lui và thử nhánh khác
+```
+
+Vì vậy DFS + state tracking là cách biểu diễn rất tự nhiên.
+
+------------------------------------------------------------------------
+
+## 14. BFS có giải được không?
+
+Có.
+
+Với BFS, ta cần lưu cùng lúc:
+
+``` text
+node
+currentSum
+```
+
+Ví dụ:
+
+``` cpp
+class Solution {
+public:
+    bool hasPathSum(TreeNode* root, int targetSum) {
+        if (root == nullptr) {
+            return false;
+        }
+
+        queue<pair<TreeNode*, int>> q;
+        q.push({root, root->val});
+
+        while (!q.empty()) {
+            TreeNode* current = q.front().first;
+            int currentSum = q.front().second;
+            q.pop();
+
+            if (current->left == nullptr &&
+                current->right == nullptr &&
+                currentSum == targetSum) {
+                return true;
+            }
+
+            if (current->left != nullptr) {
+                q.push({
+                    current->left,
+                    currentSum + current->left->val
+                });
+            }
+
+            if (current->right != nullptr) {
+                q.push({
+                    current->right,
+                    currentSum + current->right->val
+                });
+            }
+        }
+
+        return false;
+    }
+};
+```
+
+BFS có:
+
+``` text
+Time:  O(n)
+Space: O(w)
+```
+
+với `w` là số node lớn nhất trên một level.
+
+DFS đệ quy thường ngắn gọn hơn cho bài `Path Sum`.
+
+------------------------------------------------------------------------
+
+## 15. Pattern quan trọng cần ghi nhớ
+
+`Path Sum` là ví dụ điển hình của:
+
+``` text
+Tree DFS + State
+```
+
+Ta có:
+
+``` text
+State = tổng còn lại
+```
+
+Mỗi node:
+
+``` text
+state mới = state cũ - node->val
+```
+
+Tại leaf:
+
+``` text
+state == 0
+```
+
+thì tìm thấy đáp án.
+
+Pattern tổng quát:
+
+``` text
+DFS(node, state)
+
+    Nếu node không tồn tại
+        return false
+
+    Cập nhật state
+
+    Nếu node là leaf
+        kiểm tra điều kiện
+
+    return DFS(left, state)
+           OR
+           DFS(right, state)
+```
+
+Pattern này rất hữu ích cho nhiều bài Binary Tree liên quan đến
+root-to-leaf path.
+
+------------------------------------------------------------------------
+
+## 16. Ví dụ với số âm
+
+Xét:
+
+``` text
+        1
+       /      -2   3
+     /
+    4
+```
+
+Với:
+
+``` text
+targetSum = 3
+```
+
+Đường đi:
+
+``` text
+1 -> -2 -> 4
+```
+
+có:
+
+``` text
+1 + (-2) + 4 = 3
+```
+
+Node `4` là leaf nên đáp án là:
+
+``` text
+true
+```
+
+Điều này cho thấy thuật toán không dựa vào việc các giá trị node phải
+dương.
+
+------------------------------------------------------------------------
+
+## 17. Tóm tắt phương pháp
+
+Có thể ghi nhớ bằng 5 bước:
+
+``` text
+1. Nếu root == nullptr
+   -> false
+
+2. Trừ root->val khỏi targetSum
+
+3. Nếu root là leaf
+   -> kiểm tra targetSum == 0
+
+4. Nếu chưa phải leaf
+   -> DFS cây con trái
+
+5. Hoặc DFS cây con phải
+```
+
+Lời giải:
+
+``` cpp
+class Solution {
+public:
+    bool hasPathSum(TreeNode* root, int targetSum) {
+        if (root == nullptr) {
+            return false;
+        }
+
+        targetSum -= root->val;
+
+        if (root->left == nullptr &&
+            root->right == nullptr) {
+            return targetSum == 0;
+        }
+
+        return hasPathSum(root->left, targetSum) ||
+               hasPathSum(root->right, targetSum);
+    }
+};
+```
+
+Độ phức tạp:
+
+``` text
+Time:  O(n)
+Space: O(h)
+```
+
+------------------------------------------------------------------------
+
+## 18. Kết luận
+
+Điểm cốt lõi của `Path Sum` là nhận ra rằng ta không cần lưu toàn bộ
+đường đi.
+
+Chỉ cần:
+
+``` text
+DFS
++
+tổng còn lại
++
+kiểm tra leaf
+```
+
+Công thức tư duy:
+
+``` text
+Tổng còn lại
+=
+Tổng cần tìm
+-
+các node đã đi qua
+```
+
+Khi đến leaf:
+
+``` text
+Tổng còn lại == 0
+```
+
+thì path hiện tại chính là một root-to-leaf path có tổng đúng bằng
+`targetSum`.
+
+Đặc biệt cần nhớ:
+
+``` text
+targetSum == 0
+```
+
+**chỉ được xem là thành công khi node hiện tại là leaf.**
+
+Đây là điểm quan trọng nhất của bài và cũng là pattern hữu ích cho nhiều
+bài toán Binary Tree khác.
