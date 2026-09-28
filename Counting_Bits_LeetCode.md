@@ -1,0 +1,872 @@
+# Counting Bits - LeetCode
+
+## 1. Thông tin bài toán
+
+**Bài toán:** [Counting Bits](https://leetcode.com/problems/counting-bits/)
+
+Cho một số nguyên `n`.
+
+Hãy trả về một mảng `ans` có `n + 1` phần tử, trong đó:
+
+- `ans[i]` là số lượng bit `1` trong biểu diễn nhị phân của số `i`.
+- Cần tính `ans[0]`, `ans[1]`, ..., `ans[n]`.
+
+### Ví dụ
+
+```text
+Input:
+n = 5
+
+Output:
+[0,1,1,2,1,2]
+```
+
+Giải thích:
+
+```text
+0  -> 0     -> có 0 bit 1
+1  -> 1     -> có 1 bit 1
+2  -> 10    -> có 1 bit 1
+3  -> 11    -> có 2 bit 1
+4  -> 100   -> có 1 bit 1
+5  -> 101   -> có 2 bit 1
+```
+
+---
+
+## 2. Yêu cầu cần quan tâm
+
+Với mỗi số `i` từ `0` đến `n`, ta cần biết có bao nhiêu bit `1`.
+
+Một cách đơn giản là duyệt từng số rồi đếm các bit `1` của nó.
+
+Tuy nhiên, nếu làm như vậy độc lập cho từng số, chúng ta sẽ phải thực hiện khá nhiều phép kiểm tra bit.
+
+Điểm quan trọng của bài toán là:
+
+> Kết quả của một số có thể được suy ra trực tiếp từ kết quả của một số nhỏ hơn.
+
+Đây chính là ý tưởng giúp chúng ta sử dụng **Dynamic Programming (DP)** để đạt độ phức tạp tối ưu.
+
+---
+
+# 3. Cách tiếp cận 1: Đếm bit của từng số độc lập
+
+Với mỗi số `i`, ta có thể liên tục kiểm tra bit cuối cùng:
+
+```cpp
+i & 1
+```
+
+Sau đó dịch phải:
+
+```cpp
+i >>= 1
+```
+
+Mỗi lần gặp bit `1`, ta tăng biến đếm.
+
+Ví dụ với:
+
+```text
+i = 13
+```
+
+Biểu diễn nhị phân:
+
+```text
+13 = 1101
+```
+
+Ta kiểm tra lần lượt:
+
+```text
+1101 -> bit cuối là 1
+0110 -> bit cuối là 0
+0011 -> bit cuối là 1
+0001 -> bit cuối là 1
+0000 -> dừng
+```
+
+Kết quả là `3`.
+
+### Độ phức tạp
+
+Mỗi số có thể cần kiểm tra khoảng `log(i)` bit.
+
+Vì phải làm cho tất cả các số từ `0` đến `n`, độ phức tạp tổng thể là:
+
+```text
+O(n log n)
+```
+
+Cách này đúng nhưng chưa phải cách tối ưu nhất.
+
+---
+
+# 4. Ý tưởng tối ưu: Dynamic Programming
+
+Ta nhận thấy giữa các số có mối quan hệ rất đơn giản.
+
+Có hai cách nhìn quan trọng.
+
+## Cách nhìn 1: Xóa bit `1` cuối cùng
+
+Một tính chất rất hữu ích của phép toán bit:
+
+```cpp
+i & (i - 1)
+```
+
+sẽ xóa đi **bit `1` thấp nhất** của `i`.
+
+Ví dụ:
+
+```text
+i     = 10110
+i - 1 = 10101
+
+i & (i - 1)
+
+  10110
+& 10101
+-------
+  10100
+```
+
+Ta đã xóa bit `1` cuối cùng:
+
+```text
+10110 -> 10100
+```
+
+Do đó:
+
+```text
+số bit 1 của i
+=
+số bit 1 của i & (i - 1) + 1
+```
+
+Ta có thể viết:
+
+```cpp
+ans[i] = ans[i & (i - 1)] + 1;
+```
+
+Ví dụ:
+
+```text
+i = 7
+
+7  = 111
+6  = 110
+
+ans[7] = ans[6] + 1
+       = 2 + 1
+       = 3
+```
+
+Cách này cho độ phức tạp `O(n)` vì mỗi số chỉ cần một phép tính DP.
+
+---
+
+# 5. Ý tưởng tối ưu phổ biến hơn: Dựa vào i / 2
+
+Ta có thể nhìn biểu diễn nhị phân của `i`.
+
+Khi thực hiện:
+
+```cpp
+i >> 1
+```
+
+ta đang loại bỏ bit cuối cùng của `i`.
+
+Ví dụ:
+
+```text
+i = 13
+
+13 = 1101
+13 >> 1 = 0110
+```
+
+Tức là:
+
+```text
+1101 -> 110
+```
+
+Nếu bit cuối của `i` là `1`, thì số lượng bit `1` của `i` sẽ bằng:
+
+```text
+số bit 1 của i >> 1 + 1
+```
+
+Nếu bit cuối là `0`, thì:
+
+```text
+số bit 1 của i = số bit 1 của i >> 1
+```
+
+Ta có thể gộp hai trường hợp bằng:
+
+```cpp
+ans[i] = ans[i >> 1] + (i & 1);
+```
+
+Hay tương đương:
+
+```cpp
+ans[i] = ans[i / 2] + (i % 2);
+```
+
+Trong bài toán bit, dùng `>>` và `&` thể hiện rõ bản chất hơn.
+
+---
+
+# 6. Phân tích công thức DP
+
+Công thức quan trọng nhất là:
+
+```cpp
+ans[i] = ans[i >> 1] + (i & 1);
+```
+
+Hãy phân tích từng phần.
+
+## `i >> 1`
+
+Phép dịch phải một bit sẽ bỏ bit cuối cùng.
+
+Ví dụ:
+
+```text
+i = 13 = 1101
+
+i >> 1 = 110 = 6
+```
+
+Vì vậy:
+
+```cpp
+ans[i >> 1]
+```
+
+là số lượng bit `1` của phần còn lại sau khi bỏ bit cuối.
+
+---
+
+## `i & 1`
+
+Biểu thức:
+
+```cpp
+i & 1
+```
+
+dùng để kiểm tra bit cuối cùng của `i`.
+
+Có hai trường hợp.
+
+### Trường hợp 1: i là số chẵn
+
+Ví dụ:
+
+```text
+i = 6 = 110
+```
+
+Bit cuối là `0`.
+
+Do đó:
+
+```cpp
+6 & 1 = 0
+```
+
+Vậy:
+
+```text
+ans[6] = ans[3] + 0
+```
+
+Và:
+
+```text
+ans[3] = 2
+```
+
+nên:
+
+```text
+ans[6] = 2
+```
+
+---
+
+### Trường hợp 2: i là số lẻ
+
+Ví dụ:
+
+```text
+i = 7 = 111
+```
+
+Bit cuối là `1`.
+
+Do đó:
+
+```cpp
+7 & 1 = 1
+```
+
+Vậy:
+
+```text
+ans[7] = ans[3] + 1
+```
+
+Ta có:
+
+```text
+ans[3] = 2
+```
+
+nên:
+
+```text
+ans[7] = 3
+```
+
+---
+
+# 7. Ví dụ xây dựng mảng DP
+
+Giả sử:
+
+```text
+n = 5
+```
+
+Ta cần tính:
+
+```text
+ans[0], ans[1], ans[2], ans[3], ans[4], ans[5]
+```
+
+## i = 0
+
+Đây là trường hợp cơ sở:
+
+```text
+0 = 0
+```
+
+Không có bit `1`.
+
+```text
+ans[0] = 0
+```
+
+---
+
+## i = 1
+
+```text
+1 = 1
+```
+
+Áp dụng công thức:
+
+```text
+ans[1] = ans[1 >> 1] + (1 & 1)
+       = ans[0] + 1
+       = 1
+```
+
+---
+
+## i = 2
+
+```text
+2 = 10
+```
+
+```text
+ans[2] = ans[1] + 0
+       = 1
+```
+
+---
+
+## i = 3
+
+```text
+3 = 11
+```
+
+```text
+ans[3] = ans[1] + 1
+       = 2
+```
+
+---
+
+## i = 4
+
+```text
+4 = 100
+```
+
+```text
+ans[4] = ans[2] + 0
+       = 1
+```
+
+---
+
+## i = 5
+
+```text
+5 = 101
+```
+
+```text
+ans[5] = ans[2] + 1
+       = 2
+```
+
+Cuối cùng:
+
+```text
+ans = [0, 1, 1, 2, 1, 2]
+```
+
+---
+
+# 8. Vì sao phải tính từ nhỏ đến lớn?
+
+Công thức:
+
+```cpp
+ans[i] = ans[i >> 1] + (i & 1);
+```
+
+phụ thuộc vào:
+
+```cpp
+ans[i >> 1]
+```
+
+Mà:
+
+```text
+i >> 1 < i
+```
+
+với mọi `i > 0`.
+
+Ví dụ:
+
+```text
+i = 10
+i >> 1 = 5
+```
+
+Muốn tính `ans[10]`, ta cần `ans[5]`.
+
+Vì `5 < 10`, nên nếu duyệt:
+
+```cpp
+for (int i = 1; i <= n; i++)
+```
+
+thì `ans[5]` đã được tính trước khi cần dùng.
+
+Đây chính là cấu trúc rất điển hình của Dynamic Programming:
+
+> Kết quả của trạng thái hiện tại được xây dựng từ một trạng thái nhỏ hơn đã biết.
+
+---
+
+# 9. Chứng minh tính đúng đắn
+
+Ta cần chứng minh:
+
+```cpp
+ans[i] = ans[i >> 1] + (i & 1)
+```
+
+luôn cho đúng số lượng bit `1` của `i`.
+
+Xét biểu diễn nhị phân của `i`.
+
+Ta có thể viết:
+
+```text
+i = [các bit phía trước] [bit cuối]
+```
+
+Khi thực hiện:
+
+```cpp
+i >> 1
+```
+
+ta loại bỏ bit cuối.
+
+Phần còn lại chính là toàn bộ các bit phía trước.
+
+Do đó:
+
+```text
+số bit 1 của i
+=
+số bit 1 của i >> 1
++
+giá trị của bit cuối
+```
+
+Mà:
+
+```cpp
+i & 1
+```
+
+chính xác là giá trị của bit cuối, chỉ có thể bằng `0` hoặc `1`.
+
+Vì vậy:
+
+```cpp
+ans[i] = ans[i >> 1] + (i & 1)
+```
+
+là chính xác.
+
+---
+
+# 10. Độ phức tạp
+
+Ta duyệt các số:
+
+```text
+1, 2, 3, ..., n
+```
+
+Mỗi số chỉ thực hiện một số phép toán bit có thời gian `O(1)`.
+
+Do đó:
+
+### Thời gian
+
+```text
+O(n)
+```
+
+### Bộ nhớ
+
+Mảng `ans` có `n + 1` phần tử:
+
+```text
+O(n)
+```
+
+Đây là độ phức tạp tối ưu cho bài toán vì chúng ta phải trả về `n + 1` kết quả.
+
+---
+
+# 11. So sánh với cách đếm bit thông thường
+
+| Phương pháp | Thời gian | Bộ nhớ | Ý tưởng |
+|---|---:|---:|---|
+| Đếm bit từng số | O(n log n) | O(n) | Xử lý từng số độc lập |
+| Dùng `i & (i - 1)` | O(n) | O(n) | Xóa bit `1` thấp nhất |
+| DP với `i >> 1` | O(n) | O(n) | Loại bỏ bit cuối |
+
+Cách DP với:
+
+```cpp
+ans[i] = ans[i >> 1] + (i & 1);
+```
+
+rất trực quan vì nó cho thấy rõ mối quan hệ giữa `i` và `i / 2`.
+
+---
+
+# 12. Lời giải C++ tối ưu
+
+```cpp
+class Solution {
+public:
+    vector<int> countBits(int n) {
+        vector<int> ans(n + 1, 0);
+
+        for (int i = 1; i <= n; i++) {
+            ans[i] = ans[i >> 1] + (i & 1);
+        }
+
+        return ans;
+    }
+};
+```
+
+---
+
+# 13. Giải thích code
+
+## Khởi tạo mảng
+
+```cpp
+vector<int> ans(n + 1, 0);
+```
+
+Ta cần lưu kết quả cho tất cả các số từ `0` đến `n`.
+
+Có tổng cộng:
+
+```text
+n + 1
+```
+
+giá trị.
+
+Ban đầu tất cả được gán bằng `0`.
+
+Đặc biệt:
+
+```text
+ans[0] = 0
+```
+
+là trường hợp cơ sở.
+
+---
+
+## Duyệt từ 1 đến n
+
+```cpp
+for (int i = 1; i <= n; i++)
+```
+
+Ta lần lượt tính `ans[i]`.
+
+---
+
+## Công thức DP
+
+```cpp
+ans[i] = ans[i >> 1] + (i & 1);
+```
+
+Trong đó:
+
+```cpp
+i >> 1
+```
+
+là số `i` sau khi bỏ bit cuối.
+
+Còn:
+
+```cpp
+i & 1
+```
+
+cho biết bit cuối của `i` là `0` hay `1`.
+
+Vì vậy:
+
+```text
+số bit 1 của i
+=
+số bit 1 của i >> 1
++
+bit cuối của i
+```
+
+---
+
+# 14. Một cách viết tương đương
+
+Ta cũng có thể viết:
+
+```cpp
+ans[i] = ans[i / 2] + (i % 2);
+```
+
+Code:
+
+```cpp
+class Solution {
+public:
+    vector<int> countBits(int n) {
+        vector<int> ans(n + 1, 0);
+
+        for (int i = 1; i <= n; i++) {
+            ans[i] = ans[i / 2] + (i % 2);
+        }
+
+        return ans;
+    }
+};
+```
+
+Hai cách đều có độ phức tạp:
+
+```text
+O(n) thời gian
+O(n) bộ nhớ
+```
+
+Tuy nhiên, cách sử dụng:
+
+```cpp
+i >> 1
+i & 1
+```
+
+thể hiện trực tiếp ý tưởng xử lý biểu diễn nhị phân và rất phù hợp với bản chất của bài Counting Bits.
+
+---
+
+# 15. Một công thức DP khác cũng tối ưu
+
+Ta cũng có thể sử dụng:
+
+```cpp
+ans[i] = ans[i & (i - 1)] + 1;
+```
+
+Code:
+
+```cpp
+class Solution {
+public:
+    vector<int> countBits(int n) {
+        vector<int> ans(n + 1, 0);
+
+        for (int i = 1; i <= n; i++) {
+            ans[i] = ans[i & (i - 1)] + 1;
+        }
+
+        return ans;
+    }
+};
+```
+
+Lý do đúng:
+
+```cpp
+i & (i - 1)
+```
+
+xóa bit `1` thấp nhất của `i`.
+
+Ví dụ:
+
+```text
+i = 13 = 1101
+
+i - 1 = 12 = 1100
+
+1101
+1100
+----
+1100
+```
+
+Từ `1101` thành `1100`, tức là đã loại bỏ một bit `1`.
+
+Vì vậy:
+
+```text
+số bit 1 của i
+=
+số bit 1 của i & (i - 1) + 1
+```
+
+Cách này cũng có:
+
+```text
+O(n) thời gian
+O(n) bộ nhớ
+```
+
+---
+
+# 16. Nên nhớ gì từ bài toán này?
+
+Counting Bits là một bài rất quan trọng để luyện cả **bit manipulation** và **Dynamic Programming**.
+
+Điểm cần ghi nhớ nhất là công thức:
+
+```cpp
+ans[i] = ans[i >> 1] + (i & 1);
+```
+
+Có thể hiểu đơn giản:
+
+```text
+Bỏ bit cuối của i
+        ↓
+   i >> 1
+        ↓
+Đếm số bit 1 của phần còn lại
+        ↓
+Cộng thêm bit cuối của i
+        ↓
+      ans[i]
+```
+
+Ngoài ra, cần nhớ hai phép toán bit:
+
+```cpp
+i >> 1
+```
+
+- Dịch phải 1 bit.
+- Tương đương với bỏ bit cuối trong biểu diễn nhị phân.
+
+```cpp
+i & 1
+```
+
+- Kiểm tra bit cuối.
+- Kết quả là `0` nếu `i` chẵn.
+- Kết quả là `1` nếu `i` lẻ.
+
+Và một kỹ thuật bit rất quan trọng khác:
+
+```cpp
+i & (i - 1)
+```
+
+- Xóa bit `1` thấp nhất của `i`.
+
+---
+
+# 17. Kết luận
+
+Thay vì đếm số bit `1` của từng số một cách độc lập, ta tận dụng kết quả đã tính trước đó.
+
+Với mỗi `i`:
+
+```cpp
+ans[i] = ans[i >> 1] + (i & 1);
+```
+
+Nhờ đó:
+
+- Mỗi `i` chỉ cần `O(1)` thao tác.
+- Tổng thời gian là `O(n)`.
+- Bộ nhớ là `O(n)`.
+- Đây là cách tiếp cận DP tối ưu và rất phù hợp với yêu cầu của bài toán.
+
+**Độ phức tạp cuối cùng:**
+
+```text
+Time:  O(n)
+Space: O(n)
+```
