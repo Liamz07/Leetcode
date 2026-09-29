@@ -1,0 +1,1738 @@
+# Balanced Binary Tree
+
+[LeetCode - Balanced Binary Tree](https://leetcode.com/problems/balanced-binary-tree/)
+
+## 1. Mô tả bài toán
+
+Cho một cây nhị phân `root`, hãy xác định xem cây có phải là một **height-balanced binary tree** hay không.
+
+Một cây nhị phân được gọi là balanced nếu với **mọi node** trong cây:
+
+```text
+|height(left subtree) - height(right subtree)| <= 1
+```
+
+Nói cách khác, chiều cao của cây con trái và cây con phải tại mỗi node không được chênh lệch quá `1`.
+
+Nếu tất cả các node đều thỏa mãn điều kiện trên:
+
+```text
+true
+```
+
+Ngược lại:
+
+```text
+false
+```
+
+---
+
+## 2. Ví dụ
+
+### Ví dụ 1
+
+```text
+        3
+       / \
+      9  20
+         / \
+        15   7
+```
+
+Ta có:
+
+```text
+height(9)  = 1
+height(15) = 1
+height(7)  = 1
+height(20) = 2
+```
+
+Tại node `3`:
+
+```text
+leftHeight  = 1
+rightHeight = 2
+```
+
+Do đó:
+
+```text
+|1 - 2| = 1
+```
+
+Các node còn lại cũng balanced.
+
+Kết quả:
+
+```text
+true
+```
+
+---
+
+### Ví dụ 2
+
+```text
+        1
+       /
+      2
+     /
+    3
+```
+
+Tại node `1`:
+
+```text
+leftHeight  = 2
+rightHeight = 0
+```
+
+Do đó:
+
+```text
+|2 - 0| = 2
+```
+
+Lớn hơn `1`.
+
+Kết quả:
+
+```text
+false
+```
+
+---
+
+# 3. Điều kiện quan trọng nhất
+
+Một cây balanced không có nghĩa là chỉ node `root` balanced.
+
+Điều kiện phải đúng với:
+
+```text
+root
+root->left
+root->right
+...
+```
+
+tức là **mọi node trong cây**.
+
+Ví dụ:
+
+```text
+        1
+       / \
+      2   3
+     /
+    4
+   /
+  5
+```
+
+Có thể chỉ nhìn vào root là chưa đủ. Một cây con bên dưới cũng có thể mất cân bằng.
+
+Vì vậy thuật toán phải kiểm tra đệ quy toàn bộ cây.
+
+---
+
+# 4. Cách tiếp cận trực tiếp nhưng chưa tối ưu
+
+Một cách nghĩ tự nhiên là viết hàm:
+
+```text
+height(root)
+```
+
+để tính chiều cao của cây.
+
+Sau đó viết:
+
+```text
+isBalanced(root)
+```
+
+và tại mỗi node:
+
+```text
+leftHeight = height(root->left)
+rightHeight = height(root->right)
+```
+
+rồi kiểm tra:
+
+```text
+|leftHeight - rightHeight| <= 1
+```
+
+Sau đó tiếp tục:
+
+```text
+isBalanced(root->left)
+isBalanced(root->right)
+```
+
+Ý tưởng:
+
+```text
+isBalanced(root)
+
+    Nếu root == nullptr
+        return true
+
+    leftHeight = height(root->left)
+    rightHeight = height(root->right)
+
+    Nếu chênh lệch > 1
+        return false
+
+    return isBalanced(root->left)
+           &&
+           isBalanced(root->right)
+```
+
+Cách này đúng về mặt logic.
+
+Tuy nhiên nó có một vấn đề về hiệu năng.
+
+---
+
+# 5. Vì sao cách trên có thể là O(n^2)?
+
+Hãy xét một cây lệch hoàn toàn:
+
+```text
+1
+ \
+  2
+   \
+    3
+     \
+      4
+       \
+        5
+```
+
+Khi kiểm tra node `1`, ta tính height của subtree bên dưới.
+
+Sau đó khi kiểm tra node `2`, ta lại tính height của subtree bắt đầu từ `2`.
+
+Tiếp tục như vậy.
+
+Các node phía dưới có thể bị duyệt lại nhiều lần.
+
+Có thể hình dung:
+
+```text
+height(1)
+    duyệt 1,2,3,4,5
+
+height(2)
+    duyệt 2,3,4,5
+
+height(3)
+    duyệt 3,4,5
+
+...
+```
+
+Tổng số thao tác có thể tăng thành:
+
+```text
+n + (n-1) + (n-2) + ... + 1
+```
+
+và có độ phức tạp:
+
+```text
+O(n^2)
+```
+
+Vì vậy đây không phải cách tối ưu.
+
+---
+
+# 6. Ý tưởng tối ưu
+
+Mục tiêu là:
+
+```text
+Mỗi node chỉ được xử lý một lần.
+```
+
+Muốn làm được điều đó, ta kết hợp hai công việc:
+
+```text
+1. Tính chiều cao.
+2. Kiểm tra balanced.
+```
+
+trong **cùng một lần DFS**.
+
+Ta sử dụng **Bottom-Up DFS**.
+
+Thay vì hỏi:
+
+```text
+Node này có balanced không?
+```
+
+rồi lại đi tính height của các subtree nhiều lần, ta đi từ các node con lên node cha.
+
+Tức là:
+
+```text
+Leaf
+  ↓
+Parent
+  ↓
+Grandparent
+  ↓
+...
+  ↓
+Root
+```
+
+---
+
+# 7. Tại sao phải xử lý từ dưới lên?
+
+Để biết node hiện tại balanced hay không, ta cần biết:
+
+```text
+height(left subtree)
+height(right subtree)
+```
+
+Muốn biết chiều cao của hai subtree, ta phải xử lý chúng trước.
+
+Ví dụ:
+
+```text
+        1
+       / \
+      2   3
+     / \
+    4   5
+```
+
+Để kiểm tra `1`, cần biết:
+
+```text
+height(2)
+height(3)
+```
+
+Để biết `height(2)`, cần biết:
+
+```text
+height(4)
+height(5)
+```
+
+Vì vậy thứ tự tự nhiên là:
+
+```text
+4 -> 5 -> 2 -> 3 -> 1
+```
+
+Đây chính là tư duy của **postorder traversal**:
+
+```text
+Left -> Right -> Root
+```
+
+---
+
+# 8. Ý tưởng quan trọng nhất: trả về height hoặc -1
+
+Ta xây dựng một hàm:
+
+```text
+checkHeight(root)
+```
+
+Hàm này có hai nhiệm vụ.
+
+### Nếu subtree balanced
+
+Trả về:
+
+```text
+height của subtree
+```
+
+### Nếu subtree không balanced
+
+Trả về:
+
+```text
+-1
+```
+
+Ta quy ước:
+
+```text
+height >= 0
+    => subtree balanced
+
+-1
+    => subtree không balanced
+```
+
+Tại sao chọn `-1`?
+
+Bởi vì chiều cao hợp lệ luôn:
+
+```text
+0 hoặc lớn hơn
+```
+
+Do đó `-1` không thể nhầm với một chiều cao thực tế.
+
+---
+
+# 9. Công thức của thuật toán
+
+Với node hiện tại:
+
+```text
+root
+```
+
+ta tính:
+
+```text
+leftHeight = checkHeight(root->left)
+rightHeight = checkHeight(root->right)
+```
+
+### Trường hợp 1: cây con trái đã mất cân bằng
+
+Nếu:
+
+```text
+leftHeight == -1
+```
+
+thì toàn bộ subtree hiện tại chắc chắn mất cân bằng.
+
+Trả về:
+
+```text
+-1
+```
+
+### Trường hợp 2: cây con phải đã mất cân bằng
+
+Nếu:
+
+```text
+rightHeight == -1
+```
+
+thì toàn bộ subtree hiện tại cũng mất cân bằng.
+
+Trả về:
+
+```text
+-1
+```
+
+### Trường hợp 3: cả hai subtree đều balanced
+
+Ta kiểm tra:
+
+```text
+|leftHeight - rightHeight| > 1
+```
+
+Nếu đúng:
+
+```text
+return -1
+```
+
+Nếu không:
+
+```text
+return 1 + max(leftHeight, rightHeight)
+```
+
+Đây là toàn bộ ý tưởng của lời giải tối ưu.
+
+---
+
+# 10. Code C++
+
+```cpp
+class Solution {
+public:
+    int checkHeight(TreeNode* root) {
+        if (root == nullptr) {
+            return 0;
+        }
+
+        int leftHeight = checkHeight(root->left);
+
+        if (leftHeight == -1) {
+            return -1;
+        }
+
+        int rightHeight = checkHeight(root->right);
+
+        if (rightHeight == -1) {
+            return -1;
+        }
+
+        if (abs(leftHeight - rightHeight) > 1) {
+            return -1;
+        }
+
+        return 1 + max(leftHeight, rightHeight);
+    }
+
+    bool isBalanced(TreeNode* root) {
+        return checkHeight(root) != -1;
+    }
+};
+```
+
+---
+
+# 11. Giải thích từng phần của code
+
+## 11.1. Base case
+
+```cpp
+if (root == nullptr) {
+    return 0;
+}
+```
+
+Cây rỗng có chiều cao:
+
+```text
+0
+```
+
+và được xem là balanced.
+
+Do đó:
+
+```text
+checkHeight(nullptr) = 0
+```
+
+Đây cũng là điều kiện dừng của đệ quy.
+
+---
+
+## 11.2. Tính chiều cao cây con trái
+
+```cpp
+int leftHeight = checkHeight(root->left);
+```
+
+Hàm đệ quy xử lý toàn bộ cây con trái.
+
+Nếu kết quả:
+
+```text
+leftHeight >= 0
+```
+
+thì cây con trái balanced và `leftHeight` chính là chiều cao của nó.
+
+Nếu:
+
+```text
+leftHeight == -1
+```
+
+thì cây con trái đã mất cân bằng.
+
+---
+
+## 11.3. Cắt nhánh khi subtree trái mất cân bằng
+
+```cpp
+if (leftHeight == -1) {
+    return -1;
+}
+```
+
+Nếu cây con trái đã không balanced thì subtree hiện tại chắc chắn cũng không balanced.
+
+Không cần tính toán thêm.
+
+Đây là một dạng **early termination**.
+
+---
+
+## 11.4. Tính chiều cao cây con phải
+
+```cpp
+int rightHeight = checkHeight(root->right);
+```
+
+Tương tự với cây con phải.
+
+Nếu:
+
+```cpp
+if (rightHeight == -1) {
+    return -1;
+}
+```
+
+thì cây con phải đã mất cân bằng.
+
+---
+
+## 11.5. Kiểm tra node hiện tại
+
+Khi cả hai subtree đều balanced, ta có:
+
+```text
+leftHeight
+rightHeight
+```
+
+Ta kiểm tra:
+
+```cpp
+if (abs(leftHeight - rightHeight) > 1) {
+    return -1;
+}
+```
+
+Nếu chênh lệch lớn hơn `1`, node hiện tại không balanced.
+
+Vì vậy trả về:
+
+```text
+-1
+```
+
+để báo trạng thái này cho parent.
+
+---
+
+## 11.6. Tính chiều cao của subtree hiện tại
+
+Nếu node hiện tại balanced:
+
+```cpp
+return 1 + max(leftHeight, rightHeight);
+```
+
+Chiều cao của một node là:
+
+```text
+1 + chiều cao lớn hơn của hai cây con
+```
+
+Ví dụ:
+
+```text
+        1
+       / \
+      2   3
+```
+
+Ta có:
+
+```text
+leftHeight  = 1
+rightHeight = 1
+```
+
+nên:
+
+```text
+height(1) = 1 + max(1, 1)
+          = 2
+```
+
+---
+
+# 12. Hàm isBalanced
+
+```cpp
+bool isBalanced(TreeNode* root) {
+    return checkHeight(root) != -1;
+}
+```
+
+Nếu:
+
+```text
+checkHeight(root) == -1
+```
+
+thì tồn tại ít nhất một node không balanced.
+
+Kết quả:
+
+```text
+false
+```
+
+Nếu:
+
+```text
+checkHeight(root) >= 0
+```
+
+thì toàn bộ cây balanced.
+
+Kết quả:
+
+```text
+true
+```
+
+---
+
+# 13. Mô phỏng trên cây balanced
+
+Xét:
+
+```text
+        3
+       / \
+      9  20
+         / \
+        15   7
+```
+
+Ta xử lý từ dưới lên.
+
+### Node 9
+
+```text
+leftHeight  = 0
+rightHeight = 0
+```
+
+Chênh lệch:
+
+```text
+0
+```
+
+Trả về:
+
+```text
+1
+```
+
+### Node 15
+
+Trả về:
+
+```text
+1
+```
+
+### Node 7
+
+Trả về:
+
+```text
+1
+```
+
+### Node 20
+
+Ta có:
+
+```text
+leftHeight  = 1
+rightHeight = 1
+```
+
+Chênh lệch:
+
+```text
+0
+```
+
+Nên:
+
+```text
+height(20) = 1 + max(1, 1)
+            = 2
+```
+
+### Node 3
+
+Ta có:
+
+```text
+leftHeight  = 1
+rightHeight = 2
+```
+
+Chênh lệch:
+
+```text
+1
+```
+
+Vẫn balanced.
+
+Do đó:
+
+```text
+height(3) = 1 + max(1, 2)
+          = 3
+```
+
+Cuối cùng:
+
+```text
+checkHeight(root) = 3
+```
+
+Không phải `-1`.
+
+Vậy:
+
+```text
+isBalanced(root) = true
+```
+
+---
+
+# 14. Mô phỏng trên cây không balanced
+
+Xét:
+
+```text
+        1
+       /
+      2
+     /
+    3
+   /
+  4
+```
+
+### Node 4
+
+```text
+leftHeight  = 0
+rightHeight = 0
+```
+
+Trả về:
+
+```text
+1
+```
+
+### Node 3
+
+```text
+leftHeight  = 1
+rightHeight = 0
+```
+
+Chênh lệch:
+
+```text
+1
+```
+
+Vẫn balanced.
+
+Trả về:
+
+```text
+2
+```
+
+### Node 2
+
+```text
+leftHeight  = 2
+rightHeight = 0
+```
+
+Chênh lệch:
+
+```text
+2
+```
+
+Lớn hơn `1`.
+
+Do đó:
+
+```text
+checkHeight(2) = -1
+```
+
+### Node 1
+
+Khi nhận:
+
+```text
+leftHeight = -1
+```
+
+hàm lập tức:
+
+```text
+return -1;
+```
+
+Kết quả cuối cùng:
+
+```text
+false
+```
+
+---
+
+# 15. Tại sao chỉ cần trả về -1?
+
+Khi một subtree đã mất cân bằng, parent không còn cần biết chiều cao chính xác của subtree đó.
+
+Parent chỉ cần biết:
+
+```text
+"Subtree này đã không balanced."
+```
+
+Do đó `-1` đóng vai trò như một tín hiệu:
+
+```text
+-1
+ ↓
+Subtree không hợp lệ
+ ↓
+Parent cũng không thể balanced
+```
+
+Điều này giúp code vừa ngắn vừa tránh các phép tính không cần thiết.
+
+---
+
+# 16. Vì sao cách này đạt O(n)?
+
+Mỗi node được xử lý tối đa một lần.
+
+Tại mỗi node, ta chỉ thực hiện một số thao tác hằng số:
+
+```text
+- gọi cây con trái
+- gọi cây con phải
+- so sánh hai height
+- tính max
+```
+
+Không có việc tính lại height của một subtree.
+
+Do đó:
+
+```text
+Time Complexity = O(n)
+```
+
+Trong đó `n` là số node.
+
+Đây là cải thiện quan trọng so với cách tính height lặp lại có thể đạt:
+
+```text
+O(n^2)
+```
+
+---
+
+# 17. Space Complexity
+
+Ta sử dụng DFS đệ quy.
+
+Số lượng lời gọi đệ quy đồng thời phụ thuộc vào chiều cao cây `h`.
+
+Do đó:
+
+```text
+Space Complexity = O(h)
+```
+
+### Nếu cây cân bằng
+
+```text
+h = O(log n)
+```
+
+nên:
+
+```text
+O(log n)
+```
+
+### Nếu cây lệch hoàn toàn
+
+Ví dụ:
+
+```text
+1
+ \
+  2
+   \
+    3
+     \
+      4
+```
+
+thì:
+
+```text
+h = O(n)
+```
+
+nên:
+
+```text
+O(n)
+```
+
+---
+
+# 18. Tại sao không cần vector, map hay set?
+
+Bài toán chỉ cần biết:
+
+```text
+height của subtree
+```
+
+và:
+
+```text
+subtree có balanced hay không
+```
+
+Ta có thể truyền cả hai thông tin thông qua một giá trị trả về:
+
+```text
+height >= 0
+```
+
+hoặc:
+
+```text
+-1
+```
+
+Do đó không cần thêm cấu trúc dữ liệu.
+
+---
+
+# 19. Một cách tiếp cận khác: dùng biến bool
+
+Có thể viết một DFS tính height và lưu trạng thái balanced trong biến:
+
+```cpp
+class Solution {
+public:
+    bool balanced = true;
+
+    int height(TreeNode* root) {
+        if (root == nullptr) {
+            return 0;
+        }
+
+        int leftHeight = height(root->left);
+        int rightHeight = height(root->right);
+
+        if (abs(leftHeight - rightHeight) > 1) {
+            balanced = false;
+        }
+
+        return 1 + max(leftHeight, rightHeight);
+    }
+
+    bool isBalanced(TreeNode* root) {
+        height(root);
+        return balanced;
+    }
+};
+```
+
+Cách này cũng có:
+
+```text
+Time: O(n)
+Space: O(h)
+```
+
+Nhưng cách dùng `-1` thường dễ kiểm soát hơn vì trạng thái mất cân bằng được truyền trực tiếp qua return value.
+
+Ngoài ra, cách `-1` cho phép dừng sớm khi đã phát hiện subtree không balanced.
+
+---
+
+# 20. Những lỗi thường gặp
+
+## Lỗi 1: Chỉ kiểm tra root
+
+Ví dụ chỉ kiểm tra:
+
+```cpp
+abs(height(root->left) - height(root->right)) <= 1
+```
+
+là chưa đủ.
+
+Một subtree bên dưới có thể mất cân bằng.
+
+Phải kiểm tra mọi node.
+
+---
+
+## Lỗi 2: Tính height lặp lại
+
+Cách:
+
+```text
+height()
++
+isBalanced()
+```
+
+nếu gọi `height()` độc lập tại mọi node có thể dẫn đến:
+
+```text
+O(n^2)
+```
+
+Cần kết hợp hai công việc trong một DFS bottom-up.
+
+---
+
+## Lỗi 3: Nhầm balanced với complete hoặc perfect
+
+Balanced không yêu cầu:
+
+```text
+mọi level đều đầy
+```
+
+và cũng không yêu cầu:
+
+```text
+tất cả leaf nằm cùng một level
+```
+
+Chỉ cần:
+
+```text
+|leftHeight - rightHeight| <= 1
+```
+
+ở mọi node.
+
+---
+
+## Lỗi 4: Nghĩ rằng node có một con luôn mất cân bằng
+
+Ví dụ:
+
+```text
+    1
+   /
+  2
+```
+
+Ta có:
+
+```text
+leftHeight  = 1
+rightHeight = 0
+```
+
+Chênh lệch:
+
+```text
+1
+```
+
+Vẫn balanced.
+
+Chỉ khi chênh lệch lớn hơn `1` mới mất cân bằng.
+
+---
+
+## Lỗi 5: Quên kiểm tra trạng thái -1
+
+Nếu cây con đã trả về:
+
+```text
+-1
+```
+
+không được dùng `-1` như một chiều cao bình thường.
+
+Phải kiểm tra:
+
+```cpp
+if (leftHeight == -1) {
+    return -1;
+}
+```
+
+và tương tự với cây con phải.
+
+---
+
+# 21. Các trường hợp biên
+
+### Cây rỗng
+
+```text
+root = nullptr
+```
+
+Kết quả:
+
+```text
+true
+```
+
+vì:
+
+```cpp
+checkHeight(nullptr) = 0;
+```
+
+---
+
+### Chỉ có một node
+
+```text
+    1
+```
+
+Kết quả:
+
+```text
+true
+```
+
+---
+
+### Một node có một con
+
+```text
+    1
+   /
+  2
+```
+
+Kết quả:
+
+```text
+true
+```
+
+vì chênh lệch height bằng `1`.
+
+---
+
+### Chênh lệch bằng đúng 1
+
+```text
+        1
+       / \
+      2   3
+     /
+    4
+```
+
+Tại `1`:
+
+```text
+leftHeight  = 2
+rightHeight = 1
+```
+
+Chênh lệch:
+
+```text
+1
+```
+
+Vẫn balanced.
+
+---
+
+### Chênh lệch bằng 2
+
+```text
+    1
+   /
+  2
+ /
+3
+```
+
+Tại `1`:
+
+```text
+leftHeight  = 2
+rightHeight = 0
+```
+
+Chênh lệch:
+
+```text
+2
+```
+
+Không balanced.
+
+---
+
+# 22. Pattern quan trọng: Bottom-Up DFS
+
+`Balanced Binary Tree` là một ví dụ điển hình của **Bottom-Up Tree DP**.
+
+Thay vì truyền thông tin:
+
+```text
+Parent -> Child
+```
+
+ta lấy thông tin:
+
+```text
+Child -> Parent
+```
+
+Ví dụ:
+
+```text
+             Parent
+             /    \
+            /      \
+       Left child  Right child
+          ↓            ↓
+       height        height
+            \        /
+             \      /
+              Parent
+```
+
+Parent chỉ có thể tính kết quả sau khi đã biết kết quả của hai child.
+
+Pattern tổng quát:
+
+```text
+1. Giải bài toán cho left subtree.
+2. Giải bài toán cho right subtree.
+3. Dùng hai kết quả để giải bài toán tại node hiện tại.
+4. Trả kết quả lên parent.
+```
+
+Đây là pattern cực kỳ quan trọng khi học Binary Tree.
+
+---
+
+# 23. Công thức cần ghi nhớ
+
+Tại mỗi node:
+
+```text
+leftHeight = checkHeight(left)
+rightHeight = checkHeight(right)
+```
+
+Nếu:
+
+```text
+leftHeight == -1
+```
+
+hoặc:
+
+```text
+rightHeight == -1
+```
+
+thì:
+
+```text
+current = -1
+```
+
+Nếu cả hai đều hợp lệ nhưng:
+
+```text
+|leftHeight - rightHeight| > 1
+```
+
+thì:
+
+```text
+current = -1
+```
+
+Ngược lại:
+
+```text
+currentHeight = 1 + max(leftHeight, rightHeight)
+```
+
+Có thể nhớ ngắn gọn:
+
+```text
+Balanced subtree
+    -> return height
+
+Unbalanced subtree
+    -> return -1
+```
+
+---
+
+# 24. Chứng minh tính đúng đắn
+
+Ta chứng minh rằng `checkHeight(root)` trả về:
+
+- `-1` nếu subtree tại `root` không balanced.
+- Chiều cao của subtree nếu subtree balanced.
+
+## Trường hợp cơ sở
+
+Nếu:
+
+```text
+root == nullptr
+```
+
+ta trả:
+
+```text
+0
+```
+
+Cây rỗng balanced và có height `0`.
+
+Mệnh đề đúng.
+
+## Trường hợp tổng quát
+
+Giả sử hai lời gọi đệ quy:
+
+```text
+checkHeight(root->left)
+checkHeight(root->right)
+```
+
+đã trả về đúng.
+
+### Nếu một bên trả về -1
+
+Subtree tương ứng không balanced.
+
+Vậy subtree hiện tại cũng không balanced.
+
+Trả về:
+
+```text
+-1
+```
+
+là đúng.
+
+### Nếu cả hai bên đều hợp lệ
+
+Ta có chính xác:
+
+```text
+leftHeight
+rightHeight
+```
+
+Nếu:
+
+```text
+|leftHeight - rightHeight| > 1
+```
+
+thì node hiện tại vi phạm điều kiện balanced.
+
+Trả về:
+
+```text
+-1
+```
+
+là đúng.
+
+Ngược lại, node hiện tại balanced và chiều cao của nó là:
+
+```text
+1 + max(leftHeight, rightHeight)
+```
+
+Vì vậy hàm trả về đúng chiều cao.
+
+Theo quy nạp, toàn bộ cây được xử lý chính xác.
+
+---
+
+# 25. Tại sao đây là lời giải tối ưu?
+
+Có ba điểm quan trọng.
+
+### 1. Mỗi node chỉ xử lý một lần
+
+```text
+O(n)
+```
+
+### 2. Không lưu toàn bộ cây hoặc các subtree
+
+Chỉ dùng call stack:
+
+```text
+O(h)
+```
+
+### 3. Có thể dừng sớm
+
+Ngay khi nhận:
+
+```text
+-1
+```
+
+ta biết subtree hiện tại không balanced và truyền `-1` lên trên.
+
+Không cần tính thêm height chính xác.
+
+---
+
+# 26. Lời giải C++ hoàn chỉnh
+
+```cpp
+class Solution {
+public:
+    int checkHeight(TreeNode* root) {
+        if (root == nullptr) {
+            return 0;
+        }
+
+        int leftHeight = checkHeight(root->left);
+
+        if (leftHeight == -1) {
+            return -1;
+        }
+
+        int rightHeight = checkHeight(root->right);
+
+        if (rightHeight == -1) {
+            return -1;
+        }
+
+        if (abs(leftHeight - rightHeight) > 1) {
+            return -1;
+        }
+
+        return 1 + max(leftHeight, rightHeight);
+    }
+
+    bool isBalanced(TreeNode* root) {
+        return checkHeight(root) != -1;
+    }
+};
+```
+
+---
+
+# 27. Tóm tắt phương pháp
+
+Có thể ghi nhớ bài toán bằng các bước:
+
+```text
+Bước 1:
+Nếu root == nullptr
+-> return 0
+
+Bước 2:
+Tính height của cây con trái.
+
+Bước 3:
+Nếu cây con trái trả -1
+-> return -1
+
+Bước 4:
+Tính height của cây con phải.
+
+Bước 5:
+Nếu cây con phải trả -1
+-> return -1
+
+Bước 6:
+Nếu chênh lệch hai height > 1
+-> return -1
+
+Bước 7:
+Ngược lại
+-> return 1 + max(leftHeight, rightHeight)
+```
+
+Cuối cùng:
+
+```cpp
+return checkHeight(root) != -1;
+```
+
+---
+
+# 28. Độ phức tạp cuối cùng
+
+Với `n` là số node và `h` là chiều cao cây:
+
+```text
+Time Complexity:  O(n)
+Space Complexity: O(h)
+```
+
+Trong worst case khi cây lệch hoàn toàn:
+
+```text
+h = n
+```
+
+nên:
+
+```text
+Space = O(n)
+```
+
+Nếu cây cân bằng:
+
+```text
+h = O(log n)
+```
+
+nên:
+
+```text
+Space = O(log n)
+```
+
+---
+
+# 29. Kết luận
+
+`Balanced Binary Tree` là một bài rất quan trọng để học cách tối ưu DFS trên Binary Tree.
+
+Cách tiếp cận cơ bản:
+
+```text
+Tính height riêng
++
+Kiểm tra balanced riêng
+```
+
+có thể khiến cùng một subtree bị duyệt nhiều lần và đạt:
+
+```text
+O(n^2)
+```
+
+trong trường hợp xấu.
+
+Cách tối ưu là dùng:
+
+```text
+Bottom-Up DFS
+```
+
+và để một hàm trả về:
+
+```text
+height >= 0
+```
+
+nếu subtree balanced, hoặc:
+
+```text
+-1
+```
+
+nếu subtree không balanced.
+
+Từ đó mỗi node chỉ được xử lý một lần:
+
+```text
+Left subtree
+      ↓
+Right subtree
+      ↓
+Kiểm tra balance
+      ↓
+Tính height
+      ↓
+Trả kết quả lên parent
+```
+
+Lời giải tối ưu:
+
+```cpp
+class Solution {
+public:
+    int checkHeight(TreeNode* root) {
+        if (root == nullptr) {
+            return 0;
+        }
+
+        int leftHeight = checkHeight(root->left);
+
+        if (leftHeight == -1) {
+            return -1;
+        }
+
+        int rightHeight = checkHeight(root->right);
+
+        if (rightHeight == -1) {
+            return -1;
+        }
+
+        if (abs(leftHeight - rightHeight) > 1) {
+            return -1;
+        }
+
+        return 1 + max(leftHeight, rightHeight);
+    }
+
+    bool isBalanced(TreeNode* root) {
+        return checkHeight(root) != -1;
+    }
+};
+```
+
+Pattern quan trọng cần ghi nhớ:
+
+```text
+Bottom-Up DFS
++
+Return useful information from child
++
+Use that information at parent
++
+Return a special value when the subtree is invalid
+```
+
+Pattern này không chỉ dùng cho `Balanced Binary Tree`, mà còn xuất hiện trong nhiều bài Binary Tree và Tree DP khác.
