@@ -1,0 +1,897 @@
+# Find Center of Star Graph — LeetCode
+
+## 1. Thông tin bài toán
+
+**Bài toán:** [Find Center of Star Graph](https://leetcode.com/problems/find-center-of-star-graph/)
+
+Cho một đồ thị vô hướng dạng **star graph** có `n` đỉnh.
+
+Một star graph gồm:
+
+- Một đỉnh trung tâm (center).
+- `n - 1` đỉnh còn lại.
+- Mỗi đỉnh còn lại chỉ được nối trực tiếp với đỉnh trung tâm.
+- Có tổng cộng `n - 1` cạnh.
+
+Mảng `edges` chứa các cạnh của đồ thị:
+
+```text
+edges[i] = [u, v]
+```
+
+Trong đó `u` và `v` là hai đỉnh được nối với nhau.
+
+Yêu cầu: **Tìm và trả về đỉnh trung tâm của star graph.**
+
+---
+
+## 2. Ví dụ
+
+### Ví dụ 1
+
+```text
+Input:
+edges = [[1,2],[2,3],[4,2]]
+
+Output:
+2
+```
+
+Giải thích:
+
+```text
+    1
+    |
+    2 --- 3
+    |
+    4
+```
+
+Đỉnh `2` được nối với tất cả các đỉnh còn lại nên `2` là center.
+
+---
+
+### Ví dụ 2
+
+```text
+Input:
+edges = [[1,2],[5,1],[1,3],[1,4]]
+
+Output:
+1
+```
+
+Đỉnh `1` được nối với `2`, `5`, `3`, `4`.
+
+Do đó:
+
+```text
+1
+|
+2
+
+5
+|
+1
+|
+3
+
+1
+|
+4
+```
+
+Center là `1`.
+
+---
+
+# 3. Phân tích cấu trúc của Star Graph
+
+Đây là phần quan trọng nhất để tìm ra lời giải tối ưu.
+
+Giả sử đồ thị có `n` đỉnh.
+
+Star graph có dạng:
+
+```text
+        leaf
+          |
+leaf --- center --- leaf
+          |
+        leaf
+```
+
+Đặc điểm:
+
+- Center được nối với **tất cả** các đỉnh khác.
+- Mỗi leaf chỉ được nối với center.
+- Vì vậy:
+  - Degree của center = `n - 1`
+  - Degree của mỗi leaf = `1`
+
+Do đó, nếu duyệt toàn bộ đồ thị và đếm degree của từng đỉnh, ta chắc chắn tìm được center.
+
+Tuy nhiên, bài toán còn có một cách đơn giản hơn rất nhiều.
+
+---
+
+# 4. Nhận xét quan trọng
+
+Chỉ cần nhìn vào **hai cạnh đầu tiên**.
+
+Giả sử:
+
+```text
+edges[0] = [a, b]
+edges[1] = [c, d]
+```
+
+Vì đây là một star graph, **hai cạnh bất kỳ đều phải có chung đỉnh trung tâm**.
+
+Ví dụ:
+
+```text
+edges = [
+    [1, 2],
+    [2, 3],
+    [2, 4]
+]
+```
+
+Hai cạnh đầu tiên:
+
+```text
+[1, 2]
+[2, 3]
+```
+
+Hai cạnh có đỉnh chung là:
+
+```text
+2
+```
+
+Vậy `2` chính là center.
+
+---
+
+# 5. Vì sao hai cạnh đầu tiên luôn có chung center?
+
+Trong star graph:
+
+```text
+        1
+        |
+        2
+       / \
+      3   4
+```
+
+Mọi cạnh đều bắt buộc phải chứa center `2`.
+
+Các cạnh:
+
+```text
+[1,2]
+[2,3]
+[2,4]
+```
+
+đều chứa `2`.
+
+Do đó, khi lấy bất kỳ hai cạnh nào:
+
+```text
+[a, b]
+[c, d]
+```
+
+thì chắc chắn phải có ít nhất một đỉnh xuất hiện trong cả hai cạnh.
+
+Đỉnh xuất hiện trong cả hai cạnh chính là center.
+
+---
+
+# 6. Các trường hợp có thể xảy ra
+
+Giả sử:
+
+```text
+edges[0] = [a, b]
+edges[1] = [c, d]
+```
+
+Vì hai cạnh có chung center nên một trong các trường hợp sau xảy ra:
+
+```text
+a == c
+```
+
+hoặc:
+
+```text
+a == d
+```
+
+hoặc:
+
+```text
+b == c
+```
+
+hoặc:
+
+```text
+b == d
+```
+
+Ta chỉ cần kiểm tra các khả năng này.
+
+Có thể viết ngắn gọn bằng:
+
+```cpp
+if (edges[0][0] == edges[1][0] ||
+    edges[0][0] == edges[1][1])
+{
+    return edges[0][0];
+}
+
+return edges[0][1];
+```
+
+Nhưng thực tế có thể suy nghĩ đơn giản hơn:
+
+- Nếu `edges[0][0]` xuất hiện trong cạnh thứ hai → nó là center.
+- Nếu không → `edges[0][1]` chắc chắn là center.
+
+---
+
+# 7. Phương pháp 1 — Đếm degree
+
+Đây là phương pháp trực tiếp từ định nghĩa của star graph.
+
+## Ý tưởng
+
+Tạo một mảng hoặc hash map để đếm số cạnh kết nối với từng đỉnh.
+
+Với mỗi cạnh:
+
+```text
+[u, v]
+```
+
+ta tăng:
+
+```text
+degree[u]++
+degree[v]++
+```
+
+Sau khi duyệt toàn bộ cạnh:
+
+- Center có degree lớn nhất.
+- Trong star graph, center có degree `n - 1`.
+- Các leaf có degree `1`.
+
+## Ví dụ
+
+```text
+edges = [[1,2],[2,3],[2,4],[2,5]]
+```
+
+Ta có:
+
+```text
+degree[1] = 1
+degree[2] = 4
+degree[3] = 1
+degree[4] = 1
+degree[5] = 1
+```
+
+Center:
+
+```text
+2
+```
+
+## Độ phức tạp
+
+Có `n - 1` cạnh.
+
+Ta phải duyệt toàn bộ cạnh:
+
+```text
+Time: O(n)
+Space: O(n)
+```
+
+Phương pháp này đúng nhưng chưa tối ưu về số lượng dữ liệu cần xử lý.
+
+---
+
+# 8. Phương pháp 2 — Dùng Set
+
+Có thể lưu các đỉnh xuất hiện trong các cạnh rồi tìm đỉnh xuất hiện nhiều nhất.
+
+Tuy nhiên cách này cũng không cần thiết.
+
+Vì:
+
+- Star graph có cấu trúc rất đặc biệt.
+- Không cần biết degree của tất cả các đỉnh.
+- Chỉ cần hai cạnh đầu tiên.
+
+Vì vậy dùng `set`, `map` hoặc `unordered_map` đều là **overkill** cho bài toán này.
+
+---
+
+# 9. Phương pháp 3 — Chỉ kiểm tra hai cạnh đầu tiên
+
+Đây là phương pháp tối ưu nhất.
+
+Giả sử:
+
+```text
+edges[0] = [a, b]
+edges[1] = [c, d]
+```
+
+Center phải nằm trong cả hai cạnh.
+
+Ta kiểm tra:
+
+```cpp
+if (a == c || a == d)
+    return a;
+```
+
+Nếu `a` không xuất hiện trong cạnh thứ hai thì `b` chắc chắn là center.
+
+Có thể viết:
+
+```cpp
+class Solution {
+public:
+    int findCenter(vector<vector<int>>& edges) {
+        if (edges[0][0] == edges[1][0] ||
+            edges[0][0] == edges[1][1]) {
+            return edges[0][0];
+        }
+
+        return edges[0][1];
+    }
+};
+```
+
+---
+
+# 10. Chứng minh tính đúng đắn
+
+Ta cần chứng minh thuật toán luôn trả về center.
+
+Gọi:
+
+```text
+edges[0] = [a, b]
+edges[1] = [c, d]
+```
+
+Vì đồ thị là star graph nên mọi cạnh đều chứa center.
+
+Do đó hai cạnh `edges[0]` và `edges[1]` chắc chắn có chung một đỉnh.
+
+Có hai trường hợp.
+
+## Trường hợp 1
+
+```text
+a == c
+```
+
+hoặc:
+
+```text
+a == d
+```
+
+Khi đó `a` xuất hiện trong cả hai cạnh.
+
+Vì trong star graph, hai cạnh khác nhau chỉ có thể chung center nên:
+
+```text
+a = center
+```
+
+Thuật toán trả về `a`.
+
+Đúng.
+
+---
+
+## Trường hợp 2
+
+`a` không xuất hiện trong cạnh thứ hai.
+
+Khi đó đỉnh chung của hai cạnh bắt buộc phải là `b`.
+
+Vì vậy:
+
+```text
+b = center
+```
+
+Thuật toán trả về `b`.
+
+Đúng.
+
+---
+
+## Kết luận
+
+Trong mọi trường hợp, thuật toán đều trả về đúng center.
+
+---
+
+# 11. Vì sao không cần duyệt các cạnh còn lại?
+
+Đây là điểm rất quan trọng để hiểu bản chất bài toán.
+
+Giả sử:
+
+```text
+edges = [
+    [1, 2],
+    [2, 3],
+    [2, 4],
+    [2, 5],
+    [2, 6],
+    ...
+]
+```
+
+Ngay sau khi nhìn vào:
+
+```text
+[1,2]
+[2,3]
+```
+
+ta đã biết:
+
+```text
+center = 2
+```
+
+Các cạnh:
+
+```text
+[2,4]
+[2,5]
+[2,6]
+...
+```
+
+không cung cấp thêm thông tin cần thiết để xác định center.
+
+Vì vậy không cần:
+
+```cpp
+for (...)
+```
+
+để duyệt toàn bộ `edges`.
+
+---
+
+# 12. Độ phức tạp
+
+Thuật toán chỉ truy cập:
+
+```text
+edges[0]
+edges[1]
+```
+
+Số phép kiểm tra không phụ thuộc vào `n`.
+
+Do đó:
+
+### Time Complexity
+
+```text
+O(1)
+```
+
+### Space Complexity
+
+```text
+O(1)
+```
+
+Đây là lời giải tối ưu theo số lượng phần tử cần xử lý.
+
+---
+
+# 13. So sánh các phương pháp
+
+| Phương pháp | Time | Space | Nhận xét |
+|---|---:|---:|---|
+| Đếm degree | O(n) | O(n) | Đúng nhưng xử lý toàn bộ graph |
+| Hash map | O(n) | O(n) | Không cần thiết |
+| Set | O(n log n) | O(n) | Overkill |
+| Kiểm tra 2 cạnh đầu | O(1) | O(1) | Tối ưu |
+
+Trong bài toán này, phương pháp kiểm tra hai cạnh đầu tiên là phù hợp nhất.
+
+---
+
+# 14. Lời giải C++ tối ưu
+
+```cpp
+class Solution {
+public:
+    int findCenter(vector<vector<int>>& edges) {
+        if (edges[0][0] == edges[1][0] ||
+            edges[0][0] == edges[1][1]) {
+            return edges[0][0];
+        }
+
+        return edges[0][1];
+    }
+};
+```
+
+---
+
+# 15. Giải thích code từng dòng
+
+## Khai báo class
+
+```cpp
+class Solution {
+```
+
+LeetCode yêu cầu viết lời giải trong class `Solution`.
+
+---
+
+## Hàm `findCenter`
+
+```cpp
+int findCenter(vector<vector<int>>& edges)
+```
+
+Hàm nhận vào:
+
+```text
+edges
+```
+
+là danh sách các cạnh.
+
+Mỗi cạnh có hai phần tử:
+
+```text
+edges[i][0]
+edges[i][1]
+```
+
+Hàm trả về một số nguyên là center.
+
+---
+
+## Kiểm tra đỉnh đầu tiên của cạnh đầu
+
+```cpp
+if (edges[0][0] == edges[1][0] ||
+    edges[0][0] == edges[1][1])
+```
+
+Ta kiểm tra xem:
+
+```text
+edges[0][0]
+```
+
+có xuất hiện trong cạnh thứ hai hay không.
+
+Cạnh thứ hai có hai đỉnh:
+
+```text
+edges[1][0]
+edges[1][1]
+```
+
+Nếu một trong hai bằng `edges[0][0]`, thì `edges[0][0]` chính là đỉnh chung của hai cạnh.
+
+Mà đỉnh chung của hai cạnh trong star graph chính là center.
+
+---
+
+## Trả về center
+
+```cpp
+return edges[0][0];
+```
+
+Nếu điều kiện đúng, `edges[0][0]` là center.
+
+---
+
+## Trường hợp còn lại
+
+```cpp
+return edges[0][1];
+```
+
+Nếu `edges[0][0]` không xuất hiện trong cạnh thứ hai thì đỉnh chung phải là:
+
+```text
+edges[0][1]
+```
+
+Do đó nó là center.
+
+---
+
+# 16. Dry Run
+
+## Test 1
+
+```text
+edges = [[1,2],[2,3],[2,4]]
+```
+
+Lấy hai cạnh đầu:
+
+```text
+edges[0] = [1,2]
+edges[1] = [2,3]
+```
+
+Kiểm tra:
+
+```text
+1 == 2 → false
+1 == 3 → false
+```
+
+Không thỏa điều kiện.
+
+Trả về:
+
+```text
+edges[0][1] = 2
+```
+
+Kết quả:
+
+```text
+2
+```
+
+---
+
+## Test 2
+
+```text
+edges = [[2,1],[2,3],[2,4]]
+```
+
+Hai cạnh đầu:
+
+```text
+[2,1]
+[2,3]
+```
+
+Kiểm tra:
+
+```text
+2 == 2 → true
+```
+
+Trả về:
+
+```text
+2
+```
+
+---
+
+## Test 3
+
+```text
+edges = [[5,1],[2,5],[5,3],[5,4]]
+```
+
+Hai cạnh đầu:
+
+```text
+[5,1]
+[2,5]
+```
+
+Kiểm tra:
+
+```text
+5 == 2 → false
+5 == 5 → true
+```
+
+Trả về:
+
+```text
+5
+```
+
+---
+
+# 17. Một cách suy nghĩ khác
+
+Có thể ghi nhớ bài này bằng câu:
+
+> **Trong star graph, center là đỉnh xuất hiện trong hai cạnh bất kỳ.**
+
+Vì vậy khi gặp:
+
+```text
+Find Center of Star Graph
+```
+
+hãy nghĩ ngay:
+
+```text
+Lấy 2 cạnh đầu tiên
+        ↓
+Tìm đỉnh chung
+        ↓
+Đỉnh chung = center
+```
+
+Không cần:
+
+- DFS
+- BFS
+- Degree array
+- Hash map
+- Set
+- Duyệt toàn bộ graph
+
+---
+
+# 18. Những lỗi thường gặp
+
+## Lỗi 1: Duyệt toàn bộ graph khi không cần
+
+Ví dụ:
+
+```cpp
+for (int i = 0; i < edges.size(); i++) {
+    ...
+}
+```
+
+Không sai, nhưng không tận dụng được tính chất đặc biệt của star graph.
+
+---
+
+## Lỗi 2: Nghĩ rằng phải tìm node có degree lớn nhất
+
+Cách này đúng về mặt ý tưởng:
+
+```text
+center có degree lớn nhất
+```
+
+nhưng bài toán không yêu cầu xây dựng toàn bộ degree.
+
+Chỉ cần hai cạnh đầu tiên là đủ.
+
+---
+
+## Lỗi 3: Dùng DFS/BFS
+
+Star graph không yêu cầu traversal.
+
+DFS/BFS thường dùng khi cần:
+
+- Duyệt toàn bộ graph.
+- Kiểm tra liên thông.
+- Tìm đường đi.
+- Tìm khoảng cách.
+- Tìm thành phần liên thông.
+
+Ở đây ta đã biết graph chắc chắn là star graph nên traversal là không cần thiết.
+
+---
+
+# 19. Pattern DSA cần ghi nhớ
+
+Bài này là một ví dụ về việc **khai thác cấu trúc đặc biệt của input**.
+
+Khi gặp một bài toán graph, đừng mặc định phải dùng:
+
+```text
+DFS
+BFS
+Union-Find
+Dijkstra
+Floyd-Warshall
+```
+
+Hãy đọc kỹ constraint và cấu trúc graph.
+
+Nếu đề cho biết graph có cấu trúc đặc biệt, có thể tồn tại lời giải đơn giản hơn rất nhiều.
+
+Đối với Star Graph:
+
+```text
+Mọi cạnh đều chứa center
+        ↓
+Hai cạnh bất kỳ đều chứa center
+        ↓
+Center = giao của hai cạnh
+        ↓
+Chỉ cần 2 cạnh
+        ↓
+O(1)
+```
+
+---
+
+# 20. Tổng kết
+
+### Ý tưởng cốt lõi
+
+Star graph có một center và mọi cạnh đều nối với center.
+
+Vì vậy hai cạnh đầu tiên chắc chắn có chung center.
+
+### Thuật toán
+
+```text
+1. Lấy cạnh đầu tiên.
+2. Lấy cạnh thứ hai.
+3. Kiểm tra edges[0][0] có xuất hiện trong edges[1] không.
+4. Nếu có → edges[0][0] là center.
+5. Nếu không → edges[0][1] là center.
+```
+
+### Complexity
+
+```text
+Time: O(1)
+Space: O(1)
+```
+
+### Code tối ưu
+
+```cpp
+class Solution {
+public:
+    int findCenter(vector<vector<int>>& edges) {
+        if (edges[0][0] == edges[1][0] ||
+            edges[0][0] == edges[1][1]) {
+            return edges[0][0];
+        }
+
+        return edges[0][1];
+    }
+};
+```
+
+### Điều cần nhớ
+
+```text
+Star Graph
+    ↓
+Mọi cạnh chứa center
+    ↓
+Hai cạnh bất kỳ có chung center
+    ↓
+Chỉ cần kiểm tra 2 cạnh đầu tiên
+    ↓
+O(1) Time + O(1) Space
+```
