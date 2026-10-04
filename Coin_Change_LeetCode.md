@@ -1,0 +1,1318 @@
+# Coin Change - LeetCode
+
+## 1. Phát biểu bài toán
+
+Cho một mảng `coins`, trong đó `coins[i]` là một loại mệnh giá tiền, và
+một số nguyên `amount`.
+
+Mỗi loại tiền có thể được sử dụng **không giới hạn số lần**.
+
+Hãy tìm **số lượng đồng xu ít nhất** cần dùng để tạo ra đúng `amount`.
+
+Nếu không thể tạo ra `amount`, trả về `-1`.
+
+### Ví dụ
+
+``` text
+Input:
+coins = [1, 2, 5]
+amount = 11
+
+Output:
+3
+```
+
+Giải thích:
+
+``` text
+11 = 5 + 5 + 1
+```
+
+Có 3 đồng xu và đây là số lượng ít nhất.
+
+------------------------------------------------------------------------
+
+## 2. Điều quan trọng cần nhận ra
+
+Đây là một bài toán tối ưu:
+
+> Với một tổng tiền `amount`, cần tìm số lượng đồng xu nhỏ nhất để tạo
+> thành tổng đó.
+
+Có hai điểm rất quan trọng:
+
+### Điểm 1: Một đồng xu có thể dùng nhiều lần
+
+Ví dụ:
+
+``` text
+coins = [1, 2, 5]
+amount = 11
+```
+
+Ta có thể dùng đồng `5` nhiều lần:
+
+``` text
+5 + 5 + 1
+```
+
+Vì vậy đây không phải bài toán mỗi loại tiền chỉ được chọn một lần.
+
+### Điểm 2: Không phải cứ chọn đồng tiền lớn nhất là tối ưu
+
+Ví dụ:
+
+``` text
+coins = [1, 3, 4]
+amount = 6
+```
+
+Nếu tham lam chọn đồng lớn nhất:
+
+``` text
+6 -> 4 -> còn 2 -> 1 + 1
+```
+
+Ta được:
+
+``` text
+4 + 1 + 1
+```
+
+Có 3 đồng.
+
+Nhưng đáp án tối ưu là:
+
+``` text
+3 + 3
+```
+
+Chỉ có 2 đồng.
+
+Do đó, cách **tham lam chọn đồng lớn nhất** không đảm bảo đúng.
+
+Đây là dấu hiệu rất rõ cho thấy ta nên nghĩ đến **Dynamic Programming
+(DP)**.
+
+------------------------------------------------------------------------
+
+# 3. Phương hướng 1: Brute Force / Đệ quy
+
+Ta có thể thử mọi khả năng.
+
+Ví dụ:
+
+``` text
+amount = 6
+coins = [1, 3, 4]
+```
+
+Ở trạng thái `6`, ta có thể chọn:
+
+``` text
+6 - 1 = 5
+6 - 3 = 3
+6 - 4 = 2
+```
+
+Sau đó tiếp tục giải các bài toán nhỏ hơn:
+
+``` text
+solve(6)
+    -> solve(5)
+    -> solve(3)
+    -> solve(2)
+```
+
+Với mỗi trạng thái, ta lại thử tất cả các loại tiền.
+
+## Vấn đề
+
+Các trạng thái giống nhau có thể xuất hiện rất nhiều lần.
+
+Ví dụ `solve(6)` có thể gọi `solve(3)` theo nhiều nhánh khác nhau.
+
+Nếu mỗi lần đều tính lại từ đầu thì chương trình sẽ thực hiện rất nhiều
+phép tính trùng lặp.
+
+Đây chính là **overlapping subproblems**.
+
+Vì vậy, brute force có độ phức tạp rất lớn và không phù hợp khi `amount`
+lớn.
+
+------------------------------------------------------------------------
+
+# 4. Nhận ra bài toán con
+
+Thay vì tìm trực tiếp đáp án cho `amount`, ta xét các số tiền nhỏ hơn.
+
+Đặt:
+
+``` text
+dp[x] = số lượng đồng xu ít nhất để tạo thành số tiền x
+```
+
+Ví dụ:
+
+``` text
+coins = [1, 2, 5]
+```
+
+Ta có:
+
+``` text
+dp[0] = 0
+```
+
+Vì để tạo ra số tiền `0`, ta cần 0 đồng xu.
+
+Sau đó:
+
+``` text
+dp[1] = 1
+dp[2] = 1
+dp[3] = 2
+dp[4] = 2
+dp[5] = 1
+...
+```
+
+Cuối cùng:
+
+``` text
+dp[amount]
+```
+
+chính là đáp án.
+
+------------------------------------------------------------------------
+
+# 5. Tìm công thức chuyển trạng thái
+
+Đây là phần quan trọng nhất của bài.
+
+Giả sử ta đang muốn tính:
+
+``` text
+dp[x]
+```
+
+Ta chọn một đồng xu có giá trị `coin`.
+
+Sau khi lấy đồng xu đó ra, số tiền còn lại là:
+
+``` text
+x - coin
+```
+
+Để tạo thành `x - coin`, cần:
+
+``` text
+dp[x - coin]
+```
+
+đồng xu.
+
+Sau đó ta thêm đồng xu `coin` vào.
+
+Vậy tổng số đồng xu là:
+
+``` text
+dp[x - coin] + 1
+```
+
+Ta thử tất cả các loại coin và lấy giá trị nhỏ nhất:
+
+``` text
+dp[x] = min(dp[x], dp[x - coin] + 1)
+```
+
+Đây chính là công thức DP của bài.
+
+------------------------------------------------------------------------
+
+# 6. Tại sao công thức trên đúng?
+
+Xét một lời giải tối ưu tạo ra số tiền `x`.
+
+Trong lời giải đó chắc chắn có một đồng xu cuối cùng.
+
+Giả sử đồng xu cuối cùng có giá trị `coin`.
+
+Trước khi lấy đồng xu đó, ta phải tạo được:
+
+``` text
+x - coin
+```
+
+Nếu cách tạo `x - coin` không phải là cách tối ưu, giả sử ta có một cách
+khác dùng ít đồng hơn, thì ta có thể thay phần đó vào lời giải hiện tại.
+
+Khi đó ta sẽ tạo được `x` với ít đồng hơn.
+
+Điều này mâu thuẫn với việc lời giải ban đầu là tối ưu.
+
+Vì vậy:
+
+``` text
+phần tạo x - coin
+```
+
+phải là một lời giải tối ưu.
+
+Do đó:
+
+``` text
+dp[x - coin] + 1
+```
+
+là một ứng viên hợp lệ cho `dp[x]`.
+
+Thử tất cả các loại coin rồi lấy nhỏ nhất sẽ đảm bảo tìm được đáp án tối
+ưu.
+
+------------------------------------------------------------------------
+
+# 7. Khởi tạo mảng DP
+
+Ta cần một giá trị biểu diễn trạng thái:
+
+> Chưa thể tạo được số tiền này.
+
+Có thể dùng một giá trị rất lớn, chẳng hạn:
+
+``` text
+amount + 1
+```
+
+Tại sao `amount + 1` đủ lớn?
+
+Trong trường hợp xấu nhất, nếu có đồng xu `1`, ta cần đúng:
+
+``` text
+amount
+```
+
+đồng xu.
+
+Do đó không bao giờ cần nhiều hơn `amount` đồng xu để tạo ra `amount`.
+
+Vì vậy:
+
+``` text
+amount + 1
+```
+
+có thể dùng làm giá trị vô cùng.
+
+Ta khởi tạo:
+
+``` text
+vector<int> dp(amount + 1, amount + 1);
+```
+
+Sau đó:
+
+``` text
+dp[0] = 0;
+```
+
+------------------------------------------------------------------------
+
+# 8. Cách duyệt DP
+
+Ta xét từng số tiền từ nhỏ đến lớn:
+
+``` text
+for (int i = 1; i <= amount; i++)
+```
+
+Với mỗi `i`, thử tất cả các đồng xu:
+
+``` text
+for (int coin : coins)
+```
+
+Nếu:
+
+``` text
+coin <= i
+```
+
+thì ta có thể dùng đồng xu đó.
+
+Cập nhật:
+
+``` text
+dp[i] = min(dp[i], dp[i - coin] + 1);
+```
+
+------------------------------------------------------------------------
+
+# 9. Ví dụ chạy từng bước
+
+Xét:
+
+``` text
+coins = [1, 2, 5]
+amount = 11
+```
+
+Ban đầu:
+
+``` text
+dp[0] = 0
+
+dp[1..11] = 12
+```
+
+Ta dùng `12` làm giá trị vô cùng.
+
+## Tính dp\[1\]
+
+Có thể dùng:
+
+``` text
+1
+```
+
+nên:
+
+``` text
+dp[1] = dp[0] + 1
+      = 1
+```
+
+------------------------------------------------------------------------
+
+## Tính dp\[2\]
+
+Thử coin `1`:
+
+``` text
+dp[2] = dp[1] + 1
+      = 2
+```
+
+Thử coin `2`:
+
+``` text
+dp[2] = dp[0] + 1
+      = 1
+```
+
+Vậy:
+
+``` text
+dp[2] = 1
+```
+
+------------------------------------------------------------------------
+
+## Tính dp\[3\]
+
+Thử coin `1`:
+
+``` text
+dp[3] = dp[2] + 1
+      = 2
+```
+
+Thử coin `2`:
+
+``` text
+dp[3] = dp[1] + 1
+      = 2
+```
+
+Vậy:
+
+``` text
+dp[3] = 2
+```
+
+------------------------------------------------------------------------
+
+## Tính dp\[5\]
+
+Ta có thể dùng trực tiếp đồng `5`:
+
+``` text
+dp[5] = dp[0] + 1
+      = 1
+```
+
+------------------------------------------------------------------------
+
+## Tính dp\[10\]
+
+Một khả năng:
+
+``` text
+5 + 5
+```
+
+nên:
+
+``` text
+dp[10] = dp[5] + 1
+       = 2
+```
+
+------------------------------------------------------------------------
+
+## Tính dp\[11\]
+
+Ta thử các đồng xu.
+
+Với coin `1`:
+
+``` text
+dp[11] = dp[10] + 1
+       = 3
+```
+
+Với coin `2`:
+
+``` text
+dp[11] = dp[9] + 1
+```
+
+Với coin `5`:
+
+``` text
+dp[11] = dp[6] + 1
+       = 3
+```
+
+Kết quả cuối cùng:
+
+``` text
+dp[11] = 3
+```
+
+Một cách tạo ra là:
+
+``` text
+5 + 5 + 1
+```
+
+------------------------------------------------------------------------
+
+# 10. Vì sao duyệt từ nhỏ đến lớn?
+
+Khi tính:
+
+``` text
+dp[i]
+```
+
+ta cần:
+
+``` text
+dp[i - coin]
+```
+
+Vì `coin > 0`, nên:
+
+``` text
+i - coin < i
+```
+
+Tức là trạng thái cần thiết luôn nằm ở phía trước.
+
+Ví dụ khi tính:
+
+``` text
+dp[7]
+```
+
+với coin `5`, ta cần:
+
+``` text
+dp[2]
+```
+
+Mà `dp[2]` đã được tính trước đó.
+
+Vì vậy ta có thể duyệt:
+
+``` text
+0 -> 1 -> 2 -> ... -> amount
+```
+
+Đây là cách tự nhiên nhất đối với công thức DP này.
+
+------------------------------------------------------------------------
+
+# 11. Tại sao không cần quan tâm thứ tự các đồng xu?
+
+Bài toán chỉ hỏi:
+
+> Cần ít nhất bao nhiêu đồng xu?
+
+Không quan tâm thứ tự.
+
+Ví dụ:
+
+``` text
+1 + 2 + 2
+```
+
+và:
+
+``` text
+2 + 1 + 2
+```
+
+đều sử dụng 3 đồng xu.
+
+Cả hai đều biểu diễn cùng một cách chọn số lượng đồng xu.
+
+Với cách định nghĩa:
+
+``` text
+dp[x] = số đồng xu ít nhất để tạo x
+```
+
+ta không cần lưu thứ tự các đồng xu.
+
+------------------------------------------------------------------------
+
+# 12. Vì sao đây là bài toán Unbounded Knapsack?
+
+Coin Change có đặc điểm:
+
+-   Có nhiều loại vật phẩm.
+-   Mỗi loại có thể lấy không giới hạn lần.
+-   Cần đạt một tổng tiền nhất định.
+-   Mục tiêu là tối thiểu số lượng vật phẩm.
+
+Đây là dạng **Unbounded Knapsack**.
+
+Khác với 0/1 Knapsack:
+
+``` text
+mỗi vật chỉ được dùng tối đa một lần
+```
+
+thì ở Coin Change:
+
+``` text
+mỗi đồng xu có thể dùng bao nhiêu lần cũng được
+```
+
+Ví dụ:
+
+``` text
+coins = [2, 5]
+```
+
+Ta có thể sử dụng:
+
+``` text
+2 + 2 + 2 + 2 + ...
+```
+
+bao nhiêu lần tùy ý.
+
+------------------------------------------------------------------------
+
+# 13. Kiểm tra trường hợp không thể tạo amount
+
+Ví dụ:
+
+``` text
+coins = [2]
+amount = 3
+```
+
+Không thể tạo ra `3`.
+
+Trong quá trình tính:
+
+``` text
+dp[1] = INF
+dp[2] = 1
+dp[3] = INF
+```
+
+Cuối cùng:
+
+``` text
+dp[3]
+```
+
+vẫn là giá trị vô cùng.
+
+Vì vậy ta trả về:
+
+``` text
+-1
+```
+
+Có thể viết:
+
+``` text
+if (dp[amount] == amount + 1)
+    return -1;
+```
+
+------------------------------------------------------------------------
+
+# 14. Độ phức tạp
+
+Gọi:
+
+``` text
+n = coins.size()
+A = amount
+```
+
+Ta có:
+
+-   `A` trạng thái cần tính.
+-   Với mỗi trạng thái, thử `n` loại coin.
+
+Do đó:
+
+``` text
+Thời gian: O(A * n)
+```
+
+Bộ nhớ:
+
+``` text
+O(A)
+```
+
+Đây là cách tiếp cận DP tối ưu và tiêu chuẩn cho bài toán Coin Change.
+
+------------------------------------------------------------------------
+
+# 15. So sánh với các cách tiếp cận khác
+
+## Brute Force
+
+Thử tất cả cách chọn đồng xu.
+
+Ưu điểm:
+
+-   Dễ hình dung.
+
+Nhược điểm:
+
+-   Có rất nhiều nhánh.
+-   Tính lại cùng một trạng thái nhiều lần.
+-   Thời gian tăng rất nhanh.
+
+Không phù hợp với `amount` lớn.
+
+------------------------------------------------------------------------
+
+## Greedy
+
+Luôn chọn đồng tiền lớn nhất có thể.
+
+Ví dụ:
+
+``` text
+coins = [1, 3, 4]
+amount = 6
+```
+
+Greedy chọn:
+
+``` text
+4 + 1 + 1
+```
+
+nhưng đáp án tối ưu là:
+
+``` text
+3 + 3
+```
+
+Do đó Greedy không đúng cho mọi bộ coin.
+
+------------------------------------------------------------------------
+
+## DP
+
+Lưu đáp án tối ưu của các số tiền nhỏ hơn:
+
+``` text
+dp[0]
+dp[1]
+dp[2]
+...
+dp[amount]
+```
+
+Sau đó dùng các trạng thái đã tính để xây dựng trạng thái lớn hơn.
+
+Độ phức tạp:
+
+``` text
+O(amount * coins.size())
+```
+
+Đây là phương pháp phù hợp với bài toán.
+
+------------------------------------------------------------------------
+
+# 16. Một cách suy nghĩ rất quan trọng
+
+Khi gặp một bài toán kiểu:
+
+> Tìm số lượng ít nhất để đạt được một tổng nào đó.
+
+Hãy thử đặt:
+
+``` text
+dp[x] = đáp án tốt nhất để đạt tổng x
+```
+
+Sau đó tự hỏi:
+
+> Nếu tôi biết đáp án của một tổng nhỏ hơn, tôi có thể thêm một lựa chọn
+> vào để tạo ra tổng hiện tại không?
+
+Ở Coin Change:
+
+``` text
+dp[x - coin]
+```
+
+đã biết số đồng xu ít nhất để tạo ra:
+
+``` text
+x - coin
+```
+
+Chỉ cần thêm:
+
+``` text
+coin
+```
+
+là tạo được:
+
+``` text
+x
+```
+
+nên:
+
+``` text
+dp[x - coin] + 1
+```
+
+là một ứng viên.
+
+Đây chính là tư duy quan trọng nhất để nhận ra công thức DP.
+
+------------------------------------------------------------------------
+
+# 17. Pseudocode
+
+``` text
+dp[0] = 0
+
+Các dp còn lại = INF
+
+for amount hiện tại từ 1 đến amount:
+    for mỗi coin:
+        nếu coin <= amount hiện tại:
+            dp[amount hiện tại]
+                = min(dp[amount hiện tại],
+                      dp[amount hiện tại - coin] + 1)
+
+nếu dp[amount] là INF:
+    trả về -1
+
+ngược lại:
+    trả về dp[amount]
+```
+
+------------------------------------------------------------------------
+
+# 18. Lời giải C++ tối ưu
+
+``` cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+class Solution {
+public:
+    int coinChange(vector<int>& coins, int amount) {
+        vector<int> dp(amount + 1, amount + 1);
+        dp[0] = 0;
+
+        for (int i = 1; i <= amount; i++) {
+            for (int coin : coins) {
+                if (coin <= i) {
+                    dp[i] = min(dp[i], dp[i - coin] + 1);
+                }
+            }
+        }
+
+        return dp[amount] == amount + 1 ? -1 : dp[amount];
+    }
+};
+```
+
+------------------------------------------------------------------------
+
+# 19. Phân tích code
+
+## Khởi tạo
+
+``` cpp
+vector<int> dp(amount + 1, amount + 1);
+```
+
+Tạo mảng:
+
+``` text
+dp[0], dp[1], ..., dp[amount]
+```
+
+Tất cả ban đầu được gán:
+
+``` text
+amount + 1
+```
+
+để biểu diễn trạng thái chưa thể tạo được.
+
+------------------------------------------------------------------------
+
+## Trạng thái cơ sở
+
+``` cpp
+dp[0] = 0;
+```
+
+Không cần đồng xu nào để tạo số tiền `0`.
+
+Đây là trạng thái quan trọng nhất để các trạng thái khác dựa vào.
+
+------------------------------------------------------------------------
+
+## Duyệt từng số tiền
+
+``` cpp
+for (int i = 1; i <= amount; i++)
+```
+
+Ta lần lượt tính:
+
+``` text
+dp[1]
+dp[2]
+...
+dp[amount]
+```
+
+------------------------------------------------------------------------
+
+## Duyệt từng loại coin
+
+``` cpp
+for (int coin : coins)
+```
+
+Với mỗi số tiền `i`, ta thử sử dụng từng loại coin.
+
+------------------------------------------------------------------------
+
+## Kiểm tra coin có thể sử dụng hay không
+
+``` cpp
+if (coin <= i)
+```
+
+Nếu:
+
+``` text
+coin > i
+```
+
+thì không thể dùng coin này để tạo ra `i`.
+
+------------------------------------------------------------------------
+
+## Cập nhật
+
+``` cpp
+dp[i] = min(dp[i], dp[i - coin] + 1);
+```
+
+Có hai khả năng:
+
+``` text
+dp[i]
+```
+
+hiện tại.
+
+Hoặc:
+
+``` text
+dp[i - coin] + 1
+```
+
+tức là tạo `i - coin` trước, sau đó thêm một đồng `coin`.
+
+Lấy nhỏ hơn.
+
+------------------------------------------------------------------------
+
+## Trả kết quả
+
+``` cpp
+return dp[amount] == amount + 1 ? -1 : dp[amount];
+```
+
+Nếu vẫn là `amount + 1`, nghĩa là không có cách nào tạo ra `amount`.
+
+Ngược lại, đó chính là số đồng xu ít nhất.
+
+------------------------------------------------------------------------
+
+# 20. Ví dụ kiểm tra
+
+## Test 1
+
+``` text
+coins = [1, 2, 5]
+amount = 11
+```
+
+Kết quả:
+
+``` text
+3
+```
+
+Một cách:
+
+``` text
+5 + 5 + 1
+```
+
+------------------------------------------------------------------------
+
+## Test 2
+
+``` text
+coins = [2]
+amount = 3
+```
+
+Không thể tạo `3`.
+
+Kết quả:
+
+``` text
+-1
+```
+
+------------------------------------------------------------------------
+
+## Test 3
+
+``` text
+coins = [1]
+amount = 0
+```
+
+Không cần đồng xu nào.
+
+Kết quả:
+
+``` text
+0
+```
+
+Code xử lý được ngay nhờ:
+
+``` cpp
+dp[0] = 0;
+```
+
+------------------------------------------------------------------------
+
+## Test 4
+
+``` text
+coins = [1, 3, 4]
+amount = 6
+```
+
+Greedy có thể chọn:
+
+``` text
+4 + 1 + 1
+```
+
+nhưng DP tìm được:
+
+``` text
+3 + 3
+```
+
+nên kết quả:
+
+``` text
+2
+```
+
+------------------------------------------------------------------------
+
+# 21. Những lỗi thường gặp
+
+## Lỗi 1: Nghĩ rằng phải dùng mỗi coin tối đa một lần
+
+Sai.
+
+Đề bài cho phép sử dụng mỗi loại coin không giới hạn.
+
+Ví dụ:
+
+``` text
+coins = [5]
+amount = 15
+```
+
+Ta có thể dùng:
+
+``` text
+5 + 5 + 5
+```
+
+------------------------------------------------------------------------
+
+## Lỗi 2: Dùng Greedy
+
+Không phải mọi hệ thống mệnh giá đều có tính chất greedy.
+
+Ví dụ:
+
+``` text
+coins = [1, 3, 4]
+amount = 6
+```
+
+Greedy:
+
+``` text
+4 + 1 + 1
+```
+
+DP:
+
+``` text
+3 + 3
+```
+
+------------------------------------------------------------------------
+
+## Lỗi 3: Quên `dp[0] = 0`
+
+Nếu không có:
+
+``` cpp
+dp[0] = 0;
+```
+
+thì các trạng thái khác không có điểm bắt đầu chính xác.
+
+Ví dụ:
+
+``` text
+dp[5]
+```
+
+với coin `5` phải được tính từ:
+
+``` text
+dp[0] + 1
+```
+
+------------------------------------------------------------------------
+
+## Lỗi 4: Khởi tạo bằng 0
+
+Không nên làm:
+
+``` cpp
+vector<int> dp(amount + 1, 0);
+```
+
+vì `0` có nghĩa là đã tìm được cách tạo số tiền đó với 0 đồng xu.
+
+Điều này làm sai ý nghĩa của trạng thái.
+
+Ta cần một giá trị lớn để biểu diễn:
+
+``` text
+chưa thể tạo được
+```
+
+------------------------------------------------------------------------
+
+## Lỗi 5: Dùng một giá trị INF quá nhỏ
+
+Ví dụ nếu đặt:
+
+``` text
+INF = 100
+```
+
+mà `amount` lớn hơn nhiều, giá trị này có thể không đủ lớn.
+
+Dùng:
+
+``` cpp
+amount + 1
+```
+
+là đơn giản và an toàn trong bài này.
+
+------------------------------------------------------------------------
+
+# 22. Có cần sắp xếp coins không?
+
+Không cần.
+
+Code:
+
+``` cpp
+for (int coin : coins)
+```
+
+có thể duyệt theo bất kỳ thứ tự nào.
+
+Ta chỉ cần thử tất cả các coin.
+
+Kết quả cuối cùng vẫn giống nhau vì ta luôn lấy:
+
+``` text
+min(...)
+```
+
+------------------------------------------------------------------------
+
+# 23. Có cần loại bỏ coin trùng nhau không?
+
+Không cần.
+
+Ví dụ:
+
+``` text
+coins = [1, 2, 2, 5]
+```
+
+Việc thử `2` hai lần không làm thay đổi đáp án.
+
+Nó chỉ khiến chương trình thực hiện thêm một số phép tính nhỏ.
+
+------------------------------------------------------------------------
+
+# 24. Tại sao dùng mảng 1 chiều?
+
+Ta chỉ cần biết:
+
+``` text
+dp[x - coin]
+```
+
+để tính:
+
+``` text
+dp[x]
+```
+
+Do đó không cần bảng 2 chiều.
+
+Không cần lưu:
+
+``` text
+dp[i][j]
+```
+
+với `i` là số loại coin và `j` là amount.
+
+Chỉ cần:
+
+``` text
+dp[0...amount]
+```
+
+là đủ.
+
+Điều này giúp bộ nhớ giảm xuống:
+
+``` text
+O(amount)
+```
+
+------------------------------------------------------------------------
+
+# 25. Kết luận
+
+Bài Coin Change là một ví dụ kinh điển của Dynamic Programming.
+
+Cách suy nghĩ cốt lõi là:
+
+``` text
+dp[x] = số đồng xu ít nhất để tạo ra x
+```
+
+Khi muốn tính `dp[x]`, chọn một đồng `coin`.
+
+Nếu dùng đồng đó, phần còn lại là:
+
+``` text
+x - coin
+```
+
+và cần:
+
+``` text
+dp[x - coin]
+```
+
+đồng xu.
+
+Thêm đồng `coin` vào:
+
+``` text
+dp[x - coin] + 1
+```
+
+Thử tất cả các coin:
+
+``` text
+dp[x] = min(dp[x], dp[x - coin] + 1)
+```
+
+Với:
+
+``` text
+dp[0] = 0
+```
+
+ta xây dựng lần lượt từ nhỏ đến lớn.
+
+Độ phức tạp cuối cùng:
+
+``` text
+Thời gian: O(amount * coins.size())
+Bộ nhớ: O(amount)
+```
+
+Đây là lời giải DP chuẩn, tối ưu về mặt độ phức tạp cho bài Coin Change
+với giới hạn `amount` của LeetCode.
