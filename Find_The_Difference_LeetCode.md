@@ -1,0 +1,1327 @@
+# Find The Difference - LeetCode
+
+## 1. Thông tin bài toán
+
+**Bài toán:** [Find The Difference](https://leetcode.com/problems/find-the-difference/)
+
+Cho hai chuỗi `s` và `t`.
+
+- Chuỗi `t` được tạo ra từ chuỗi `s` bằng cách **xáo trộn thứ tự các ký tự của `s`**, sau đó **thêm đúng một ký tự mới**.
+- Các ký tự trong chuỗi chỉ gồm chữ cái tiếng Anh viết thường.
+- Yêu cầu tìm ký tự đã được thêm vào.
+
+### Ví dụ 1
+
+```text
+Input:
+s = "abcd"
+t = "abcde"
+
+Output:
+'e'
+```
+
+### Ví dụ 2
+
+```text
+Input:
+s = "a"
+t = "aa"
+
+Output:
+'a'
+```
+
+### Ví dụ 3
+
+```text
+Input:
+s = ""
+t = "y"
+
+Output:
+'y'
+```
+
+---
+
+# 2. Phân tích bản chất bài toán
+
+Điểm quan trọng nhất:
+
+```text
+t = s + thêm một ký tự + xáo trộn
+```
+
+Điều đó có nghĩa là:
+
+- Mọi ký tự xuất hiện trong `s` đều xuất hiện trong `t`.
+- `t` có đúng **một ký tự dư ra**.
+- Thứ tự của các ký tự không còn giống nhau.
+
+Ví dụ:
+
+```text
+s = "abcd"
+t = "debac"
+```
+
+Ta có thể sắp xếp:
+
+```text
+s: a b c d
+t: a b c d e
+```
+
+Vậy ký tự dư là:
+
+```text
+e
+```
+
+Do thứ tự các ký tự đã bị xáo trộn, không thể chỉ so sánh:
+
+```cpp
+s[i] == t[i]
+```
+
+mà phải tìm cách xử lý **tần suất xuất hiện** của từng ký tự.
+
+---
+
+# 3. Những hướng giải có thể nghĩ đến
+
+Có nhiều cách giải bài này:
+
+1. Dùng mảng đếm tần suất.
+2. Dùng `unordered_map`.
+3. Sắp xếp hai chuỗi rồi so sánh.
+4. Dùng phép XOR.
+
+Trong đó, cách sử dụng **XOR** là lời giải rất gọn và tối ưu về bộ nhớ.
+
+Tuy nhiên, trước khi đi vào XOR, cần hiểu rõ các cách tiếp cận khác để thấy tại sao XOR phù hợp.
+
+---
+
+# 4. Cách 1: Dùng mảng đếm
+
+Vì đề bài chỉ sử dụng chữ cái tiếng Anh viết thường nên có đúng:
+
+```text
+26 ký tự
+```
+
+Ta có thể tạo:
+
+```cpp
+int dem[26] = {};
+```
+
+Sau đó:
+
+- Với mỗi ký tự trong `s`, tăng bộ đếm.
+- Với mỗi ký tự trong `t`, giảm bộ đếm.
+- Ký tự nào còn giá trị khác 0 chính là ký tự được thêm.
+
+Ví dụ:
+
+```text
+s = "abcd"
+t = "abcde"
+```
+
+Sau khi xử lý:
+
+```text
+a: 0
+b: 0
+c: 0
+d: 0
+e: -1
+```
+
+Vậy:
+
+```text
+e
+```
+
+là ký tự dư.
+
+### Độ phức tạp
+
+```text
+Time: O(n)
+Space: O(1)
+```
+
+Vì mảng chỉ có 26 phần tử.
+
+Đây là một lời giải rất tốt.
+
+---
+
+# 5. Cách 2: Dùng unordered_map
+
+Ta cũng có thể dùng:
+
+```cpp
+unordered_map<char, int> mp;
+```
+
+Sau đó đếm số lần xuất hiện.
+
+Ví dụ:
+
+```text
+s = "aabbc"
+t = "abcabd"
+```
+
+Ta có thể lưu:
+
+```text
+a -> 2
+b -> 2
+c -> 1
+```
+
+Sau đó xử lý chuỗi `t`.
+
+Tuy nhiên cách này không cần thiết vì:
+
+- Chỉ có 26 ký tự.
+- `unordered_map` có overhead lớn hơn mảng.
+- Bài toán có thể giải đơn giản hơn.
+
+Vì vậy với bài này, mảng đếm thường hợp lý hơn `unordered_map`.
+
+---
+
+# 6. Cách 3: Sort rồi so sánh
+
+Một cách khác:
+
+```text
+s = "abcd"
+t = "debac"
+```
+
+Sau khi sort:
+
+```text
+s = "abcd"
+t = "abcde"
+```
+
+Ta duyệt từ trái sang phải:
+
+```text
+a == a
+b == b
+c == c
+d == d
+```
+
+Sau đó:
+
+```text
+e
+```
+
+là ký tự dư.
+
+### Độ phức tạp
+
+Nếu `n = s.length()`:
+
+```text
+Time: O(n log n)
+Space: tùy cách sort
+```
+
+Cách này đúng nhưng không tối ưu về thời gian so với `O(n)`.
+
+---
+
+# 7. Cách 4: Sử dụng XOR
+
+Đây là cách rất đáng học vì nó tận dụng tính chất đặc biệt của phép XOR.
+
+Ta cần nhớ 3 tính chất:
+
+```text
+a XOR a = 0
+```
+
+```text
+a XOR 0 = a
+```
+
+và:
+
+```text
+a XOR b XOR a = b
+```
+
+Tính chất cuối cùng cực kỳ quan trọng.
+
+---
+
+# 8. Vì sao XOR giải được bài này?
+
+Giả sử:
+
+```text
+s = "abcd"
+t = "abcde"
+```
+
+Ta XOR tất cả ký tự trong `s` và `t`.
+
+Ta có:
+
+```text
+a XOR b XOR c XOR d
+XOR
+a XOR b XOR c XOR d XOR e
+```
+
+Các ký tự xuất hiện ở cả hai chuỗi sẽ triệt tiêu:
+
+```text
+a XOR a = 0
+b XOR b = 0
+c XOR c = 0
+d XOR d = 0
+```
+
+Còn lại:
+
+```text
+e
+```
+
+Vậy đáp án chính là:
+
+```text
+e
+```
+
+---
+
+# 9. Tại sao thứ tự không quan trọng?
+
+Một tính chất quan trọng của XOR là XOR có tính giao hoán:
+
+```text
+a XOR b = b XOR a
+```
+
+và kết hợp:
+
+```text
+(a XOR b) XOR c
+=
+a XOR (b XOR c)
+```
+
+Do đó:
+
+```text
+"abcd"
+```
+
+và:
+
+```text
+"dcba"
+```
+
+khi XOR tất cả ký tự sẽ cho cùng kết quả.
+
+Ví dụ:
+
+```text
+a XOR b XOR c XOR d
+```
+
+bằng:
+
+```text
+d XOR c XOR b XOR a
+```
+
+Vì vậy việc `t` bị xáo trộn không ảnh hưởng đến kết quả.
+
+---
+
+# 10. Ví dụ XOR từng bước
+
+Giả sử:
+
+```text
+s = "abcd"
+t = "debac"
+```
+
+Ký tự được thêm là:
+
+```text
+e
+```
+
+Ta XOR toàn bộ:
+
+```text
+a XOR b XOR c XOR d
+XOR
+d XOR e XOR b XOR a XOR c
+```
+
+Nhóm các ký tự giống nhau:
+
+```text
+a XOR a
+b XOR b
+c XOR c
+d XOR d
+e
+```
+
+Các cặp giống nhau trở thành:
+
+```text
+0
+```
+
+Cuối cùng:
+
+```text
+e
+```
+
+---
+
+# 11. Không cần chuyển char thành số riêng
+
+Trong C++, kiểu `char` có thể tham gia phép toán XOR.
+
+Ví dụ:
+
+```cpp
+char a = 'a';
+char b = 'b';
+
+char c = a ^ b;
+```
+
+Các ký tự thực chất được biểu diễn bằng giá trị số trong bộ nhớ, nên phép XOR có thể thực hiện trực tiếp.
+
+Ta có thể viết:
+
+```cpp
+char kq = 0;
+```
+
+Sau đó:
+
+```cpp
+kq ^= s[i];
+```
+
+và:
+
+```cpp
+kq ^= t[i];
+```
+
+Cuối cùng `kq` chính là ký tự cần tìm.
+
+---
+
+# 12. Cách triển khai tối ưu
+
+Ta có:
+
+```text
+length(t) = length(s) + 1
+```
+
+Do đó có thể duyệt cả hai chuỗi trong một vòng lặp.
+
+Cách đơn giản:
+
+```cpp
+char kq = 0;
+
+for (char c : s) {
+    kq ^= c;
+}
+
+for (char c : t) {
+    kq ^= c;
+}
+
+return kq;
+```
+
+Đây là cách dễ hiểu nhất khi mới học XOR.
+
+---
+
+# 13. Có thể tối ưu vòng lặp hơn nữa
+
+Ta có:
+
+```text
+|t| = |s| + 1
+```
+
+Có thể tận dụng điều này:
+
+```cpp
+char kq = t.back();
+
+for (int i = 0; i < s.size(); i++) {
+    kq ^= s[i];
+    kq ^= t[i];
+}
+```
+
+Tại sao đúng?
+
+Ta đã lấy trước ký tự cuối cùng của `t`:
+
+```cpp
+char kq = t.back();
+```
+
+Sau đó với mỗi vị trí `i`, XOR:
+
+```text
+s[i]
+```
+
+và:
+
+```text
+t[i]
+```
+
+Các ký tự chung sẽ triệt tiêu.
+
+Ký tự thêm vào đã được giữ lại từ:
+
+```text
+t.back()
+```
+
+---
+
+# 14. Cách viết dễ hiểu hơn
+
+Mặc dù cách trên rất gọn, với người mới học thì phiên bản:
+
+```cpp
+char kq = 0;
+
+for (char c : s) {
+    kq ^= c;
+}
+
+for (char c : t) {
+    kq ^= c;
+}
+
+return kq;
+```
+
+thường dễ hiểu hơn.
+
+Không nên cố giảm số dòng code nếu điều đó khiến bản chất thuật toán khó hiểu.
+
+---
+
+# 15. Lời giải C++ tối ưu
+
+```cpp
+class Solution {
+public:
+    char findTheDifference(string s, string t) {
+        char kq = 0;
+
+        for (char c : s) {
+            kq ^= c;
+        }
+
+        for (char c : t) {
+            kq ^= c;
+        }
+
+        return kq;
+    }
+};
+```
+
+---
+
+# 16. Giải thích code từng dòng
+
+## Khai báo class
+
+```cpp
+class Solution {
+public:
+```
+
+LeetCode yêu cầu lời giải nằm trong class `Solution`.
+
+---
+
+## Hàm findTheDifference
+
+```cpp
+char findTheDifference(string s, string t)
+```
+
+Hàm nhận:
+
+```text
+s
+t
+```
+
+và trả về:
+
+```text
+char
+```
+
+vì đáp án chỉ là một ký tự.
+
+---
+
+## Khởi tạo biến kết quả
+
+```cpp
+char kq = 0;
+```
+
+Ban đầu:
+
+```text
+kq = 0
+```
+
+Đây là giá trị trung hòa của XOR vì:
+
+```text
+0 XOR x = x
+```
+
+---
+
+## XOR toàn bộ s
+
+```cpp
+for (char c : s) {
+    kq ^= c;
+}
+```
+
+Sau vòng lặp:
+
+```text
+kq = s[0] XOR s[1] XOR ... XOR s[n-1]
+```
+
+---
+
+## XOR toàn bộ t
+
+```cpp
+for (char c : t) {
+    kq ^= c;
+}
+```
+
+Bây giờ:
+
+```text
+kq =
+tất cả ký tự trong s
+XOR
+tất cả ký tự trong t
+```
+
+Mỗi ký tự xuất hiện trong cả hai chuỗi sẽ xuất hiện hai lần.
+
+Theo tính chất:
+
+```text
+x XOR x = 0
+```
+
+nên chúng triệt tiêu.
+
+Chỉ còn ký tự xuất hiện thêm trong `t`.
+
+---
+
+## Trả về kết quả
+
+```cpp
+return kq;
+```
+
+`kq` chính là ký tự được thêm vào.
+
+---
+
+# 17. Chứng minh tính đúng đắn
+
+Gọi ký tự được thêm vào là:
+
+```text
+x
+```
+
+Vì `t` được tạo bằng cách lấy tất cả ký tự của `s`, sau đó thêm `x`, nên tập ký tự của `t` có thể xem như:
+
+```text
+s + x
+```
+
+Ta tính:
+
+```text
+XOR(s) XOR XOR(t)
+```
+
+Do:
+
+```text
+t = s + x
+```
+
+nên:
+
+```text
+XOR(s) XOR XOR(t)
+=
+XOR(s) XOR XOR(s) XOR x
+```
+
+Mà:
+
+```text
+XOR(s) XOR XOR(s) = 0
+```
+
+nên:
+
+```text
+0 XOR x = x
+```
+
+Vì vậy kết quả cuối cùng chính xác là ký tự được thêm vào.
+
+---
+
+# 18. Độ phức tạp
+
+Gọi:
+
+```text
+n = s.length()
+```
+
+Khi đó:
+
+```text
+t.length() = n + 1
+```
+
+Ta duyệt mỗi ký tự đúng một lần.
+
+Do đó:
+
+```text
+Time Complexity: O(n)
+```
+
+Về bộ nhớ:
+
+```text
+Space Complexity: O(1)
+```
+
+Chỉ sử dụng một biến:
+
+```cpp
+char kq
+```
+
+Đây là lời giải tối ưu theo độ phức tạp Big-O.
+
+---
+
+# 19. So sánh các phương pháp
+
+| Phương pháp | Time | Space | Nhận xét |
+|---|---:|---:|---|
+| Mảng đếm | O(n) | O(1) | Rất tốt, dễ hiểu |
+| unordered_map | O(n) trung bình | O(1) | Không cần thiết |
+| Sort | O(n log n) | Tùy | Chậm hơn |
+| XOR | O(n) | O(1) | Gọn và tối ưu |
+
+Với bài toán này, **XOR là một trong những lời giải tối ưu nhất**.
+
+Tuy nhiên, nếu mới học XOR, mảng đếm có thể dễ hiểu hơn.
+
+---
+
+# 20. Tại sao XOR tốt hơn mảng đếm?
+
+Mảng đếm:
+
+```cpp
+int dem[26] = {};
+```
+
+cần lưu thông tin tần suất của 26 ký tự.
+
+Trong khi XOR chỉ cần:
+
+```cpp
+char kq = 0;
+```
+
+Do đó XOR có cách triển khai rất gọn.
+
+Nhưng xét về Big-O thì cả hai đều:
+
+```text
+Time: O(n)
+Space: O(1)
+```
+
+Sự khác biệt chủ yếu nằm ở:
+
+- XOR ít code hơn.
+- Không cần mảng.
+- Không cần biết trước bảng ký tự có bao nhiêu ký tự.
+- Tận dụng tính chất triệt tiêu của XOR.
+
+---
+
+# 21. Vì sao không dùng phép cộng?
+
+Một ý tưởng có thể xuất hiện:
+
+```text
+sum(t) - sum(s)
+```
+
+để tìm ký tự dư.
+
+Ví dụ:
+
+```text
+s = "abcd"
+t = "abcde"
+```
+
+Tổng ASCII của `t` trừ tổng ASCII của `s` sẽ cho ASCII của `e`.
+
+Cách này có thể hoạt động trong điều kiện phù hợp, nhưng XOR an toàn và phù hợp hơn với bài toán.
+
+Lý do quan trọng:
+
+- XOR có tính chất triệt tiêu trực tiếp.
+- Không cần lo tổng số có thể lớn.
+- Không cần phép trừ.
+- Đây là một mẫu kỹ thuật phổ biến trong các bài toán tìm phần tử xuất hiện khác biệt.
+
+---
+
+# 22. Tại sao không cần quan tâm ký tự nằm ở vị trí nào?
+
+Ví dụ:
+
+```text
+s = "abcd"
+t = "dcbae"
+```
+
+Nếu so sánh theo vị trí:
+
+```text
+a != d
+b != c
+c != b
+d != a
+```
+
+sẽ rất khó tìm ra đáp án.
+
+Nhưng XOR không quan tâm vị trí.
+
+Ta chỉ quan tâm:
+
+```text
+ký tự nào xuất hiện bao nhiêu lần
+```
+
+Do đó:
+
+```text
+a XOR b XOR c XOR d
+```
+
+và:
+
+```text
+d XOR c XOR b XOR a
+```
+
+cho cùng kết quả.
+
+Đây chính là lý do XOR rất phù hợp với bài này.
+
+---
+
+# 23. Những tính chất XOR cần nhớ
+
+Đây là phần rất quan trọng để có thể áp dụng XOR cho các bài khác.
+
+### Tính chất 1
+
+```text
+x XOR 0 = x
+```
+
+Ví dụ:
+
+```text
+5 XOR 0 = 5
+```
+
+---
+
+### Tính chất 2
+
+```text
+x XOR x = 0
+```
+
+Ví dụ:
+
+```text
+5 XOR 5 = 0
+```
+
+---
+
+### Tính chất 3
+
+```text
+x XOR y = y XOR x
+```
+
+Thứ tự không quan trọng.
+
+---
+
+### Tính chất 4
+
+```text
+(x XOR y) XOR z
+=
+x XOR (y XOR z)
+```
+
+Có thể nhóm các phép XOR theo cách khác nhau.
+
+---
+
+### Tính chất 5
+
+```text
+x XOR y XOR x = y
+```
+
+Vì:
+
+```text
+x XOR x = 0
+```
+
+nên:
+
+```text
+x XOR y XOR x
+=
+y XOR x XOR x
+=
+y XOR 0
+=
+y
+```
+
+Đây chính là tính chất cốt lõi của bài `Find The Difference`.
+
+---
+
+# 24. Mẫu tư duy XOR tổng quát
+
+Khi gặp bài toán có dạng:
+
+```text
+Các phần tử gần như giống nhau
+nhưng một bên có thêm hoặc thiếu một phần tử
+```
+
+hãy nghĩ đến XOR.
+
+Ví dụ:
+
+```text
+A = [1, 2, 3, 4]
+B = [4, 2, 1, 3, 5]
+```
+
+Ta có:
+
+```text
+1 XOR 2 XOR 3 XOR 4
+XOR
+4 XOR 2 XOR 1 XOR 3 XOR 5
+```
+
+Các phần tử giống nhau triệt tiêu.
+
+Còn:
+
+```text
+5
+```
+
+Đây là cùng một tư tưởng với `Find The Difference`.
+
+---
+
+# 25. Trường hợp đặc biệt: s rỗng
+
+Ví dụ:
+
+```text
+s = ""
+t = "y"
+```
+
+Vòng lặp trên `s` không thực hiện lần nào.
+
+Sau đó:
+
+```cpp
+kq ^= 'y';
+```
+
+Do:
+
+```text
+0 XOR y = y
+```
+
+nên kết quả:
+
+```text
+'y'
+```
+
+Không cần xử lý đặc biệt.
+
+---
+
+# 26. Trường hợp ký tự được thêm trùng với ký tự cũ
+
+Ví dụ:
+
+```text
+s = "aabb"
+t = "ababb"
+```
+
+Ký tự được thêm là:
+
+```text
+b
+```
+
+Ta có:
+
+```text
+s:
+a a b b
+
+t:
+a b a b b
+```
+
+XOR vẫn hoạt động:
+
+```text
+a XOR a = 0
+b XOR b = 0
+```
+
+và các ký tự tương ứng trong `t` tiếp tục triệt tiêu.
+
+Cuối cùng chỉ còn:
+
+```text
+b
+```
+
+Do đó không cần ký tự được thêm phải là một ký tự hoàn toàn mới.
+
+---
+
+# 27. Những lỗi thường gặp
+
+## Lỗi 1: So sánh trực tiếp theo vị trí
+
+Không thể làm:
+
+```cpp
+for (int i = 0; i < s.size(); i++) {
+    if (s[i] != t[i]) {
+        return t[i];
+    }
+}
+```
+
+Vì `t` đã bị xáo trộn.
+
+Ví dụ:
+
+```text
+s = "abcd"
+t = "dbaec"
+```
+
+Ngay vị trí đầu tiên:
+
+```text
+a != d
+```
+
+nhưng `d` không phải ký tự được thêm.
+
+---
+
+## Lỗi 2: Chỉ kiểm tra độ dài
+
+Ta biết:
+
+```text
+t.length() = s.length() + 1
+```
+
+nhưng độ dài không cho biết ký tự nào được thêm.
+
+Cần xét nội dung của hai chuỗi.
+
+---
+
+## Lỗi 3: Dùng `unordered_map` khi không cần thiết
+
+Không sai, nhưng bài toán chỉ có một ký tự dư và bảng ký tự đơn giản.
+
+XOR hoặc mảng đếm sẽ gọn hơn.
+
+---
+
+## Lỗi 4: Không hiểu tại sao XOR triệt tiêu
+
+Không nên chỉ ghi nhớ:
+
+```cpp
+kq ^= s[i];
+kq ^= t[i];
+```
+
+mà cần hiểu:
+
+```text
+x XOR x = 0
+```
+
+và:
+
+```text
+0 XOR x = x
+```
+
+Đây mới là phần quan trọng để áp dụng kỹ thuật này cho các bài khác.
+
+---
+
+# 28. Cách tự suy luận khi gặp bài này
+
+Thay vì lập tức nhớ code, hãy đặt các câu hỏi:
+
+### Câu hỏi 1
+
+Hai chuỗi khác nhau ở điểm nào?
+
+```text
+t có thêm đúng một ký tự.
+```
+
+### Câu hỏi 2
+
+Thứ tự có quan trọng không?
+
+```text
+Không, vì t đã bị xáo trộn.
+```
+
+### Câu hỏi 3
+
+Ta cần so sánh cái gì?
+
+```text
+Số lần xuất hiện của các ký tự.
+```
+
+### Câu hỏi 4
+
+Có phép toán nào khiến hai phần tử giống nhau triệt tiêu không?
+
+```text
+Có: XOR.
+```
+
+### Câu hỏi 5
+
+Nếu XOR toàn bộ hai chuỗi thì sao?
+
+```text
+Các ký tự giống nhau xuất hiện hai lần -> triệt tiêu.
+Ký tự dư xuất hiện một lần -> còn lại.
+```
+
+Đây chính là toàn bộ hướng suy luận của lời giải tối ưu.
+
+---
+
+# 29. Pseudocode
+
+```text
+Đặt kq = 0
+
+Với mỗi ký tự c trong s:
+    kq = kq XOR c
+
+Với mỗi ký tự c trong t:
+    kq = kq XOR c
+
+Trả về kq
+```
+
+---
+
+# 30. Lời giải hoàn chỉnh
+
+```cpp
+class Solution {
+public:
+    char findTheDifference(string s, string t) {
+        char kq = 0;
+
+        for (char c : s) {
+            kq ^= c;
+        }
+
+        for (char c : t) {
+            kq ^= c;
+        }
+
+        return kq;
+    }
+};
+```
+
+---
+
+# 31. Tóm tắt để ôn tập
+
+```text
+Bài toán:
+Tìm ký tự được thêm vào t sau khi xáo trộn s.
+
+Quan sát:
+t có tất cả ký tự của s + đúng 1 ký tự.
+
+Ý tưởng:
+XOR toàn bộ ký tự của s và t.
+
+Tính chất:
+x XOR x = 0
+x XOR 0 = x
+
+Các ký tự xuất hiện ở cả hai chuỗi:
+-> xuất hiện 2 lần
+-> triệt tiêu.
+
+Ký tự được thêm:
+-> xuất hiện 1 lần
+-> còn lại.
+
+Time:
+O(n)
+
+Space:
+O(1)
+```
+
+---
+
+# 32. Kết luận
+
+`Find The Difference` là một bài toán đơn giản nhưng rất hữu ích để học kỹ thuật XOR.
+
+Điểm quan trọng nhất cần ghi nhớ:
+
+```text
+Nếu các phần tử giống nhau xuất hiện ở cả hai phía,
+XOR chúng lại sẽ khiến chúng triệt tiêu.
+```
+
+Với bài này:
+
+```text
+XOR tất cả ký tự của s
+XOR tất cả ký tự của t
+```
+
+sẽ loại bỏ toàn bộ các ký tự xuất hiện ở cả hai chuỗi.
+
+Cuối cùng chỉ còn:
+
+```text
+ký tự được thêm vào
+```
+
+Lời giải đạt:
+
+```text
+Time Complexity: O(n)
+Space Complexity: O(1)
+```
+
+và đây là lời giải C++ ngắn gọn, tối ưu và không cần thêm cấu trúc dữ liệu phụ.
