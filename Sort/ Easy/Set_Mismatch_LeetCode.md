@@ -1,0 +1,875 @@
+# Set Mismatch - LeetCode
+
+[Set Mismatch](https://leetcode.com/problems/set-mismatch/)
+
+## 1. Phân tích bài toán
+
+Ta được cho một mảng `nums` có độ dài `n`.
+
+Ban đầu, mảng đáng lẽ phải chứa đầy đủ các số nguyên từ `1` đến `n`, mỗi số xuất hiện đúng một lần:
+
+```text
+[1, 2, 3, ..., n]
+```
+
+Tuy nhiên, do một lỗi:
+
+- Có đúng một số xuất hiện hai lần.
+- Có đúng một số bị mất khỏi mảng.
+
+Nhiệm vụ là tìm:
+
+```text
+[so_bi_lap, so_bi_thieu]
+```
+
+### Ví dụ
+
+```text
+Input:
+nums = [1, 2, 2, 4]
+
+Output:
+[2, 3]
+```
+
+Mảng đúng phải là:
+
+```text
+[1, 2, 3, 4]
+```
+
+`2` xuất hiện hai lần và `3` không xuất hiện.
+
+---
+
+# 2. Nhận xét quan trọng
+
+Mỗi giá trị trong `nums` đều nằm trong khoảng:
+
+```text
+1 <= nums[i] <= n
+```
+
+Đồng thời mảng có đúng `n` phần tử.
+
+Điều này cho phép liên hệ trực tiếp:
+
+```text
+giá trị x
+```
+
+với:
+
+```text
+index = x - 1
+```
+
+Ví dụ với `n = 5`:
+
+```text
+Giá trị:    1   2   3   4   5
+Index:      0   1   2   3   4
+```
+
+Do đó:
+
+```text
+1 -> nums[0]
+2 -> nums[1]
+3 -> nums[2]
+4 -> nums[3]
+5 -> nums[4]
+```
+
+Đây chính là chìa khóa để giải bài toán với:
+
+```text
+O(n) thời gian
+O(1) bộ nhớ phụ
+```
+
+---
+
+# 3. Cách đơn giản: dùng mảng đánh dấu
+
+Ta có thể tạo một mảng `check` kích thước `n + 1`.
+
+Khi gặp giá trị `x`:
+
+```text
+check[x]++
+```
+
+Sau đó:
+
+- `check[x] == 2` -> `x` là số bị lặp.
+- `check[x] == 0` -> `x` là số bị thiếu.
+
+Ví dụ:
+
+```text
+nums = [1, 2, 2, 4]
+```
+
+Ta có:
+
+```text
+check[1] = 1
+check[2] = 2
+check[3] = 0
+check[4] = 1
+```
+
+Suy ra:
+
+```text
+duplicate = 2
+missing = 3
+```
+
+Cách này có:
+
+```text
+Thời gian: O(n)
+Bộ nhớ phụ: O(n)
+```
+
+Thời gian đã tối ưu nhưng bộ nhớ chưa tối ưu.
+
+Ta có thể tận dụng chính `nums`.
+
+---
+
+# 4. Ý tưởng tối ưu: đánh dấu ngay trên mảng
+
+Thay vì tạo mảng `check`, ta sử dụng chính `nums` để đánh dấu các giá trị đã xuất hiện.
+
+Với mỗi giá trị `x`, ta lấy:
+
+```text
+index = x - 1
+```
+
+Sau đó đổi dấu phần tử tại vị trí đó:
+
+```text
+nums[x - 1] = -nums[x - 1]
+```
+
+Ý nghĩa:
+
+> "Giá trị x đã xuất hiện."
+
+Vì ban đầu mọi phần tử đều dương, ta có thể quy ước:
+
+```text
+dương -> chưa được đánh dấu
+âm    -> đã được đánh dấu
+```
+
+---
+
+# 5. Phát hiện số bị lặp
+
+Xét:
+
+```text
+nums = [1, 2, 2, 4]
+```
+
+### Gặp 1 lần đầu
+
+```text
+x = 1
+index = x - 1 = 0
+```
+
+Đổi dấu:
+
+```text
+[-1, 2, 2, 4]
+```
+
+Ta đã đánh dấu rằng `1` xuất hiện.
+
+### Gặp 2 lần đầu
+
+```text
+x = 2
+index = 1
+```
+
+Đổi dấu:
+
+```text
+[-1, -2, 2, 4]
+```
+
+### Gặp 2 lần thứ hai
+
+Ta vẫn có:
+
+```text
+x = 2
+index = 1
+```
+
+Nhưng:
+
+```text
+nums[1] = -2
+```
+
+Điều đó chứng minh `2` đã được đánh dấu từ trước.
+
+Vậy:
+
+```text
+duplicate = 2
+```
+
+Đây là cách phát hiện số bị lặp mà không cần `set`, `map` hay mảng phụ.
+
+---
+
+# 6. Tìm số bị thiếu
+
+Sau khi đánh dấu tất cả các giá trị đã xuất hiện, ta có:
+
+```text
+[-1, -2, 2, -4]
+```
+
+Ta duyệt lại mảng.
+
+Nếu:
+
+```text
+nums[i] > 0
+```
+
+thì vị trí `i` chưa từng được đánh dấu.
+
+Điều đó có nghĩa số:
+
+```text
+i + 1
+```
+
+không xuất hiện trong mảng.
+
+Ở ví dụ trên:
+
+```text
+nums[2] = 2 > 0
+```
+
+nên:
+
+```text
+missing = 2 + 1 = 3
+```
+
+Kết quả:
+
+```text
+[2, 3]
+```
+
+---
+
+# 7. Thuật toán đầy đủ
+
+Ta thực hiện hai lần duyệt.
+
+## Lần 1: tìm số bị lặp
+
+Với mỗi phần tử:
+
+```text
+x = abs(nums[i])
+```
+
+Sau đó:
+
+```text
+index = x - 1
+```
+
+Kiểm tra:
+
+```text
+Nếu nums[index] < 0:
+    x là số bị lặp
+Ngược lại:
+    đổi dấu nums[index]
+```
+
+Ta phải dùng `abs()` vì mảng đã bị thay đổi trong quá trình đánh dấu.
+
+---
+
+## Lần 2: tìm số bị thiếu
+
+Duyệt lại toàn bộ mảng.
+
+Nếu:
+
+```text
+nums[i] > 0
+```
+
+thì:
+
+```text
+missing = i + 1
+```
+
+---
+
+# 8. Mô phỏng chi tiết
+
+Xét:
+
+```text
+nums = [1, 2, 2, 4]
+```
+
+## Lần 1
+
+### i = 0
+
+```text
+x = abs(nums[0]) = 1
+index = 0
+```
+
+Đổi dấu:
+
+```text
+[-1, 2, 2, 4]
+```
+
+### i = 1
+
+```text
+x = abs(nums[1]) = 2
+index = 1
+```
+
+Đổi dấu:
+
+```text
+[-1, -2, 2, 4]
+```
+
+### i = 2
+
+```text
+x = abs(nums[2]) = 2
+index = 1
+```
+
+Hiện tại:
+
+```text
+nums[1] = -2
+```
+
+Vậy `2` đã xuất hiện trước đó:
+
+```text
+duplicate = 2
+```
+
+### i = 3
+
+```text
+x = abs(nums[3]) = 4
+index = 3
+```
+
+Đổi dấu:
+
+```text
+[-1, -2, 2, -4]
+```
+
+## Lần 2
+
+Kiểm tra:
+
+```text
+index 0 -> -1
+index 1 -> -2
+index 2 ->  2
+index 3 -> -4
+```
+
+Chỉ có vị trí `2` vẫn dương.
+
+Do đó:
+
+```text
+missing = 2 + 1 = 3
+```
+
+Kết quả:
+
+```text
+[2, 3]
+```
+
+---
+
+# 9. Vì sao thuật toán đúng?
+
+## Tìm số bị lặp
+
+Mỗi giá trị `x` được ánh xạ vào vị trí:
+
+```text
+x - 1
+```
+
+Lần đầu gặp `x`, vị trí này đang dương và được đổi thành âm.
+
+Nếu gặp `x` lần thứ hai, vị trí đó đã âm.
+
+Do đó:
+
+```text
+nums[x - 1] < 0
+```
+
+chính là dấu hiệu cho biết `x` đã xuất hiện trước đó.
+
+Theo đề bài chỉ có đúng một số bị lặp, nên số được phát hiện chính là `duplicate`.
+
+---
+
+## Tìm số bị thiếu
+
+Mỗi số xuất hiện đều làm vị trí tương ứng của nó trở thành âm.
+
+Chỉ có số bị thiếu là không xuất hiện, nên vị trí tương ứng với nó không bị đánh dấu.
+
+Vì vậy vị trí đó vẫn dương.
+
+Nếu vị trí đó là `i`, số tương ứng là:
+
+```text
+i + 1
+```
+
+Do đó ta tìm được `missing`.
+
+---
+
+# 10. Độ phức tạp
+
+Ta duyệt mảng hai lần:
+
+```text
+Lần 1: O(n)
+Lần 2: O(n)
+```
+
+Tổng vẫn là:
+
+```text
+O(n)
+```
+
+Bộ nhớ phụ chỉ gồm một vài biến:
+
+```text
+duplicate
+missing
+x
+index
+```
+
+Không tạo thêm cấu trúc dữ liệu phụ.
+
+Vì vậy:
+
+```text
+Thời gian: O(n)
+Bộ nhớ phụ: O(1)
+```
+
+Đây là lời giải tối ưu về mặt tiệm cận.
+
+---
+
+# 11. Code C++ tối ưu
+
+```cpp
+class Solution {
+public:
+    vector<int> findErrorNums(vector<int>& nums) {
+        int duplicate = -1;
+        int missing = -1;
+
+        // Danh dau cac so da xuat hien
+        for (int i = 0; i < nums.size(); i++) {
+            int x = abs(nums[i]);
+            int idx = x - 1;
+
+            // Neu vi tri nay da am, x da xuat hien truoc do
+            if (nums[idx] < 0) {
+                duplicate = x;
+            } else {
+                nums[idx] = -nums[idx];
+            }
+        }
+
+        // Tim so chua duoc danh dau
+        for (int i = 0; i < nums.size(); i++) {
+            if (nums[i] > 0) {
+                missing = i + 1;
+                break;
+            }
+        }
+
+        return {duplicate, missing};
+    }
+};
+```
+
+---
+
+# 12. Giải thích code
+
+## Khởi tạo
+
+```cpp
+int duplicate = -1;
+int missing = -1;
+```
+
+Hai biến lưu số bị lặp và số bị thiếu.
+
+---
+
+## Lấy giá trị thực
+
+```cpp
+int x = abs(nums[i]);
+```
+
+Trong quá trình đánh dấu, một số phần tử có thể đã thành số âm.
+
+Ví dụ:
+
+```text
+nums[i] = -4
+```
+
+Nhưng giá trị cần xử lý vẫn là `4`.
+
+Vì vậy phải dùng:
+
+```cpp
+abs(nums[i])
+```
+
+---
+
+## Ánh xạ giá trị thành vị trí
+
+```cpp
+int idx = x - 1;
+```
+
+Bởi vì:
+
+```text
+1 -> index 0
+2 -> index 1
+...
+n -> index n - 1
+```
+
+---
+
+## Kiểm tra số bị lặp
+
+```cpp
+if (nums[idx] < 0) {
+    duplicate = x;
+}
+```
+
+Nếu vị trí đã âm thì `x` đã xuất hiện trước đó.
+
+---
+
+## Đánh dấu số đã xuất hiện
+
+```cpp
+else {
+    nums[idx] = -nums[idx];
+}
+```
+
+Đổi dấu để ghi nhớ rằng `x` đã xuất hiện.
+
+---
+
+## Tìm số bị thiếu
+
+```cpp
+for (int i = 0; i < nums.size(); i++) {
+    if (nums[i] > 0) {
+        missing = i + 1;
+        break;
+    }
+}
+```
+
+Nếu vị trí `i` vẫn dương, vị trí đó chưa được đánh dấu.
+
+Vậy số:
+
+```text
+i + 1
+```
+
+là số bị thiếu.
+
+---
+
+# 13. Một ví dụ khác
+
+```text
+nums = [2, 2]
+```
+
+Mảng đúng phải là:
+
+```text
+[1, 2]
+```
+
+Gặp `2` lần đầu:
+
+```text
+[2, -2]
+```
+
+Gặp `2` lần thứ hai:
+
+```text
+nums[1] < 0
+```
+
+nên:
+
+```text
+duplicate = 2
+```
+
+Sau đó:
+
+```text
+nums[0] > 0
+```
+
+nên:
+
+```text
+missing = 1
+```
+
+Kết quả:
+
+```text
+[2, 1]
+```
+
+---
+
+# 14. Lưu ý về việc thay đổi mảng
+
+Thuật toán này thay đổi trực tiếp `nums` bằng cách đổi dấu các phần tử.
+
+Điều này không gây vấn đề vì đề bài chỉ yêu cầu trả về:
+
+```text
+[duplicate, missing]
+```
+
+và không yêu cầu giữ nguyên mảng đầu vào.
+
+Đây chính là điều cho phép ta đạt:
+
+```text
+O(1)
+```
+
+bộ nhớ phụ.
+
+---
+
+# 15. So sánh với các cách khác
+
+## Dùng `set`
+
+Có thể dùng:
+
+```cpp
+set<int> s;
+```
+
+nhưng độ phức tạp thường là:
+
+```text
+Thời gian: O(n log n)
+Bộ nhớ: O(n)
+```
+
+Không tối ưu.
+
+## Dùng `unordered_set`
+
+Có thể đạt trung bình:
+
+```text
+Thời gian: O(n)
+Bộ nhớ: O(n)
+```
+
+Thời gian tốt nhưng vẫn tốn bộ nhớ phụ.
+
+## Dùng tổng
+
+Có thể dùng tổng của `1..n` kết hợp với một phương trình khác.
+
+Ưu điểm:
+
+```text
+O(n) thời gian
+O(1) bộ nhớ
+```
+
+Nhưng cần chú ý nguy cơ tràn số khi tổng lớn.
+
+Cách đánh dấu dấu âm tận dụng trực tiếp điều kiện:
+
+```text
+1 <= nums[i] <= n
+```
+
+nên vừa đơn giản vừa hiệu quả.
+
+---
+
+# 16. Một hướng O(1) khác: XOR
+
+Ta cũng có thể dùng XOR vì:
+
+```text
+x ^ x = 0
+x ^ 0 = x
+```
+
+Các phần tử xuất hiện hai lần sẽ triệt tiêu nhau.
+
+Tuy nhiên, việc tách chính xác `duplicate` và `missing` từ kết quả XOR cần thêm các bước xử lý.
+
+Trong khi đó, cách đánh dấu bằng dấu âm trực tiếp biểu diễn:
+
+```text
+âm = đã xuất hiện
+dương = chưa được đánh dấu
+```
+
+nên dễ hiểu và phù hợp với bài này hơn.
+
+---
+
+# 17. Tư duy quan trọng cần rút ra
+
+Điểm quan trọng nhất không phải chỉ là "đổi dấu".
+
+Ý tưởng cốt lõi là:
+
+> Khi giá trị của phần tử nằm trong một khoảng xác định từ `1` đến `n`, ta có thể ánh xạ giá trị đó vào một vị trí trong chính mảng.
+
+Cụ thể:
+
+```text
+giá trị x
+    |
+    v
+vị trí x - 1
+```
+
+Sau đó tận dụng trạng thái của phần tử tại vị trí đó để lưu thông tin.
+
+Đây là kỹ thuật rất đáng nhớ trong các bài toán mảng.
+
+---
+
+# 18. Mẫu tư duy tổng quát
+
+Khi gặp bài toán có dạng:
+
+```text
+Mảng có n phần tử
+Giá trị nằm trong khoảng 1..n
+Có phần tử trùng / thiếu / xuất hiện đặc biệt
+Yêu cầu O(1) bộ nhớ phụ
+```
+
+hãy thử hỏi:
+
+```text
+"Liệu mình có thể dùng chính giá trị x để truy cập nums[x - 1] không?"
+```
+
+Nếu có, ta có thể tận dụng mảng như một cấu trúc dữ liệu đánh dấu.
+
+Trong `Set Mismatch`:
+
+```text
+âm = đã xuất hiện
+dương = chưa được đánh dấu
+```
+
+Từ đó:
+
+```text
+gặp vị trí đã âm -> duplicate
+còn vị trí dương -> missing
+```
+
+Đây chính là ý tưởng cốt lõi.
+
+---
+
+# 19. Kết luận
+
+Cách giải tối ưu:
+
+1. Duyệt qua mảng.
+2. Với mỗi giá trị `x`, lấy `abs(nums[i])`.
+3. Ánh xạ `x` thành vị trí `x - 1`.
+4. Nếu `nums[x - 1]` đã âm thì `x` là số bị lặp.
+5. Nếu chưa âm thì đổi dấu để đánh dấu.
+6. Duyệt lại mảng.
+7. Vị trí còn dương chính là số bị thiếu, với giá trị `i + 1`.
+
+Độ phức tạp:
+
+```text
+Thời gian: O(n)
+Bộ nhớ phụ: O(1)
+```
+
+Đây là lời giải tối ưu và thể hiện một kỹ thuật quan trọng:
+
+**Tận dụng chính mảng đầu vào để lưu trạng thái thay vì tạo thêm cấu trúc dữ liệu.**
